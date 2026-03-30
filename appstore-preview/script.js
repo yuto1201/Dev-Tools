@@ -201,8 +201,8 @@ const BG_STYLES=[
 /* ═══ PHONE LAYOUTS ═══ */
 function miniBase(c,W,H){drawGrad(c,W,H,'#1c2d50','#263660',135);}
 
-/* iPhone aspect ratio ≈ 2.165 (19.5:9) */
-const PHR=2.165;
+/* Device aspect ratio from current selection */
+function getDeviceAR(){return DEVS[curDev].h/DEVS[curDev].w;}
 
 const PHONE_LAYOUTS=[
 
@@ -211,11 +211,11 @@ const PHONE_LAYOUTS=[
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.06,'center',W);
-     const pw=W*.62,ph=pw*PHR;
+     const pw=W*.62,ph=pw*getDeviceAR();
      miniPhone(c,(W-pw)/2,H*.25,pw,ph);
    },
    zone:(W,H,s)=>{
-     const pw=W*.72,ph=pw*PHR;
+     const pw=W*.72,ph=pw*getDeviceAR();
      return{tx:W/2,ty:H*.06+getTextOffsetY(s)*H*.002,ta:'center',
             px:(W-pw)/2,py:H*.26,pw,ph};
    }},
@@ -224,12 +224,12 @@ const PHONE_LAYOUTS=[
   {id:'text-bottom',name:'テキスト下',desc:'iPhoneが上、テキストが下',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
-     const pw=W*.62,ph=pw*PHR;
+     const pw=W*.62,ph=pw*getDeviceAR();
      miniPhone(c,(W-pw)/2,H*.02,pw,ph);
      miniTextLines(c,W/2,H*.82,'center',W);
    },
    zone:(W,H,s)=>{
-     const pw=W*.70,ph=pw*PHR,py=H*.03;
+     const pw=W*.70,ph=pw*getDeviceAR(),py=H*.03;
      return{tx:W/2,ty:py+ph+H*.025+getTextOffsetY(s)*H*.002,
             ta:'center',px:(W-pw)/2,py,pw,ph};
    }},
@@ -238,7 +238,7 @@ const PHONE_LAYOUTS=[
   {id:'center-large',name:'フルスクリーン↓',desc:'大きなiPhone、テキストを下に重ねる',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
-     const pw=W*.76,ph=pw*PHR;
+     const pw=W*.76,ph=pw*getDeviceAR();
      miniPhone(c,(W-pw)/2,H*.02,pw,ph);
      const ov=c.createLinearGradient(0,H*.62,0,H);
      ov.addColorStop(0,'rgba(0,0,0,0)');ov.addColorStop(1,'rgba(0,0,0,.88)');
@@ -246,7 +246,7 @@ const PHONE_LAYOUTS=[
      miniTextLines(c,W/2,H*.82,'center',W*.85);
    },
    zone:(W,H,s)=>{
-     const pw=W*.84,ph=pw*PHR;
+     const pw=W*.84,ph=pw*getDeviceAR();
      return{tx:W/2,ty:H*.79+getTextOffsetY(s)*H*.002,ta:'center',
             px:(W-pw)/2,py:H*.02,pw,ph,overlay:'bottom'};
    }},
@@ -255,7 +255,7 @@ const PHONE_LAYOUTS=[
   {id:'center-large-top',name:'フルスクリーン↑',desc:'大きなiPhone、テキストを上に重ねる',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
-     const pw=W*.76,ph=pw*PHR;
+     const pw=W*.76,ph=pw*getDeviceAR();
      miniPhone(c,(W-pw)/2,H*.15,pw,ph);
      const ov=c.createLinearGradient(0,0,0,H*.40);
      ov.addColorStop(0,'rgba(0,0,0,.88)');ov.addColorStop(1,'rgba(0,0,0,0)');
@@ -263,7 +263,7 @@ const PHONE_LAYOUTS=[
      miniTextLines(c,W/2,H*.08,'center',W*.85);
    },
    zone:(W,H,s)=>{
-     const pw=W*.84,ph=pw*PHR;
+     const pw=W*.84,ph=pw*getDeviceAR();
      return{tx:W/2,ty:H*.07+getTextOffsetY(s)*H*.002,ta:'center',
             px:(W-pw)/2,py:H*.15,pw,ph,overlay:'top'};
    }},
@@ -304,11 +304,11 @@ const PHONE_LAYOUTS=[
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.06,'center',W);
-     const pw=W*.58,ph=pw*PHR;
+     const pw=W*.58,ph=pw*getDeviceAR();
      miniPhone(c,(W-pw)/2,H*.28,pw,ph,undefined,undefined,10*Math.PI/180);
    },
    zone:(W,H,s)=>({tx:W/2,ty:H*.06+getTextOffsetY(s)*H*.002,ta:'center',
-     px:(W-W*.68)/2,py:H*.28,pw:W*.68,ph:W*.68*PHR})},
+     px:(W-W*.68)/2,py:H*.28,pw:W*.68,ph:W*.68*getDeviceAR()})},
 
   // 8. テキスト強調：テキストが主役、小さなiPhoneがアクセント
   {id:'text-hero',name:'テキスト強調',desc:'テキストが主役、iPhoneはアクセント',
@@ -318,11 +318,11 @@ const PHONE_LAYOUTS=[
      c.fillStyle='rgba(255,255,255,.85)';c.fillRect(lx,H*.08,lw,W*.042);
      c.fillStyle='rgba(255,255,255,.7)' ;c.fillRect(lx+lw*.05,H*.08+W*.065,lw*.9,W*.034);
      c.fillStyle='rgba(255,255,255,.45)';c.fillRect(lx+lw*.1,H*.08+W*.118,lw*.7,W*.026);
-     const pw=W*.62,ph=pw*PHR;
+     const pw=W*.62,ph=pw*getDeviceAR();
      miniPhone(c,(W-pw)/2,H*.36,pw,ph);
    },
    zone:(W,H,s)=>{
-     const pw=W*.78,ph=pw*PHR;
+     const pw=W*.78,ph=pw*getDeviceAR();
      return{tx:W/2,ty:H*.08+getTextOffsetY(s)*H*.002,ta:'center',
             px:(W-pw)/2,py:H*.36,pw,ph,heroText:true};
    }},
