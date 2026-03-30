@@ -113,7 +113,7 @@ function drawGrain(ctx,W,H,intensity){
 
 /* ═══ PHONE ═══ */
 function drawPhone(ctx,x,y,w,h,s){
-  const r=w*.11,bw=w*.034;
+  const r=w*.11,bw=w*.018;
   ctx.save();ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=w*.28;ctx.shadowOffsetY=w*.09;
   const FC={black:['#282828','#0f0f0f'],silver:['#e2e2e2','#acacac'],gold:['#d4a96a','#a07840'],none:['#2a2a2a','#111']};
   const [fa,fb]=(FC[s.frameColor]||FC.black);
