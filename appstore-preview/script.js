@@ -1393,4 +1393,3 @@ function renderIphoneSlides(){
     grid.appendChild(wrap);
   });
 }
-</script>
