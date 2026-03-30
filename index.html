@@ -21,6 +21,8 @@
     --glow1: rgba(99, 179, 237, 0.4);
     --glow2: rgba(118, 228, 247, 0.3);
     --glow3: rgba(159, 122, 234, 0.35);
+    --accent4: #68d391;
+    --glow4: rgba(104, 211, 145, 0.35);
   }
 
   html, body {
@@ -148,6 +150,7 @@
   .card:nth-child(1) { animation-delay: 0.25s; --card-accent: var(--accent1); --card-glow: var(--glow1); }
   .card:nth-child(2) { animation-delay: 0.38s; --card-accent: var(--accent2); --card-glow: var(--glow2); }
   .card:nth-child(3) { animation-delay: 0.51s; --card-accent: var(--accent3); --card-glow: var(--glow3); }
+  .card:nth-child(4) { animation-delay: 0.64s; --card-accent: var(--accent4); --card-glow: var(--glow4); }
 
   .card::before {
     content: '';
@@ -455,6 +458,25 @@
         <span class="tag">canvas</span>
         <span class="tag">physics</span>
         <span class="tag">interactive</span>
+      </div>
+      <div class="card-arrow">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M7 17L17 7M17 7H7M17 7v10"/>
+        </svg>
+      </div>
+    </a>
+
+    <!-- Parser -->
+    <a class="card" href="parser/index.html">
+      <div class="card-line"></div>
+      <div class="card-icon">🔍</div>
+      <div class="card-label">Utility</div>
+      <div class="card-title">Parser /<br>Decoder</div>
+      <div class="card-desc">JSON・JWT・URL・Base64などの解析・デコードツール。開発時のデバッグに。</div>
+      <div class="card-tags">
+        <span class="tag">offline</span>
+        <span class="tag">JSON</span>
+        <span class="tag">JWT</span>
       </div>
       <div class="card-arrow">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
