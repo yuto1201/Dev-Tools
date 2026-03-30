@@ -183,7 +183,7 @@ input[type=color]{width:20px;height:20px;border:none;border-radius:4px;cursor:po
   .tpl-grid{grid-template-columns:1fr}
 }
 /* ── Accordion sections ── */
-.acc-sec{border-radius:12px;overflow:hidden;background:var(--card);border:1.5px solid var(--b1)}
+.acc-sec{border-radius:12px;overflow:hidden;background:var(--card);border:1.5px solid var(--b1);flex-shrink:0}
 .acc-sec.open{border-color:var(--b2)}
 .acc-head{
   display:flex;align-items:center;justify-content:space-between;
