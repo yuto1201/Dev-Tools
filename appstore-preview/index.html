@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Store Preview Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700;900&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=Hachi+Maru+Pop&family=DotGothic16&family=Yomogi&family=Rampart+One&family=RocknRoll+One&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="5" fill="#0A84FF"/><path d="M5 15V8l5-3 5 3v7l-5 2.5L5 15z" fill="white" opacity=".9"/><rect x="8" y="10" width="4" height="5" rx="2" fill="#0A84FF"/></svg>
+    Preview<em>Gen</em>
+  </div>
+  <div class="dev-group">
+    <span class="dev-label">iPhone</span>
+    <button class="dev-btn active" onclick="setDevice('6.9')"  id="dev-6.9">6.9"</button>
+    <button class="dev-btn"        onclick="setDevice('6.7')"  id="dev-6.7">6.7"</button>
+    <button class="dev-btn"        onclick="setDevice('6.5')"  id="dev-6.5">6.5"</button>
+    <button class="dev-btn"        onclick="setDevice('5.5')"  id="dev-5.5">5.5"</button>
+    <span class="dev-label dev-label-ipad">iPad</span>
+    <button class="dev-btn"        onclick="setDevice('ipad13')" id="dev-ipad13">12.9"</button>
+    <button class="dev-btn"        onclick="setDevice('ipad11')" id="dev-ipad11">11"</button>
+    <button class="dev-btn"        onclick="setDevice('ipad97')" id="dev-ipad97">9.7"</button>
+  </div>
+  <div class="hbtns">
+    <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
+    <button class="btn btn-g" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
+    <button class="btn btn-g" onclick="saveProject()">💾 <span class="btn-lbl">保存</span></button>
+    <button class="btn btn-g" onclick="document.getElementById('load-input').click()">📂 <span class="btn-lbl">読込</span></button>
+    <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
+    <button class="btn btn-g btn-export-all" onclick="exportZip()">🗜 <span class="btn-lbl">ZIP</span></button>
+    <button class="btn btn-g btn-export-all" onclick="exportAllSizesZip()">🗜 <span class="btn-lbl">全サイズZIP</span></button>
+    <button class="btn btn-p" onclick="exportCurrent()">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">PNG保存</span></button>
+  </div>
+</header>
+<div class="stepbar">
+  <div class="step active" id="st1" onclick="goStep(1)"><div class="step-n">1</div><div class="step-l">パーツを選ぶ</div></div>
+  <div class="step-arr">›</div>
+  <div class="step" id="st2"><div class="step-n">2</div><div class="step-l">内容を入力する</div></div>
+</div>
+
+<!-- Main wrapper: step content + always-visible slides panel -->
+<div style="display:flex;flex:1;overflow:hidden">
+
+  <!-- Step content area -->
+  <div style="display:flex;flex:1;overflow:hidden;flex-direction:column">
+
+    <!-- Step 1 -->
+    <div class="ws" id="s1">
+      <!-- Desktop: left sidebar -->
+      <div class="opt-panel">
+        <div class="compose-sec">
+          <div class="compose-head"><div class="compose-num">1</div><div class="compose-title">背景スタイル</div></div>
+          <div class="opt-grid" id="bg-grid"></div>
+        </div>
+        <div class="compose-sec">
+          <div class="compose-head"><div class="compose-num">2</div><div class="compose-title">iPhoneの配置</div></div>
+          <div class="opt-grid" id="layout-grid"></div>
+        </div>
+        <div class="compose-sec">
+          <div class="compose-head"><div class="compose-num">3</div><div class="compose-title">エフェクト<span class="multi-tag">複数選択可</span></div></div>
+          <div class="fx-list" id="fx-list"></div>
+        </div>
+      </div>
+      <!-- iPad: tab layout -->
+      <div class="s1-tab-bar" id="s1-tab-bar">
+        <button class="active" onclick="switchS1Tab('bg',this)">① 背景</button>
+        <button onclick="switchS1Tab('layout',this)">② 配置</button>
+        <button onclick="switchS1Tab('fx',this)">③ エフェクト</button>
+        <button onclick="goStep(2)" style="background:var(--acc);color:#fff;flex:none;padding:0 14px;border-radius:6px;margin:4px 8px 4px 0;font-size:11px">次へ ›</button>
+      </div>
+      <div class="s1-tab-pane active" id="s1-pane-bg">
+        <div class="compose-sec">
+          <div class="compose-head"><div class="compose-num">1</div><div class="compose-title">背景スタイル</div></div>
+          <div class="opt-grid" id="bg-grid-t"></div>
+        </div>
+      </div>
+      <div class="s1-tab-pane" id="s1-pane-layout">
+        <div class="compose-sec">
+          <div class="compose-head"><div class="compose-num">2</div><div class="compose-title">iPhoneの配置</div></div>
+          <div class="opt-grid" id="layout-grid-t"></div>
+        </div>
+      </div>
+      <div class="s1-tab-pane" id="s1-pane-fx">
+        <div class="compose-sec">
+          <div class="compose-head"><div class="compose-num">3</div><div class="compose-title">エフェクト<span class="multi-tag">複数選択可</span></div></div>
+          <div class="fx-list" id="fx-list-t"></div>
+        </div>
+      </div>
+      <div class="prev-panel">
+        <div class="cw"><canvas id="s1-canvas"></canvas></div>
+        <div class="prev-summary" id="prev-summary"></div>
+        <button class="btn btn-p" onclick="goStep(2)" style="padding:10px 24px;font-size:13px">内容を入力する ›</button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="ws" id="s2">
+      <div class="edit-layout">
+        <div class="edit-left">
+          <!-- Desktop: tags bar -->
+          <div class="edit-top" id="edit-tags"></div>
+          <!-- iPhone: tab bar for edit sections -->
+          <div class="s2-tab-bar" id="s2-tab-bar">
+            <button class="active" onclick="switchEditTab('bg',this)">🎨</button>
+            <button onclick="switchEditTab('text',this)">✍️</button>
+            <button onclick="switchEditTab('font',this)">🔤</button>
+            <button onclick="switchEditTab('fx',this)">✨</button>
+            <button onclick="switchEditTab('device',this)">📱</button>
+          </div>
+          <!-- iPhone: tab panes (each section as a separate pane) -->
+          <div class="s2-pane active" id="s2p-bg"></div>
+          <div class="s2-pane" id="s2p-text"></div>
+          <div class="s2-pane" id="s2p-font"></div>
+          <div class="s2-pane" id="s2p-fx"></div>
+          <div class="s2-pane" id="s2p-device"></div>
+          <!-- Desktop: all fields in one scroll area -->
+          <div class="edit-scroll" id="fields"></div>
+        </div>
+        <div class="edit-center">
+          <div class="cw"><canvas id="canvas"></canvas><div class="csz" id="csz">1320 × 2868 px</div></div>
+        </div>
+      </div><!-- end edit-layout -->
+    </div><!-- end s2 -->
+
+  </div>
+
+  <!-- Always-visible slides panel -->
+  <div class="edit-right" style="border-left:1px solid var(--b1)">
+    <div class="srh">
+      <span>スライド</span>
+      <button class="add-btn" onclick="addSlide()" title="スライドを追加">+</button>
+    </div>
+    <div class="sl" id="sl"></div>
+    <div class="drag-hint">↕ ドラッグで並び替え</div>
+  </div>
+
+</div>
+
+<!-- Convert Modal -->
+<div class="modal-overlay" id="conv-modal" style="display:none" onclick="if(event.target===this)hideConvModal()">
+  <div class="modal-box">
+    <div class="modal-title">🔄 パーツを変換</div>
+    <div>
+      <div class="modal-sub" style="margin-bottom:8px">背景スタイル</div>
+      <div class="modal-grid" id="conv-bg-grid"></div>
+    </div>
+    <div>
+      <div class="modal-sub" style="margin-bottom:8px">iPhoneの配置</div>
+      <div class="modal-grid" id="conv-lo-grid"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g" onclick="hideConvModal()">キャンセル</button>
+      <button class="btn btn-p" onclick="applyConv()">テキスト・画像を引き継いで適用</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Template Modal -->
+<div class="tpl-overlay" id="tpl-modal" style="display:none" onclick="if(event.target===this)hideTpl()">
+  <div class="tpl-box">
+    <div class="tpl-head">
+      <div class="tpl-title">🎯 テンプレートから始める</div>
+      <button class="tpl-close" onclick="hideTpl()">✕</button>
+    </div>
+    <div class="tpl-grid" id="tpl-grid"></div>
+  </div>
+</div>
+
+<!-- iPhone Bottom Nav -->
+<nav class="iphone-nav" id="iphone-nav" style="display:none">
+  <button id="inav-parts" onclick="iphoneNavParts()" class="iph-hidden">
+    <span class="nav-icon">←</span>パーツ
+  </button>
+  <button onclick="showTemplates()">
+    <span class="nav-icon">🎯</span>テンプレ
+  </button>
+  <button onclick="iphoneShowSlides()">
+    <span class="nav-icon">📋</span>スライド
+  </button>
+  <button onclick="iphoneShowDevMenu()">
+    <span class="nav-icon">📐</span>サイズ
+  </button>
+</nav>
+
+<!-- iPhone Device Size Menu -->
+<div class="iphone-slides-sheet" id="iphone-dev-sheet">
+  <div class="iphone-slides-bg" onclick="iphoneHideDevMenu()"></div>
+  <div class="iphone-slides-inner" style="gap:8px">
+    <div class="iphone-slides-handle"></div>
+    <div class="iphone-slides-head"><span>書き出しサイズ</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:8px">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);padding:4px 0">iPhone</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px" id="iph-dev-btns-iphone"></div>
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);padding:8px 0 4px;border-top:1px solid var(--b1);margin-top:4px">iPad</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px" id="iph-dev-btns-ipad"></div>
+    </div>
+  </div>
+</div>
+
+<!-- iPhone Slides Bottom Sheet -->
+<div class="iphone-slides-sheet" id="iphone-slides-sheet">
+  <div class="iphone-slides-bg" onclick="iphoneHideSlides()"></div>
+  <div class="iphone-slides-inner">
+    <div class="iphone-slides-handle"></div>
+    <div class="iphone-slides-head">
+      <span>スライド一覧</span>
+      <button class="add-btn" onclick="addSlide();renderIphoneSlides()">+</button>
+    </div>
+    <div class="iphone-slides-grid" id="iphone-sl"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
