@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ER Diagram Generator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">⬡</div>ER Diagram Generator</div>
+  <div class="header-right">
+    <span class="badge">OFFLINE</span>
+
+    <!-- ファイル ▼ -->
+    <div class="dropdown" id="ddFile">
+      <button class="btn" onclick="toggleDD('ddFile')">📂 ファイル ▾</button>
+      <div class="dropdown-menu">
+        <button class="dropdown-item" onclick="openUploadModal();closeDD()">📂 読み込む（CSV / JSON）</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" onclick="showAIHelp();closeDD()">🤖 Claudeと連携する</button>
+      </div>
+    </div>
+
+    <!-- 追加系（単体） -->
+    <button class="btn" onclick="openAddDBModal()" style="border-color:var(--accent2);color:var(--accent2);" title="DBを追加">⊕ DB追加</button>
+    <button class="btn success" onclick="openAddModal()">＋ テーブル追加</button>
+
+    <!-- 表示 ▼ -->
+    <div class="dropdown" id="ddView">
+      <button class="btn" onclick="toggleDD('ddView')">👁 表示 ▾</button>
+      <div class="dropdown-menu">
+        <button class="dropdown-item" onclick="toggleLabels();closeDD()" id="labelItem">🏷 ラベル表示</button>
+        <button class="dropdown-item" onclick="toggleAllCollapse();closeDD()" id="collapseItem">⊟ キーのみ表示</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" onclick="forceLayout();closeDD()">⊞ 自動整列</button>
+        <button class="dropdown-item" onclick="addMemo();closeDD()">📝 メモを追加</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" onclick="toggleTheme();closeDD()" id="themeItem">🌙 ダークモード</button>
+      </div>
+    </div>
+
+    <!-- 出力 ▼ -->
+    <div class="dropdown" id="ddExport">
+      <button class="btn" onclick="toggleDD('ddExport')">⬇ 出力 ▾</button>
+      <div class="dropdown-menu">
+        <button class="dropdown-item" onclick="exportJSON();closeDD()">📄 JSON</button>
+        <button class="dropdown-item" onclick="exportDDL();closeDD()">🗃 DDL（SQL）</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" onclick="exportSVG();closeDD()">🖼 SVG画像</button>
+        <button class="dropdown-item" onclick="exportPNG();closeDD()">🖼 PNG画像</button>
+      </div>
+    </div>
+
+    <!-- Undo / Redo -->
+    <button class="btn" onclick="undo()" id="undoBtn" title="元に戻す (Ctrl+Z)" style="padding:6px 9px;opacity:.35;">↩</button>
+    <button class="btn" onclick="redo()" id="redoBtn" title="やり直す (Ctrl+Y)" style="padding:6px 9px;opacity:.35;">↪</button>
+
+    <!-- その他アイコン -->
+    <button class="btn" onclick="showHistory()" title="変更履歴" style="padding:6px 9px;">📋</button>
+    <button class="btn" onclick="showShortcuts()" title="キーボードショートカット (?)" style="padding:6px 9px;">⌨</button>
+    <button class="btn" onclick="resetAll()" title="リセット" style="padding:6px 9px;color:var(--red);">🗑</button>
+  </div>
+</header>
+<main>
+  <aside class="sidebar">
+    <div class="sb-sec">
+      <div class="sec-lbl">統計</div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-v" id="st-t">0</div><div class="stat-l">Tables</div></div>
+        <div class="stat-card"><div class="stat-v" id="st-r">0</div><div class="stat-l">Relations</div></div>
+      </div>
+    </div>
+    <div class="sb-sec" style="padding-bottom:7px;">
+      <div class="sec-lbl">テーブル一覧</div>
+      <input class="fi" id="tblSearch" placeholder="🔍 テーブルを検索..." oninput="filterTables(this.value)" style="font-size:11px;padding:5px 10px;">
+    </div>
+    <div class="tbl-list" id="tblList"><div style="text-align:center;color:var(--text3);font-size:11px;padding-top:20px;line-height:1.9;">「＋ テーブル追加」または<br>ファイルを読み込んでください</div></div>
+  </aside>
+  <div class="canvas-area" id="cnv">
+    <svg id="diagram-svg">
+      <defs></defs>
+      <g id="dr"><g id="el"></g><g id="nl"></g></g>
+    </svg>
+    <div class="empty" id="emp">
+      <div class="empty-ico">🗄️</div>
+      <div class="empty-ttl">No tables loaded</div>
+      <div class="empty-sub">右上の「＋ テーブル追加」からGUI入力できます</div>
+    </div>
+
+    <div class="zoom-ctrl">
+      <div class="zoom-btn" onclick="zoomIn()">+</div>
+      <div class="zoom-lv" id="zlv" onclick="resetZoom()">100%</div>
+      <div class="zoom-btn" onclick="zoomOut()">−</div>
+      <div class="zoom-btn" onclick="fitToScreen()" title="テーブルが見える位置に戻る" style="font-size:14px;">⊡</div>
+    </div>
+  </div>
+</main>
+
+<!-- TABLE MODAL -->
+<div class="overlay" id="tblModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="mttl">テーブルを追加</div>
+      <div class="modal-x" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label class="fl">テーブル名</label>
+          <input class="fi" id="inName" placeholder="例: users, orders">
+        </div>
+        <div>
+          <label class="fl">所属DB</label>
+          <select class="fi" id="inDB" style="cursor:pointer;">
+            <option value="">（なし）</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg" style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;">
+        <div>
+          <label class="fl">メモ・コメント（任意）</label>
+          <textarea class="fi" id="inComment" placeholder="このテーブルの説明..." rows="2" style="resize:vertical;line-height:1.5;"></textarea>
+        </div>
+        <div>
+          <label class="fl">テーブルカラー</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;width:120px;" id="colorPicker"></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">カラム</label>
+        <div class="col-hdr"><span></span><span>カラム名</span><span>型</span><span>PK</span><span>NULL可</span><span>メモ</span><span></span></div>
+        <div class="col-list" id="colList"></div>
+        <button class="btn sm" onclick="addColRow()" style="margin-top:6px;">＋ カラム追加</button>
+      </div>
+      <div class="fg" style="margin-bottom:0;">
+        <label class="fl">🔗 外部キー（FK）— このテーブルから他テーブルへの参照</label>
+        <div class="fk-sec">
+          <div class="fk-lbl"><span>このテーブルの列</span><span></span><span>参照先テーブル</span><span></span><span>参照先列</span><span>関係</span><span></span></div>
+          <div id="fkList"></div>
+          <button class="btn sm" onclick="addFKRow()">＋ FK追加</button>
+        </div>
+      </div>
+
+
+    </div>
+    <div class="modal-ftr">
+      <button class="btn danger" id="delBtn" onclick="deleteTable()" style="display:none;margin-right:auto;">🗑 削除</button>
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn primary" onclick="saveTable()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- DB MODAL -->
+<div class="overlay" id="dbModal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="dbModalTitle">⊕ DBを追加</div>
+      <div class="modal-x" onclick="document.getElementById('dbModal').classList.remove('open')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label class="fl">DB名</label>
+        <input class="fi" id="inDBName" placeholder="例: main_db, analytics, cms">
+      </div>
+      <div class="fg" style="margin-bottom:0;">
+        <label class="fl">カラー</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="dbColorPicker"></div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn danger" id="dbDeleteBtn" onclick="deleteDB()" style="display:none;margin-right:auto;">🗑 削除</button>
+      <button class="btn" onclick="document.getElementById('dbModal').classList.remove('open')">キャンセル</button>
+      <button class="btn primary" onclick="saveDB()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- MEMO MODAL -->
+<div class="overlay" id="memoModal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="memoModalTitle">📝 メモを追加</div>
+      <div class="modal-x" onclick="document.getElementById('memoModal').classList.remove('open')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label class="fl">メモ内容</label>
+        <textarea class="fi" id="memoText" rows="5" placeholder="ここにメモを入力..." style="resize:vertical;line-height:1.6;"></textarea>
+      </div>
+      <div class="fg" style="margin-bottom:0;">
+        <label class="fl">カラー</label>
+        <div style="display:flex;gap:6px;" id="memoColorPicker"></div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn danger" id="memoDeleteBtn" onclick="deleteMemo()" style="display:none;margin-right:auto;">🗑 削除</button>
+      <button class="btn" onclick="document.getElementById('memoModal').classList.remove('open')">キャンセル</button>
+      <button class="btn primary" onclick="saveMemo()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="overlay" id="historyModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-hdr">
+      <div class="modal-ttl">📋 変更履歴</div>
+      <div class="modal-x" onclick="document.getElementById('historyModal').classList.remove('open')">✕</div>
+    </div>
+    <div class="modal-body" style="padding:12px 16px;">
+      <div id="historyList" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI HELP MODAL -->
+<div class="overlay" id="aiModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-hdr">
+      <div class="modal-ttl">🤖 Claudeと連携する</div>
+      <div class="modal-x" onclick="document.getElementById('aiModal').classList.remove('open')">✕</div>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7;">
+        以下のプロンプトをコピーして Claude に貼り付けると、このアプリ用の JSON を生成してもらえます。
+      </p>
+      <div id="aiPromptList" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SHORTCUT MODAL -->
+<div class="overlay" id="shortcutModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-hdr">
+      <div class="modal-ttl">⌨ キーボードショートカット</div>
+      <div class="modal-x" onclick="document.getElementById('shortcutModal').classList.remove('open')">✕</div>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tbody id="scTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="overlay" id="upModal">
+  <div class="modal" style="width:450px;">
+    <div class="modal-hdr">
+      <div class="modal-ttl">ファイルを読み込む</div>
+      <div class="modal-x" onclick="document.getElementById('upModal').classList.remove('open')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="upzone" id="upzone">
+        <input type="file" id="fileInp" accept=".csv,.json" onchange="handleFile(this.files[0])">
+        <div style="font-size:32px;margin-bottom:8px;">📂</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px;">クリックまたはドロップ</div>
+        <div style="font-size:10px;color:var(--text3);">CSV / JSON ファイル</div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:7px;">CSVフォーマット例：</div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:10px;color:var(--text3);line-height:2;">
+        <span style="color:var(--cyan);">table,column,type,pk,fk_table,fk_col</span><br>
+        users,id,INT,true,,<br>
+        users,name,VARCHAR,false,,<br>
+        orders,id,INT,true,,<br>
+        orders,user_id,INT,false,<span style="color:var(--purple);">users,id</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="script.js"></script>
+</body>
+</html>
