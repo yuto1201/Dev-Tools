@@ -58,6 +58,10 @@ const FONTS=[
   {id:'rocknroll',name:'RocknRoll',    sample:'ロック！元気！',   css:"'RocknRoll One'",       weights:['400']},
 ];
 
+/* ═══ DEVICE-AWARE GETTERS ═══ */
+function getTitleSize(s){return isIpadDev()?(s.titleSizeIpad!=null?s.titleSizeIpad:s.titleSize||100):(s.titleSize||100);}
+function getTextOffsetY(s){return isIpadDev()?(s.textOffsetYIpad!=null?s.textOffsetYIpad:s.textOffsetY||0):(s.textOffsetY||0);}
+
 /* ═══ HELPERS ═══ */
 function ha(hex,a){try{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`;}catch{return`rgba(0,0,0,${a})`;}}
 function drawGrad(ctx,W,H,c1,c2,angle){
@@ -200,7 +204,7 @@ const PHONE_LAYOUTS=[
    },
    zone:(W,H,s)=>{
      const pw=W*.72,ph=pw*PHR;
-     return{tx:W/2,ty:H*.06+(s.textOffsetY||0)*H*.002,ta:'center',
+     return{tx:W/2,ty:H*.06+getTextOffsetY(s)*H*.002,ta:'center',
             px:(W-pw)/2,py:H*.26,pw,ph};
    }},
 
@@ -214,7 +218,7 @@ const PHONE_LAYOUTS=[
    },
    zone:(W,H,s)=>{
      const pw=W*.70,ph=pw*PHR,py=H*.03;
-     return{tx:W/2,ty:py+ph+H*.025+(s.textOffsetY||0)*H*.002,
+     return{tx:W/2,ty:py+ph+H*.025+getTextOffsetY(s)*H*.002,
             ta:'center',px:(W-pw)/2,py,pw,ph};
    }},
 
@@ -231,7 +235,7 @@ const PHONE_LAYOUTS=[
    },
    zone:(W,H,s)=>{
      const pw=W*.84,ph=pw*PHR;
-     return{tx:W/2,ty:H*.79+(s.textOffsetY||0)*H*.002,ta:'center',
+     return{tx:W/2,ty:H*.79+getTextOffsetY(s)*H*.002,ta:'center',
             px:(W-pw)/2,py:H*.02,pw,ph,overlay:'bottom'};
    }},
 
@@ -248,7 +252,7 @@ const PHONE_LAYOUTS=[
    },
    zone:(W,H,s)=>{
      const pw=W*.84,ph=pw*PHR;
-     return{tx:W/2,ty:H*.07+(s.textOffsetY||0)*H*.002,ta:'center',
+     return{tx:W/2,ty:H*.07+getTextOffsetY(s)*H*.002,ta:'center',
             px:(W-pw)/2,py:H*.15,pw,ph,overlay:'top'};
    }},
 
@@ -265,7 +269,7 @@ const PHONE_LAYOUTS=[
      c.fillStyle='rgba(255,255,255,.90)';c.fillRect(lx,H*.72,lw,W*.028);
      c.fillStyle='rgba(255,255,255,.65)';c.fillRect(lx+lw*.1,H*.72+W*.044,lw*.75,W*.022);
    },
-   zone:(W,H,s)=>({tx:W/2,ty:H*.77+(s.textOffsetY||0)*H*.002,ta:'center',
+   zone:(W,H,s)=>({tx:W/2,ty:H*.77+getTextOffsetY(s)*H*.002,ta:'center',
      px:0,py:0,pw:W,ph:H,screenFill:'bottom'})},
 
   // 6. 全面スクショ↑：スクショが全画面、テキスト上部オーバーレイ
@@ -280,7 +284,7 @@ const PHONE_LAYOUTS=[
      c.fillStyle='rgba(255,255,255,.90)';c.fillRect(lx,H*.10,lw,W*.028);
      c.fillStyle='rgba(255,255,255,.65)';c.fillRect(lx+lw*.1,H*.10+W*.044,lw*.75,W*.022);
    },
-   zone:(W,H,s)=>({tx:W/2,ty:H*.09+(s.textOffsetY||0)*H*.002,ta:'center',
+   zone:(W,H,s)=>({tx:W/2,ty:H*.09+getTextOffsetY(s)*H*.002,ta:'center',
      px:0,py:0,pw:W,ph:H,screenFill:'top'})},
 
   // 7. 傾き：大きなiPhoneをダイナミックに傾ける
@@ -291,7 +295,7 @@ const PHONE_LAYOUTS=[
      const pw=W*.58,ph=pw*PHR;
      miniPhone(c,(W-pw)/2,H*.28,pw,ph,undefined,undefined,10*Math.PI/180);
    },
-   zone:(W,H,s)=>({tx:W/2,ty:H*.06+(s.textOffsetY||0)*H*.002,ta:'center',
+   zone:(W,H,s)=>({tx:W/2,ty:H*.06+getTextOffsetY(s)*H*.002,ta:'center',
      px:(W-W*.68)/2,py:H*.28,pw:W*.68,ph:W*.68*PHR})},
 
   // 8. テキスト強調：テキストが主役、小さなiPhoneがアクセント
@@ -307,7 +311,7 @@ const PHONE_LAYOUTS=[
    },
    zone:(W,H,s)=>{
      const pw=W*.78,ph=pw*PHR;
-     return{tx:W/2,ty:H*.08+(s.textOffsetY||0)*H*.002,ta:'center',
+     return{tx:W/2,ty:H*.08+getTextOffsetY(s)*H*.002,ta:'center',
             px:(W-pw)/2,py:H*.36,pw,ph,heroText:true};
    }},
 
@@ -323,7 +327,7 @@ const PHONE_LAYOUTS=[
        c.fillStyle='rgba(255,255,255,.28)';c.fillRect(W*.21,y+W*.018,W*.46,W*.016);
      });
    },
-   zone:(W,H,s)=>({tx:W/2,ty:H*.06+(s.textOffsetY||0)*H*.002,ta:'center',
+   zone:(W,H,s)=>({tx:W/2,ty:H*.06+getTextOffsetY(s)*H*.002,ta:'center',
      px:-9999,py:-9999,pw:0,ph:0,featureList:true})},
 ];
 
@@ -352,7 +356,7 @@ function defSlide(){
     screenshotImgIpad:null,_srcIpad:'',
     frameColor:'black',
     fontId:'noto',fontWeight:'900',
-    titleSize:100,textOffsetY:0,phoneTilt:10,
+    titleSize:100,textOffsetY:0,titleSizeIpad:100,textOffsetYIpad:0,phoneTilt:10,
     grain:0,
     textEffect:'none',
     textShadowColor:'#000000',textShadowSize:12,
@@ -489,7 +493,7 @@ function renderSlide(ctx,W,H,s){
   }
   // feature-list: render icon+text rows - distribute evenly in remaining space
   if(s.phoneLayout==='feature-list'){
-    const{css,weight}=getFontCss(s);const sizeScale=(s.titleSize||100)/100;
+    const{css,weight}=getFontCss(s);const sizeScale=getTitleSize(s)/100;
     const items=(s.featureItems||'✓ 機能その1\n✓ 機能その2\n✓ 機能その3').split('\n').filter(Boolean).slice(0,5);
     const listTop=ty+H*.035;
     const listBottom=H*.94;
@@ -573,7 +577,7 @@ function drawPhoneAtZone(ctx,z,s){
 function drawTextBlock(ctx,W,H,z,s){
   let ty=z.ty;
   const{css,weight}=getFontCss(s);
-  const sizeScale=(s.titleSize||100)/100;
+  const sizeScale=getTitleSize(s)/100;
   const maxW=z.maxW||undefined;
   const te=s.textEffect||'none';
 
@@ -774,7 +778,10 @@ function buildFields(){
     addColorField(el,'タイトル文字色','titleColor');
     addTextField(el,'サブタイトル','subtitle','サブコピーを入力');
     addColorField(el,'サブタイトル文字色','subColor');
-    addSliderField(el,'上下位置','textOffsetY',-50,50,s.textOffsetY||0,'px');
+    addSec(el,'iPhone 文字調整');
+    addSliderField(el,'上下位置（iPhone）','textOffsetY',-50,50,s.textOffsetY||0,'px');
+    addSec(el,'iPad 文字調整');
+    addSliderField(el,'上下位置（iPad）','textOffsetYIpad',-50,50,s.textOffsetYIpad||0,'px');
     if(hasBadge){
       addSec(el,'バッジ');
       addTextField(el,'バッジテキスト','badgeText','例: 無料で使える');
@@ -789,7 +796,8 @@ function buildFields(){
   function buildFontSection(el){
     addFontPicker(el);
     addFontWeightPicker(el);
-    addSliderField(el,'文字サイズ','titleSize',60,160,s.titleSize||100,'%');
+    addSliderField(el,'文字サイズ（iPhone）','titleSize',60,160,s.titleSize||100,'%');
+    addSliderField(el,'文字サイズ（iPad）','titleSizeIpad',60,160,s.titleSizeIpad||100,'%');
   }
   function buildFxSection(el){
     addSec(el,'テキストエフェクト');
