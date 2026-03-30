@@ -117,19 +117,19 @@ function drawGrain(ctx,W,H,intensity){
 
 /* ═══ PHONE ═══ */
 function drawPhone(ctx,x,y,w,h,s){
-  const r=w*.11,bw=w*.018;
+  const ipad=isIpadDev();
+  const r=w*(ipad?.065:.11),bw=w*(ipad?.028:.018);
   ctx.save();ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=w*.28;ctx.shadowOffsetY=w*.09;
   const FC={black:['#282828','#0f0f0f'],silver:['#e2e2e2','#acacac'],gold:['#d4a96a','#a07840'],none:['#2a2a2a','#111']};
   const [fa,fb]=(FC[s.frameColor]||FC.black);
   const fg=ctx.createLinearGradient(x,y,x+w,y+h);fg.addColorStop(0,fa);fg.addColorStop(1,fb);
   rr(ctx,x,y,w,h,r);ctx.fillStyle=fg;ctx.fill();ctx.restore();
 
-  // Screen area with precise corner radius
+  // Screen area
   const sx=x+bw,sy=y+bw,sw=w-bw*2,sh=h-bw*2;
-  const sr=r*0.82; // iPhone screen corners are tighter than outer frame
+  const sr=r*(ipad?.75:.82);
   ctx.save();rr(ctx,sx,sy,sw,sh,sr);ctx.clip();
   if(getScreenshot(s)){
-    // Draw screenshot with rounded corner mask already from clip
     drawImgCover(ctx,getScreenshot(s),sx,sy,sw,sh);
   }else{
     ctx.fillStyle='#0a0a18';ctx.fillRect(sx,sy,sw,sh);
@@ -139,14 +139,26 @@ function drawPhone(ctx,x,y,w,h,s){
   }
   ctx.restore();
 
-  // Dynamic Island
-  const diW=w*.3,diH=w*.037;rr(ctx,x+w/2-diW/2,y+bw+h*.013,diW,diH,diH/2);ctx.fillStyle='#000';ctx.fill();
+  if(ipad){
+    // iPad: front camera (small circle, top center)
+    const camR=w*.012;
+    ctx.beginPath();ctx.arc(x+w/2,y+bw+camR*2.5,camR,0,Math.PI*2);ctx.fillStyle='#0a0a18';ctx.fill();
+    ctx.beginPath();ctx.arc(x+w/2,y+bw+camR*2.5,camR*.5,0,Math.PI*2);ctx.fillStyle='#1a1a2a';ctx.fill();
+  }else{
+    // iPhone: Dynamic Island
+    const diW=w*.3,diH=w*.037;rr(ctx,x+w/2-diW/2,y+bw+h*.013,diW,diH,diH/2);ctx.fillStyle='#000';ctx.fill();
+  }
+
   // Home bar
-  const bW=w*.33,bH=Math.max(h*.004,1.5);rr(ctx,x+w/2-bW/2,y+h-bw-bH-h*.013,bW,bH,bH/2);
+  const bW=w*(ipad?.25:.33),bH=Math.max(h*.004,1.5);
+  rr(ctx,x+w/2-bW/2,y+h-bw-bH-h*.013,bW,bH,bH/2);
   ctx.fillStyle=s.frameColor==='silver'?'rgba(0,0,0,.15)':'rgba(255,255,255,.28)';ctx.fill();
-  // Side buttons
-  const bc=s.frameColor==='silver'?'#aaa':s.frameColor==='gold'?'#b08a48':'#1a1a1a';
-  [[x-bw*.7,y+h*.2,bw*.7,h*.07],[x-bw*.7,y+h*.3,bw*.7,h*.07],[x+w,y+h*.27,bw*.65,h*.1]].forEach(([bx,by,bw2,bh2])=>{rr(ctx,bx,by,bw2,bh2,2);ctx.fillStyle=bc;ctx.fill();});
+
+  if(!ipad){
+    // iPhone: side buttons
+    const bc=s.frameColor==='silver'?'#aaa':s.frameColor==='gold'?'#b08a48':'#1a1a1a';
+    [[x-bw*.7,y+h*.2,bw*.7,h*.07],[x-bw*.7,y+h*.3,bw*.7,h*.07],[x+w,y+h*.27,bw*.65,h*.1]].forEach(([bx,by,bw2,bh2])=>{rr(ctx,bx,by,bw2,bh2,2);ctx.fillStyle=bc;ctx.fill();});
+  }
 }
 
 function miniPhone(ctx,x,y,w,h,fill='rgba(30,40,70,.9)',stroke='rgba(255,255,255,.25)',angle=0){
