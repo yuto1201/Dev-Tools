@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>yuto's dev tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #080b12;
+    --bg2: #0d1220;
+    --bg3: #111827;
+    --border: rgba(99, 179, 237, 0.15);
+    --accent1: #63b3ed;
+    --accent2: #76e4f7;
+    --accent3: #9f7aea;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --glow1: rgba(99, 179, 237, 0.4);
+    --glow2: rgba(118, 228, 247, 0.3);
+    --glow3: rgba(159, 122, 234, 0.35);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* ── background grid ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(99,179,237,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,179,237,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── noise overlay ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 24px 80px;
+  }
+
+  /* ── header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 72px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards;
+    animation-delay: 0.1s;
+  }
+
+  .header-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--accent1);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .header-eyebrow::before,
+  .header-eyebrow::after {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent1));
+  }
+  .header-eyebrow::after {
+    background: linear-gradient(90deg, var(--accent1), transparent);
+  }
+
+  .header h1 {
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-sub {
+    margin-top: 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── grid ── */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: 1080px;
+  }
+
+  /* ── card ── */
+  .card {
+    position: relative;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 32px;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards;
+    transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+                border-color 0.35s ease,
+                box-shadow 0.35s ease;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.25s; --card-accent: var(--accent1); --card-glow: var(--glow1); }
+  .card:nth-child(2) { animation-delay: 0.38s; --card-accent: var(--accent2); --card-glow: var(--glow2); }
+  .card:nth-child(3) { animation-delay: 0.51s; --card-accent: var(--accent3); --card-glow: var(--glow3); }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 20%, var(--card-glow), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .card:hover {
+    transform: translateY(-6px);
+    border-color: var(--card-accent);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--card-accent), 0 0 40px var(--card-glow);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  /* card top accent line */
+  .card-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--card-accent), transparent);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  .card:hover .card-line { opacity: 1; }
+
+  .card-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    font-size: 24px;
+    transition: border-color 0.35s ease, box-shadow 0.35s ease;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card:hover .card-icon {
+    border-color: var(--card-accent);
+    box-shadow: 0 0 20px var(--card-glow);
+  }
+
+  .card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--card-accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-weight: 400;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-arrow {
+    position: absolute;
+    bottom: 28px;
+    right: 28px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.35s ease;
+    z-index: 1;
+  }
+
+  .card-arrow svg {
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover .card-arrow {
+    border-color: var(--card-accent);
+    background: rgba(99,179,237,0.08);
+  }
+
+  .card:hover .card-arrow svg {
+    transform: translate(2px, -2px);
+  }
+
+  .card-tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── footer ── */
+  .footer {
+    margin-top: 72px;
+    text-align: center;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+    animation-delay: 0.7s;
+  }
+
+  .footer-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+  }
+
+  .footer-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent1);
+    margin: 0 10px;
+    vertical-align: middle;
+    animation: pulse 2s ease infinite;
+  }
+
+  /* ── animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ── scan line effect ── */
+  @keyframes scanline {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(99,179,237,0.3), transparent);
+    animation: scanline 8s linear infinite;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* ── glow orbs ── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb1 {
+    width: 400px; height: 400px;
+    background: rgba(99,179,237,0.06);
+    top: -100px; left: -100px;
+  }
+  .orb2 {
+    width: 300px; height: 300px;
+    background: rgba(159,122,234,0.06);
+    bottom: -50px; right: -50px;
+  }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="wrapper">
+
+  <header class="header">
+    <div class="header-eyebrow">dev tools</div>
+    <h1>yuto's toolbox</h1>
+    <p class="header-sub">// 開発用ツール一覧</p>
+  </header>
+
+  <div class="tools-grid">
+
+    <!-- ER Diagram -->
+    <a class="card" href="er-diagram.html">
+      <div class="card-line"></div>
+      <div class="card-icon">🗂️</div>
+      <div class="card-label">Database</div>
+      <div class="card-title">ER Diagram<br>Generator</div>
+      <div class="card-desc">エンティティとリレーションを視覚化。オフラインで動作するER図作成ツール。</div>
+      <div class="card-tags">
+        <span class="tag">offline</span>
+        <span class="tag">HTML</span>
+        <span class="tag">diagram</span>
+      </div>
+      <div class="card-arrow">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M7 17L17 7M17 7H7M17 7v10"/>
+        </svg>
+      </div>
+    </a>
+
+    <!-- App Store Preview -->
+    <a class="card" href="appstore-preview.html">
+      <div class="card-line"></div>
+      <div class="card-icon">📱</div>
+      <div class="card-label">iOS Dev</div>
+      <div class="card-title">App Store<br>Preview Generator</div>
+      <div class="card-desc">App Store申請用のスクリーンショット画像をブラウザ上で生成。</div>
+      <div class="card-tags">
+        <span class="tag">offline</span>
+        <span class="tag">HTML</span>
+        <span class="tag">App Store</span>
+      </div>
+      <div class="card-arrow">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M7 17L17 7M17 7H7M17 7v10"/>
+        </svg>
+      </div>
+    </a>
+
+    <!-- Cosmic Particle -->
+    <a class="card" href="cosmic-particle.html">
+      <div class="card-line"></div>
+      <div class="card-icon">✨</div>
+      <div class="card-label">Experiment</div>
+      <div class="card-title">Cosmic<br>Particle Universe</div>
+      <div class="card-desc">5モードの物理シミュレーション。インタラクティブな宇宙パーティクル体験。</div>
+      <div class="card-tags">
+        <span class="tag">canvas</span>
+        <span class="tag">physics</span>
+        <span class="tag">interactive</span>
+      </div>
+      <div class="card-arrow">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M7 17L17 7M17 7H7M17 7v10"/>
+        </svg>
+      </div>
+    </a>
+
+  </div>
+
+  <footer class="footer">
+    <p class="footer-text">
+      yuto1201
+      <span class="footer-dot"></span>
+      GitHub Pages
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>
