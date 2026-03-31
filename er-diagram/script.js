@@ -923,7 +923,7 @@ function renderSidebarDBList(){
     (function(tn){editB.onclick=function(e){e.stopPropagation();openEditModal(tn);};})(n);
     var cnt=document.createElement('span');cnt.className='tbl-cnt';cnt.textContent=cols.length;
     item.appendChild(dupB);item.appendChild(editB);item.appendChild(cnt);
-    (function(tn){item.onclick=function(){focusTable(tn);};})(n);
+    (function(tn){item.onclick=function(){showTableDetail(tn);};})(n);
     return item;
   }
 
@@ -1414,6 +1414,114 @@ function getSVGBBox(){
     maxX=Math.max(maxX,p.x+NW); maxY=Math.max(maxY,p.y+nodeH(n));
   });
   return{x:minX,y:minY,w:maxX-minX,h:maxY-minY};
+}
+
+// ─── Table Detail Panel ──────────────────────────────────
+var detailTable=null;
+
+function showTableDetail(name){
+  if(!tables[name])return;
+  detailTable=name;
+  var cols=tables[name];
+  var clr=color(name);
+  var panel=document.getElementById('tblDetail');
+  var body=document.getElementById('tblDetailBody');
+  // 一覧を隠して詳細を表示
+  document.getElementById('tblList').style.display='none';
+  document.querySelector('.sb-sec:nth-child(3)').style.display='none'; // 検索バー
+  panel.style.display='flex';
+
+  var html='';
+  // テーブル名 + DB
+  html+='<div class="td-name"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:'+clr+';flex-shrink:0;"></span>'+name;
+  var db=tableDB[name];
+  if(db&&databases[db]){
+    html+='<span class="td-db-badge" style="background:'+databases[db].color+';">'+db+'</span>';
+  }
+  html+='</div>';
+  // コメント
+  if(tableComments[name]){
+    html+='<div class="td-comment">'+escHtml(tableComments[name])+'</div>';
+  }
+  // カラム
+  html+='<div class="td-sec-title">カラム（'+cols.length+'）</div>';
+  cols.forEach(function(col){
+    html+='<div class="td-col">';
+    html+='<span class="td-col-badges">';
+    if(col.pk)html+='<span class="td-col-badge pk">PK</span>';
+    if(col.fk)html+='<span class="td-col-badge fk">FK</span>';
+    if(col.nullable)html+='<span class="td-col-badge null">NULL</span>';
+    html+='</span>';
+    html+='<span class="td-col-name">'+escHtml(col.name)+'</span>';
+    html+='<span class="td-col-type">'+escHtml(col.type)+'</span>';
+    html+='</div>';
+    if(col.comment){
+      html+='<div class="td-col-comment">'+escHtml(col.comment)+'</div>';
+    }
+  });
+  // このテーブルからの参照（FK）
+  var outRefs=cols.filter(function(c){return c.fk;});
+  if(outRefs.length){
+    html+='<div class="td-sec-title">参照先（FK）</div>';
+    var cardLabel={'1-1':'1:1','1-n':'1:N','n-1':'N:1','n-n':'N:N'};
+    outRefs.forEach(function(col){
+      html+='<div class="td-rel">';
+      html+='<span class="td-rel-col">'+escHtml(col.name)+'</span>';
+      html+=' → ';
+      html+='<span class="td-rel-tbl" onclick="showTableDetail(\''+col.fk.table+'\')">'+escHtml(col.fk.table)+'</span>';
+      html+='.<span class="td-rel-col">'+escHtml(col.fk.col)+'</span>';
+      html+='<span class="td-rel-card">'+cardLabel[col.fk.cardinality||'1-n']+'</span>';
+      html+='</div>';
+    });
+  }
+  // このテーブルを参照しているFK
+  var inRefs=[];
+  Object.entries(tables).forEach(function(e){
+    var tblName=e[0],tblCols=e[1];
+    if(tblName===name)return;
+    tblCols.forEach(function(c){
+      if(c.fk&&c.fk.table===name){
+        inRefs.push({fromTable:tblName,fromCol:c.name,toCol:c.fk.col,card:c.fk.cardinality||'1-n'});
+      }
+    });
+  });
+  if(inRefs.length){
+    html+='<div class="td-sec-title">被参照（'+inRefs.length+'）</div>';
+    var cardLabel2={'1-1':'1:1','1-n':'1:N','n-1':'N:1','n-n':'N:N'};
+    inRefs.forEach(function(r){
+      html+='<div class="td-rel">';
+      html+='<span class="td-rel-tbl" onclick="showTableDetail(\''+r.fromTable+'\')">'+escHtml(r.fromTable)+'</span>';
+      html+='.<span class="td-rel-col">'+escHtml(r.fromCol)+'</span>';
+      html+=' → ';
+      html+='<span class="td-rel-col">'+escHtml(r.toCol)+'</span>';
+      html+='<span class="td-rel-card">'+cardLabel2[r.card]+'</span>';
+      html+='</div>';
+    });
+  }
+  if(!outRefs.length&&!inRefs.length){
+    html+='<div class="td-sec-title">リレーション</div>';
+    html+='<div style="font-size:11px;color:var(--text3);padding:4px 0;">なし</div>';
+  }
+  body.innerHTML=html;
+  focusTable(name);
+}
+
+function closeTableDetail(){
+  detailTable=null;
+  document.getElementById('tblDetail').style.display='none';
+  document.getElementById('tblList').style.display='';
+  document.querySelector('.sb-sec:nth-child(3)').style.display='';
+}
+
+function openEditFromDetail(){
+  if(!detailTable)return;
+  var name=detailTable;
+  closeTableDetail();
+  openEditModal(name);
+}
+
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function downloadText(text,filename,mime){

@@ -92,6 +92,14 @@
       <input class="fi" id="tblSearch" placeholder="🔍 テーブルを検索..." oninput="filterTables(this.value)" style="font-size:11px;padding:5px 10px;">
     </div>
     <div class="tbl-list" id="tblList"><div style="text-align:center;color:var(--text3);font-size:11px;padding-top:20px;line-height:1.9;">「＋ テーブル追加」または<br>ファイルを読み込んでください</div></div>
+    <!-- Table Detail Panel -->
+    <div class="tbl-detail" id="tblDetail" style="display:none;">
+      <div class="tbl-detail-hdr">
+        <button class="tbl-detail-back" onclick="closeTableDetail()">← 一覧</button>
+        <button class="btn sm" onclick="openEditFromDetail()" style="font-size:10px;">✏ 編集</button>
+      </div>
+      <div class="tbl-detail-body" id="tblDetailBody"></div>
+    </div>
   </aside>
   <div class="canvas-area" id="cnv">
     <svg id="diagram-svg">
