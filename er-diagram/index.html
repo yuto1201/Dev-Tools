@@ -64,6 +64,22 @@
 </header>
 <main>
   <aside class="sidebar">
+    <div class="sb-sec" id="projectSection">
+      <div class="sec-lbl">プロジェクト</div>
+      <div class="proj-selector">
+        <div class="proj-current" id="projCurrent" onclick="toggleProjectDropdown()">
+          <span class="proj-current-name" id="projCurrentName">untitled</span>
+          <span class="proj-current-arrow">▾</span>
+        </div>
+        <div class="proj-dropdown" id="projDropdown">
+          <div class="proj-dropdown-list" id="projDropdownList"></div>
+          <div class="proj-dropdown-actions">
+            <button class="btn sm" onclick="createNewProject()" style="flex:1;">＋ 新規作成</button>
+            <button class="btn sm" onclick="openProjectManager()" style="flex:1;">📁 管理</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="sb-sec">
       <div class="sec-lbl">統計</div>
       <div class="stats-row">
@@ -268,6 +284,22 @@
         orders,id,INT,true,,<br>
         orders,user_id,INT,false,<span style="color:var(--purple);">users,id</span>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT MANAGER MODAL -->
+<div class="overlay" id="projModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-hdr">
+      <div class="modal-ttl">📁 プロジェクト管理</div>
+      <div class="modal-x" onclick="document.getElementById('projModal').classList.remove('open')">✕</div>
+    </div>
+    <div class="modal-body" style="padding:14px 18px;">
+      <div id="projManagerList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn success" onclick="createNewProject()">＋ 新規プロジェクト</button>
     </div>
   </div>
 </div>

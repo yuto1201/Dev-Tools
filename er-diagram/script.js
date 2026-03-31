@@ -294,6 +294,7 @@ function renderAll(){
   document.getElementById('st-r').textContent=relations.length;
   renderSidebarDBList();
   layoutNew();renderDBGroups();renderEdges();renderNodes();renderMemos();
+  if(typeof autoSave==='function')autoSave();
 }
 
 function layoutNew(){
@@ -658,7 +659,7 @@ function onDrag(e){
   if(g)g.setAttribute('transform','translate('+nodePos[dragNode].x+','+nodePos[dragNode].y+')');
   renderEdges();renderDBGroups();
 }
-function stopDrag(){if(dragNode){saveHistory();renderDBGroups();}dragNode=null;document.removeEventListener('mousemove',onDrag);document.removeEventListener('mouseup',stopDrag);cnv.style.cursor='grab';}
+function stopDrag(){if(dragNode){saveHistory();renderDBGroups();if(typeof autoSave==='function')autoSave();}dragNode=null;document.removeEventListener('mousemove',onDrag);document.removeEventListener('mouseup',stopDrag);cnv.style.cursor='grab';}
 function svgPt(cx,cy){var r=cnv.getBoundingClientRect();return{x:(cx-r.left-tf.x)/tf.scale,y:(cy-r.top-tf.y)/tf.scale};}
 
 cnv.addEventListener('mousedown',function(e){if(dragNode)return;isPan=true;panSt={x:e.clientX-tf.x,y:e.clientY-tf.y};cnv.style.cursor='grabbing';});
@@ -707,6 +708,7 @@ function resetAll(){
   document.getElementById('st-t').textContent='0';document.getElementById('st-r').textContent='0';
   document.getElementById('tblList').innerHTML='<div style="text-align:center;color:var(--text3);font-size:11px;padding-top:20px;line-height:1.9;">「＋ テーブル追加」または<br>ファイルを読み込んでください</div>';
   document.getElementById('fileInp').value='';
+  if(typeof autoSave==='function')autoSave();
 }
 
 // ─── Dropdown control ────────────────────────────────────
@@ -734,7 +736,8 @@ function showToast(msg,type){
 
 document.getElementById('tblModal').addEventListener('click',function(e){if(e.target.id==='tblModal')closeModal();});
 document.getElementById('upModal').addEventListener('click',function(e){if(e.target.id==='upModal')document.getElementById('upModal').classList.remove('open');});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();['upModal','shortcutModal','historyModal','memoModal','dbModal','aiModal'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('open');});}});
+document.getElementById('projModal').addEventListener('click',function(e){if(e.target.id==='projModal')document.getElementById('projModal').classList.remove('open');});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();['upModal','shortcutModal','historyModal','memoModal','dbModal','aiModal','projModal'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('open');});closeProjectDropdown();}});
 applyTf();
 
 // ─── Shortcut list ────────────────────────────────────────
@@ -1416,3 +1419,304 @@ function downloadText(text,filename,mime){
   a.download=filename; a.click();
   URL.revokeObjectURL(a.href);
 }
+
+// ─── Project Management ─────────────────────────────────
+var LS_PROJECTS='erd_projects';
+var LS_PROJECT_PREFIX='erd_project_';
+var LS_CURRENT='erd_current_project';
+var currentProjectId=null;
+var projectList={}; // {id: {name, createdAt, updatedAt}}
+var autoSaveTimer=null;
+
+function generateId(){return Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);}
+
+function getERState(){
+  return{
+    tables:tables,nodePos:nodePos,nodeCol:nodeCol,
+    tableComments:tableComments,databases:databases,
+    tableDB:tableDB,memos:memos,collapsedTables:collapsedTables,
+    memoIdCounter:memoIdCounter,changeLog:changeLog,
+    relations:relations,tf:{x:tf.x,y:tf.y,scale:tf.scale},
+    showLabels:showLabels
+  };
+}
+
+function loadERState(state){
+  tables=state.tables||{};
+  nodePos=state.nodePos||{};
+  nodeCol=state.nodeCol||{};
+  tableComments=state.tableComments||{};
+  databases=state.databases||{};
+  tableDB=state.tableDB||{};
+  memos=state.memos||{};
+  collapsedTables=state.collapsedTables||{};
+  memoIdCounter=state.memoIdCounter||0;
+  changeLog=state.changeLog||[];
+  showLabels=state.showLabels!==undefined?state.showLabels:true;
+  if(state.tf){tf.x=state.tf.x;tf.y=state.tf.y;tf.scale=state.tf.scale;}
+  historyStack=[];historyFuture=[];
+  buildRels();applyTf();renderAll();updateUndoRedoBtns();
+}
+
+function clearERState(){
+  tables={};relations=[];nodePos={};nodeCol={};
+  tableComments={};databases={};tableDB={};
+  memos={};memoIdCounter=0;collapsedTables={};
+  changeLog=[];historyStack=[];historyFuture=[];
+  tf={x:40,y:40,scale:1};showLabels=true;
+  nl.innerHTML='';el.innerHTML='';
+  if(dbGroupLayer)dbGroupLayer.innerHTML='';
+  applyTf();updateUndoRedoBtns();
+  document.getElementById('emp').style.display='flex';
+  document.getElementById('st-t').textContent='0';
+  document.getElementById('st-r').textContent='0';
+  document.getElementById('tblList').innerHTML='<div style="text-align:center;color:var(--text3);font-size:11px;padding-top:20px;line-height:1.9;">「＋ テーブル追加」または<br>ファイルを読み込んでください</div>';
+}
+
+function autoSave(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(function(){
+    if(!currentProjectId)return;
+    try{
+      var state=getERState();
+      localStorage.setItem(LS_PROJECT_PREFIX+currentProjectId,JSON.stringify(state));
+      projectList[currentProjectId].updatedAt=new Date().toISOString();
+      projectList[currentProjectId].tableCount=Object.keys(tables).length;
+      saveProjectList();
+    }catch(e){console.warn('autoSave failed:',e);}
+  },500);
+}
+
+function saveProjectList(){
+  try{localStorage.setItem(LS_PROJECTS,JSON.stringify(projectList));}catch(e){}
+}
+
+function loadProjectList(){
+  try{
+    var raw=localStorage.getItem(LS_PROJECTS);
+    if(raw)projectList=JSON.parse(raw);
+    else projectList={};
+  }catch(e){projectList={};}
+}
+
+function createNewProject(name){
+  // 現在のプロジェクトを保存
+  if(currentProjectId)autoSaveNow();
+  var id=generateId();
+  var pName=name||'untitled';
+  // プロンプトで名前入力
+  if(!name){
+    var input=prompt('プロジェクト名を入力してください:','新しいプロジェクト');
+    if(input===null)return; // キャンセル
+    pName=input.trim()||'untitled';
+  }
+  projectList[id]={name:pName,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:0};
+  saveProjectList();
+  // 新プロジェクトに切替
+  switchProject(id,true);
+  closeProjectDropdown();
+  document.getElementById('projModal').classList.remove('open');
+  showToast('✓ "'+pName+'" を作成しました','success');
+}
+
+function switchProject(id,isNew){
+  if(id===currentProjectId)return;
+  // 現在のプロジェクトを保存
+  if(currentProjectId)autoSaveNow();
+  currentProjectId=id;
+  localStorage.setItem(LS_CURRENT,id);
+  if(isNew){
+    clearERState();
+  }else{
+    // プロジェクトデータを読み込み
+    try{
+      var raw=localStorage.getItem(LS_PROJECT_PREFIX+id);
+      if(raw){
+        loadERState(JSON.parse(raw));
+      }else{
+        clearERState();
+      }
+    }catch(e){clearERState();}
+  }
+  updateProjectUI();
+  closeProjectDropdown();
+}
+
+function autoSaveNow(){
+  clearTimeout(autoSaveTimer);
+  if(!currentProjectId)return;
+  try{
+    var state=getERState();
+    localStorage.setItem(LS_PROJECT_PREFIX+currentProjectId,JSON.stringify(state));
+    projectList[currentProjectId].updatedAt=new Date().toISOString();
+    projectList[currentProjectId].tableCount=Object.keys(tables).length;
+    saveProjectList();
+  }catch(e){}
+}
+
+function renameProject(id){
+  var proj=projectList[id];if(!proj)return;
+  var newName=prompt('新しい名前:',proj.name);
+  if(newName===null||!newName.trim())return;
+  proj.name=newName.trim();
+  proj.updatedAt=new Date().toISOString();
+  saveProjectList();
+  updateProjectUI();
+  renderProjectManager();
+  showToast('✓ 名前を変更しました','success');
+}
+
+function duplicateProject(id){
+  var proj=projectList[id];if(!proj)return;
+  var newId=generateId();
+  projectList[newId]={name:proj.name+' (コピー)',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:proj.tableCount||0};
+  // データもコピー
+  try{
+    var raw=localStorage.getItem(LS_PROJECT_PREFIX+id);
+    if(raw)localStorage.setItem(LS_PROJECT_PREFIX+newId,raw);
+  }catch(e){}
+  saveProjectList();
+  renderProjectManager();
+  renderProjectDropdownList();
+  showToast('✓ "'+projectList[newId].name+'" を作成しました','success');
+}
+
+function deleteProjectById(id){
+  var proj=projectList[id];if(!proj)return;
+  var ids=Object.keys(projectList);
+  if(ids.length<=1){showToast('最後のプロジェクトは削除できません','error');return;}
+  if(!confirm('"'+proj.name+'" を削除しますか？'))return;
+  delete projectList[id];
+  try{localStorage.removeItem(LS_PROJECT_PREFIX+id);}catch(e){}
+  saveProjectList();
+  // 削除したのが現在のプロジェクトなら別のに切替
+  if(id===currentProjectId){
+    var remainIds=Object.keys(projectList);
+    switchProject(remainIds[0],false);
+  }
+  renderProjectManager();
+  renderProjectDropdownList();
+  showToast('プロジェクトを削除しました');
+}
+
+function updateProjectUI(){
+  var proj=projectList[currentProjectId];
+  var nameEl=document.getElementById('projCurrentName');
+  if(nameEl)nameEl.textContent=proj?proj.name:'untitled';
+  renderProjectDropdownList();
+}
+
+function toggleProjectDropdown(){
+  var sel=document.querySelector('.proj-selector');
+  if(sel.classList.contains('open')){closeProjectDropdown();}
+  else{sel.classList.add('open');renderProjectDropdownList();}
+}
+
+function closeProjectDropdown(){
+  var sel=document.querySelector('.proj-selector');
+  if(sel)sel.classList.remove('open');
+}
+
+function renderProjectDropdownList(){
+  var list=document.getElementById('projDropdownList');
+  if(!list)return;
+  list.innerHTML='';
+  var sorted=Object.entries(projectList).sort(function(a,b){return(b[1].updatedAt||'').localeCompare(a[1].updatedAt||'');});
+  sorted.forEach(function(e){
+    var id=e[0],proj=e[1];
+    var item=document.createElement('div');
+    item.className='proj-item'+(id===currentProjectId?' active':'');
+    var name=document.createElement('span');name.className='proj-item-name';name.textContent=proj.name;
+    var info=document.createElement('span');info.className='proj-item-info';info.textContent=(proj.tableCount||0)+' tables';
+    item.appendChild(name);item.appendChild(info);
+    (function(pid){item.onclick=function(){switchProject(pid,false);};})(id);
+    list.appendChild(item);
+  });
+}
+
+function openProjectManager(){
+  closeProjectDropdown();
+  renderProjectManager();
+  document.getElementById('projModal').classList.add('open');
+}
+
+function renderProjectManager(){
+  var list=document.getElementById('projManagerList');
+  if(!list)return;
+  list.innerHTML='';
+  var sorted=Object.entries(projectList).sort(function(a,b){return(b[1].updatedAt||'').localeCompare(a[1].updatedAt||'');});
+  sorted.forEach(function(e){
+    var id=e[0],proj=e[1];
+    var item=document.createElement('div');
+    item.className='proj-mgr-item'+(id===currentProjectId?' active':'');
+    // アイコン
+    var icon=document.createElement('span');icon.textContent=id===currentProjectId?'📂':'📄';icon.style.fontSize='16px';
+    // 名前
+    var name=document.createElement('span');name.className='proj-mgr-name';name.textContent=proj.name;
+    // メタ
+    var meta=document.createElement('span');meta.className='proj-mgr-meta';
+    var d=proj.updatedAt?new Date(proj.updatedAt):new Date();
+    meta.textContent=(proj.tableCount||0)+' tables / '+d.toLocaleDateString('ja-JP');
+    // ボタン群
+    var btnRename=document.createElement('button');btnRename.className='proj-mgr-btn';btnRename.textContent='✏ 名前変更';
+    (function(pid){btnRename.onclick=function(){renameProject(pid);};})(id);
+    var btnDup=document.createElement('button');btnDup.className='proj-mgr-btn';btnDup.textContent='⧉ 複製';
+    (function(pid){btnDup.onclick=function(){duplicateProject(pid);};})(id);
+    var btnDel=document.createElement('button');btnDel.className='proj-mgr-btn del';btnDel.textContent='🗑';
+    (function(pid){btnDel.onclick=function(){deleteProjectById(pid);};})(id);
+    var btnOpen=document.createElement('button');btnOpen.className='proj-mgr-btn';
+    btnOpen.style.cssText='background:var(--accent);color:white;border-color:var(--accent);';
+    btnOpen.textContent=id===currentProjectId?'● 使用中':'開く';
+    if(id!==currentProjectId)(function(pid){btnOpen.onclick=function(){switchProject(pid,false);renderProjectManager();document.getElementById('projModal').classList.remove('open');};})(id);
+
+    item.appendChild(icon);item.appendChild(name);item.appendChild(meta);
+    item.appendChild(btnRename);item.appendChild(btnDup);item.appendChild(btnDel);item.appendChild(btnOpen);
+    list.appendChild(item);
+  });
+}
+
+// Close project dropdown on outside click
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.proj-selector')&&!e.target.closest('#projModal')){
+    closeProjectDropdown();
+  }
+});
+
+// Escape key also closes project modal
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    closeProjectDropdown();
+    document.getElementById('projModal').classList.remove('open');
+  }
+});
+
+// ─── Initialize Projects ─────────────────────────────────
+function initProjects(){
+  loadProjectList();
+  var ids=Object.keys(projectList);
+  // プロジェクトがなければデフォルトを作成
+  if(!ids.length){
+    var id=generateId();
+    projectList[id]={name:'untitled',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:0};
+    saveProjectList();
+    currentProjectId=id;
+    localStorage.setItem(LS_CURRENT,id);
+  }else{
+    // 前回のプロジェクトを復元
+    var lastId=localStorage.getItem(LS_CURRENT);
+    if(lastId&&projectList[lastId]){
+      currentProjectId=lastId;
+    }else{
+      currentProjectId=ids[0];
+      localStorage.setItem(LS_CURRENT,currentProjectId);
+    }
+    // プロジェクトデータを読み込み
+    try{
+      var raw=localStorage.getItem(LS_PROJECT_PREFIX+currentProjectId);
+      if(raw)loadERState(JSON.parse(raw));
+    }catch(e){}
+  }
+  updateProjectUI();
+}
+
+initProjects();
