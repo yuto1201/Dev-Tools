@@ -737,7 +737,11 @@ function showToast(msg,type){
 document.getElementById('tblModal').addEventListener('click',function(e){if(e.target.id==='tblModal')closeModal();});
 document.getElementById('upModal').addEventListener('click',function(e){if(e.target.id==='upModal')document.getElementById('upModal').classList.remove('open');});
 document.getElementById('projModal').addEventListener('click',function(e){if(e.target.id==='projModal')document.getElementById('projModal').classList.remove('open');});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();['upModal','shortcutModal','historyModal','memoModal','dbModal','aiModal','projModal'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('open');});closeProjectDropdown();}});
+document.getElementById('projRenameModal').addEventListener('click',function(e){if(e.target.id==='projRenameModal')document.getElementById('projRenameModal').classList.remove('open');});
+// Enter key support for project inputs
+document.getElementById('newProjName').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();createNewProjectFromInput();}});
+document.getElementById('projRenameName').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();confirmRenameProject();}});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();['upModal','shortcutModal','historyModal','memoModal','dbModal','aiModal','projModal','projRenameModal'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('open');});closeProjectDropdown();}});
 applyTf();
 
 // ─── Shortcut list ────────────────────────────────────────
@@ -1499,22 +1503,27 @@ function loadProjectList(){
   }catch(e){projectList={};}
 }
 
-function createNewProject(name){
+function createNewProject(){
+  closeProjectDropdown();
+  // 管理モーダルを開いて入力欄にフォーカス
+  renderProjectManager();
+  document.getElementById('projModal').classList.add('open');
+  var inp=document.getElementById('newProjName');
+  inp.value='';
+  setTimeout(function(){inp.focus();},150);
+}
+
+function createNewProjectFromInput(){
+  var inp=document.getElementById('newProjName');
+  var pName=(inp.value||'').trim()||'untitled';
   // 現在のプロジェクトを保存
   if(currentProjectId)autoSaveNow();
   var id=generateId();
-  var pName=name||'untitled';
-  // プロンプトで名前入力
-  if(!name){
-    var input=prompt('プロジェクト名を入力してください:','新しいプロジェクト');
-    if(input===null)return; // キャンセル
-    pName=input.trim()||'untitled';
-  }
   projectList[id]={name:pName,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:0};
   saveProjectList();
   // 新プロジェクトに切替
   switchProject(id,true);
-  closeProjectDropdown();
+  inp.value='';
   document.getElementById('projModal').classList.remove('open');
   showToast('✓ "'+pName+'" を作成しました','success');
 }
@@ -1556,13 +1565,23 @@ function autoSaveNow(){
 
 function renameProject(id){
   var proj=projectList[id];if(!proj)return;
-  var newName=prompt('新しい名前:',proj.name);
-  if(newName===null||!newName.trim())return;
-  proj.name=newName.trim();
-  proj.updatedAt=new Date().toISOString();
+  document.getElementById('projRenameId').value=id;
+  document.getElementById('projRenameName').value=proj.name;
+  document.getElementById('projRenameModal').classList.add('open');
+  setTimeout(function(){document.getElementById('projRenameName').focus();},150);
+}
+
+function confirmRenameProject(){
+  var id=document.getElementById('projRenameId').value;
+  var newName=document.getElementById('projRenameName').value.trim();
+  if(!id||!projectList[id])return;
+  if(!newName){showToast('名前を入力してください','error');return;}
+  projectList[id].name=newName;
+  projectList[id].updatedAt=new Date().toISOString();
   saveProjectList();
   updateProjectUI();
   renderProjectManager();
+  document.getElementById('projRenameModal').classList.remove('open');
   showToast('✓ 名前を変更しました','success');
 }
 

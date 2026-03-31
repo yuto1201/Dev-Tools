@@ -299,7 +299,31 @@
       <div id="projManagerList" style="display:flex;flex-direction:column;gap:8px;"></div>
     </div>
     <div class="modal-ftr">
-      <button class="btn success" onclick="createNewProject()">＋ 新規プロジェクト</button>
+      <div style="display:flex;gap:8px;align-items:center;flex:1;">
+        <input class="fi" id="newProjName" placeholder="新しいプロジェクト名..." style="flex:1;font-size:12px;padding:7px 12px;">
+        <button class="btn success" onclick="createNewProjectFromInput()">＋ 作成</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT RENAME MODAL -->
+<div class="overlay" id="projRenameModal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-hdr">
+      <div class="modal-ttl">✏ プロジェクト名を変更</div>
+      <div class="modal-x" onclick="document.getElementById('projRenameModal').classList.remove('open')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="fg" style="margin-bottom:0;">
+        <label class="fl">プロジェクト名</label>
+        <input class="fi" id="projRenameName" placeholder="プロジェクト名">
+        <input type="hidden" id="projRenameId">
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn" onclick="document.getElementById('projRenameModal').classList.remove('open')">キャンセル</button>
+      <button class="btn primary" onclick="confirmRenameProject()">💾 保存</button>
     </div>
   </div>
 </div>
