@@ -27,6 +27,10 @@
     <button class="dev-btn"        onclick="setDevice('ipad13')" id="dev-ipad13">12.9"</button>
     <button class="dev-btn"        onclick="setDevice('ipad11')" id="dev-ipad11">11"</button>
     <button class="dev-btn"        onclick="setDevice('ipad97')" id="dev-ipad97">9.7"</button>
+    <span class="dev-label dev-label-ipad">Android</span>
+    <button class="dev-btn"        onclick="setDevice('android-phone')" id="dev-android-phone">Phone</button>
+    <button class="dev-btn"        onclick="setDevice('android-7')" id="dev-android-7">7"</button>
+    <button class="dev-btn"        onclick="setDevice('android-tab10')" id="dev-android-tab10">Tab10"</button>
   </div>
   <div class="hbtns" id="editor-header-btns">
     <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
@@ -36,6 +40,7 @@
     <button class="btn btn-g" onclick="saveProject()">📥 <span class="btn-lbl">JSON</span></button>
     <button class="btn btn-g" onclick="document.getElementById('load-input').click()">📂 <span class="btn-lbl">読込</span></button>
     <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
+    <button class="btn btn-g" onclick="showBatchModal()">🔧 <span class="btn-lbl">一括変更</span></button>
     <button class="btn btn-g btn-export-all" onclick="exportZip()">🗜 <span class="btn-lbl">ZIP</span></button>
     <button class="btn btn-g btn-export-all" onclick="exportAllSizesZip()">🗜 <span class="btn-lbl">全サイズZIP</span></button>
     <button class="btn btn-p" onclick="exportCurrent()">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">PNG保存</span></button>
@@ -192,6 +197,28 @@
       <button class="btn btn-g" onclick="hideConvModal()">キャンセル</button>
       <button class="btn btn-p" onclick="applyConv()">テキスト・画像を引き継いで適用</button>
     </div>
+  </div>
+</div>
+
+<!-- Batch Edit Modal -->
+<div class="modal-overlay" id="batch-modal" style="display:none" onclick="if(event.target===this)hideBatchModal()">
+  <div class="modal-box" style="width:400px">
+    <div class="modal-title">🔧 全スライド一括変更</div>
+    <div class="modal-sub">現在のスライドの設定を全スライドに適用します</div>
+    <div id="batch-options" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+    <div class="modal-foot" style="margin-top:12px">
+      <button class="btn btn-g" onclick="hideBatchModal()">キャンセル</button>
+      <button class="btn btn-p" onclick="applyBatch()">選択した項目を全スライドに適用</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Progress Bar -->
+<div class="progress-overlay" id="progress-overlay" style="display:none">
+  <div class="progress-box">
+    <div class="progress-title" id="progress-title">エクスポート中...</div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+    <div class="progress-detail" id="progress-detail">0 / 0</div>
   </div>
 </div>
 

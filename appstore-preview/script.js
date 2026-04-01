@@ -1,14 +1,18 @@
 /* ═══ DEVICES ═══ */
 const DEVS={
   /* iPhone */
-  '6.9': {w:1320, h:2868, lbl:'1320×2868 (iPhone 6.9")'},
-  '6.7': {w:1290, h:2796, lbl:'1290×2796 (iPhone 6.7")'},
-  '6.5': {w:1242, h:2688, lbl:'1242×2688 (iPhone 6.5")'},
-  '5.5': {w:1242, h:2208, lbl:'1242×2208 (iPhone 5.5")'},
+  '6.9': {w:1320, h:2868, lbl:'1320×2868 (iPhone 6.9")', platform:'ios'},
+  '6.7': {w:1290, h:2796, lbl:'1290×2796 (iPhone 6.7")', platform:'ios'},
+  '6.5': {w:1242, h:2688, lbl:'1242×2688 (iPhone 6.5")', platform:'ios'},
+  '5.5': {w:1242, h:2208, lbl:'1242×2208 (iPhone 5.5")', platform:'ios'},
   /* iPad */
-  'ipad13': {w:2048, h:2732, lbl:'2048×2732 (iPad 12.9")'},
-  'ipad11': {w:1668, h:2388, lbl:'1668×2388 (iPad 11")'},
-  'ipad97': {w:1536, h:2048, lbl:'1536×2048 (iPad 9.7")'},
+  'ipad13': {w:2048, h:2732, lbl:'2048×2732 (iPad 12.9")', platform:'ios'},
+  'ipad11': {w:1668, h:2388, lbl:'1668×2388 (iPad 11")', platform:'ios'},
+  'ipad97': {w:1536, h:2048, lbl:'1536×2048 (iPad 9.7")', platform:'ios'},
+  /* Android (Google Play) */
+  'android-phone': {w:1080, h:1920, lbl:'1080×1920 (Android Phone)', platform:'android'},
+  'android-7': {w:1080, h:2400, lbl:'1080×2400 (Android 7")', platform:'android'},
+  'android-tab10': {w:1920, h:1200, lbl:'1920×1200 (Android Tablet 10")', platform:'android'},
 };
 let curDev='6.9';
 const PW=268;
@@ -219,6 +223,15 @@ const BG_STYLES=[
   {id:'dark',name:'ダーク',desc:'深みある暗背景+グロウ',
    mini:(c,W,H)=>{drawGrad(c,W,H,'#0a0a1a','#1a0830',135);const g=c.createRadialGradient(W/2,H*.5,0,W/2,H*.5,W*.6);g.addColorStop(0,'rgba(120,80,255,.25)');g.addColorStop(1,'transparent');c.fillStyle=g;c.fillRect(0,0,W,H);},
    draw:(c,W,H,s)=>{drawGrad(c,W,H,s.bgColor1||'#0a0a1a',s.bgColor2||'#1a0830',135);const ac=s.accentColor||'#7B5FF2';const g=c.createRadialGradient(W/2,H*.48,0,W/2,H*.48,W*.72);g.addColorStop(0,ha(ac,.28));g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,W,H);}},
+  {id:'grad-radial',name:'放射状グラデ',desc:'中央から広がる放射グラデ',
+   mini:(c,W,H)=>{const g=c.createRadialGradient(W/2,H*.4,0,W/2,H*.4,Math.max(W,H)*.7);g.addColorStop(0,'#FF9F0A');g.addColorStop(1,'#FF375F');c.fillStyle=g;c.fillRect(0,0,W,H);},
+   draw:(c,W,H,s)=>{const g=c.createRadialGradient(W/2,H*.4,0,W/2,H*.4,Math.max(W,H)*.7);g.addColorStop(0,s.bgColor1||'#FF9F0A');g.addColorStop(1,s.bgColor2||'#FF375F');c.fillStyle=g;c.fillRect(0,0,W,H);}},
+  {id:'mesh',name:'メッシュグラデ',desc:'3色が混ざる柔らかな背景',
+   mini:(c,W,H)=>{c.fillStyle='#667EEA';c.fillRect(0,0,W,H);c.save();c.globalAlpha=.6;const g1=c.createRadialGradient(W*.2,H*.2,0,W*.2,H*.2,W*.7);g1.addColorStop(0,'#BF5AF2');g1.addColorStop(1,'transparent');c.fillStyle=g1;c.fillRect(0,0,W,H);const g2=c.createRadialGradient(W*.8,H*.7,0,W*.8,H*.7,W*.7);g2.addColorStop(0,'#FF375F');g2.addColorStop(1,'transparent');c.fillStyle=g2;c.fillRect(0,0,W,H);c.restore();},
+   draw:(c,W,H,s)=>{c.fillStyle=s.bgColor1||'#667EEA';c.fillRect(0,0,W,H);c.save();c.globalAlpha=.6;const g1=c.createRadialGradient(W*.2,H*.2,0,W*.2,H*.2,W*.8);g1.addColorStop(0,s.bgColor2||'#BF5AF2');g1.addColorStop(1,'transparent');c.fillStyle=g1;c.fillRect(0,0,W,H);const g2=c.createRadialGradient(W*.8,H*.7,0,W*.8,H*.7,W*.8);g2.addColorStop(0,s.accentColor||'#FF375F');g2.addColorStop(1,'transparent');c.fillStyle=g2;c.fillRect(0,0,W,H);c.restore();}},
+  {id:'grad-horiz',name:'グラデ横',desc:'左から右への水平グラデ',
+   mini:(c,W,H)=>{drawGrad(c,W,H,'#30D158','#5AC8FA',90);},
+   draw:(c,W,H,s)=>{drawGrad(c,W,H,s.bgColor1||'#30D158',s.bgColor2||'#5AC8FA',90);}},
 ];
 
 /* ═══ PHONE LAYOUTS ═══ */
@@ -467,6 +480,20 @@ const EFFECTS=[
 
 /* ═══ STATE ═══ */
 const PRESETS=['#0A84FF','#30D158','#FF453A','#FF9F0A','#BF5AF2','#FF375F','#5AC8FA','#667EEA','#FFFFFF','#1a1a2e'];
+const CUSTOM_COLORS_KEY='previewgen_custom_colors';
+function getCustomColors(){try{return JSON.parse(localStorage.getItem(CUSTOM_COLORS_KEY)||'[]');}catch{return[];}}
+function saveCustomColor(hex){
+  const cc=getCustomColors();
+  if(cc.includes(hex))return;
+  cc.unshift(hex);
+  if(cc.length>10)cc.pop();
+  localStorage.setItem(CUSTOM_COLORS_KEY,JSON.stringify(cc));
+}
+function removeCustomColor(hex){
+  let cc=getCustomColors();
+  cc=cc.filter(c=>c!==hex);
+  localStorage.setItem(CUSTOM_COLORS_KEY,JSON.stringify(cc));
+}
 
 function defSlide(){
   return{
@@ -494,6 +521,7 @@ function defSlide(){
     textStrokeColor:'#000000',textStrokeSize:4,
     featureItems:'☕ カフェイン量を記録\n📊 グラフで確認\n⏰ 摂取上限アラート\n🌙 睡眠への影響を把握',
     screenshotScale:100,screenshotOffsetX:0,screenshotOffsetY:0,
+    exportPrefix:'',
   };
 }
 
@@ -1377,7 +1405,7 @@ function buildFields(){
   tags.innerHTML=`<span class="tag tag-bg">${bg.name}</span><span class="tag tag-layout">${lo.name}</span>${s.effects.map(id=>`<span class="tag tag-fx">${EFFECTS.find(e=>e.id===id)?.name||id}</span>`).join('')}<button class="btn btn-g" onclick="goStep(1)" style="font-size:10px;padding:3px 8px;margin-left:auto">← パーツ変更</button>`;
 
   const needBg2=!['solid','white-accent'].includes(s.bgStyle);
-  const needAccent=['white-accent','dark'].includes(s.bgStyle)||s.effects.includes('deco');
+  const needAccent=['white-accent','dark','mesh'].includes(s.bgStyle)||s.effects.includes('deco');
   const hasBadge=s.effects.includes('badge');
   const hasEmoji=s.effects.includes('emoji');
 
@@ -1392,7 +1420,7 @@ function buildFields(){
     if(hasEmoji)addTextField(el,'絵文字アイコン','iconEmoji','例: ☕ 🚌 📅');
     addTextareaField(el,'タイトル（改行可）','title','キャッチコピーを入力');
     addColorField(el,'タイトル文字色','titleColor');
-    addTextField(el,'サブタイトル','subtitle','サブコピーを入力');
+    addTextareaField(el,'サブタイトル（改行可）','subtitle','サブコピーを入力');
     addColorField(el,'サブタイトル文字色','subColor');
     addSec(el,'iPhone 文字調整');
     addSliderField(el,'上下位置（iPhone）','textOffsetY',-50,50,s.textOffsetY||0,'px');
@@ -1593,11 +1621,25 @@ function addColorField(p,label,key){
     ch.onclick=()=>{pushUndo();slides[curSlide][key]=c;buildFields();render();};
     crow.appendChild(ch);
   });
+  // Custom palette
+  const cc=getCustomColors();
+  cc.forEach(c=>{
+    const ch=document.createElement('div');ch.className='chip'+(s[key]===c?' sel':'');
+    ch.style.background=c;ch.title='右クリックで削除';
+    ch.onclick=()=>{pushUndo();slides[curSlide][key]=c;buildFields();render();};
+    ch.oncontextmenu=e=>{e.preventDefault();removeCustomColor(c);buildFields();showToast('カスタムカラーを削除しました');};
+    crow.appendChild(ch);
+  });
   const ccw=document.createElement('div');ccw.className='ccw';const cp=document.createElement('input');cp.type='color';cp.value=s[key]||'#FFFFFF';const hx=document.createElement('input');hx.className='chex';hx.value=s[key]||'#FFFFFF';hx.maxLength=7;
   cp.oninput=()=>{slides[curSlide][key]=cp.value;hx.value=cp.value;render();};
   cp.onchange=()=>pushUndo();
   hx.oninput=()=>{if(/^#[0-9a-fA-F]{6}$/.test(hx.value)){slides[curSlide][key]=hx.value;cp.value=hx.value;render();}};
-  ccw.appendChild(cp);ccw.appendChild(hx);crow.appendChild(ccw);r.appendChild(crow);
+  ccw.appendChild(cp);ccw.appendChild(hx);
+  // Save button
+  const saveBtn=document.createElement('button');saveBtn.className='color-save-btn';saveBtn.textContent='+';saveBtn.title='カラーをパレットに保存';
+  saveBtn.onclick=()=>{const cur=slides[curSlide][key]||'#FFFFFF';saveCustomColor(cur);buildFields();showToast('カラーを保存しました');};
+  ccw.appendChild(saveBtn);
+  crow.appendChild(ccw);r.appendChild(crow);
 }
 function addUploadField(p,label,key,srcKey='_src'){
   const r=addRow(p,label);const s=slides[curSlide];const uz=document.createElement('div');uz.className='uz';
@@ -1651,6 +1693,50 @@ function applyConv(){
   hideConvModal();
   if(convTargetIdx===curSlide){if(inStep===2)buildFields();}
   render();showToast('パーツを変換しました 🔄');
+}
+
+/* ═══ BATCH EDIT MODAL ═══ */
+const BATCH_FIELDS=[
+  {key:'bgColor1',label:'背景カラー 1'},
+  {key:'bgColor2',label:'背景カラー 2'},
+  {key:'accentColor',label:'アクセントカラー'},
+  {key:'titleColor',label:'タイトル文字色'},
+  {key:'subColor',label:'サブタイトル文字色'},
+  {key:'fontId',label:'フォント'},
+  {key:'fontWeight',label:'フォントの太さ'},
+  {key:'titleSize',label:'文字サイズ（iPhone）'},
+  {key:'titleSizeIpad',label:'文字サイズ（iPad）'},
+  {key:'grain',label:'グレイン'},
+  {key:'textEffect',label:'テキストエフェクト'},
+  {key:'frameColor',label:'フレームカラー'},
+];
+let batchChecked={};
+function showBatchModal(){
+  batchChecked={};
+  const el=document.getElementById('batch-options');
+  el.innerHTML='';
+  const s=slides[curSlide];
+  BATCH_FIELDS.forEach(f=>{
+    const row=document.createElement('label');row.className='batch-row';
+    const cb=document.createElement('input');cb.type='checkbox';cb.onchange=()=>{batchChecked[f.key]=cb.checked;};
+    const lbl=document.createElement('span');lbl.className='batch-label';
+    const val=s[f.key]!=null?String(s[f.key]):'(未設定)';
+    const dispVal=f.key==='fontId'?(FONTS.find(ff=>ff.id===val)||{}).name||val:val;
+    lbl.textContent=`${f.label}：${dispVal}`;
+    row.appendChild(cb);row.appendChild(lbl);el.appendChild(row);
+  });
+  document.getElementById('batch-modal').style.display='flex';
+}
+function hideBatchModal(){document.getElementById('batch-modal').style.display='none';}
+function applyBatch(){
+  const keys=Object.keys(batchChecked).filter(k=>batchChecked[k]);
+  if(!keys.length){showToast('項目を選択してください');return;}
+  pushUndo();
+  const src=slides[curSlide];
+  slides.forEach((s,i)=>{if(i===curSlide)return;keys.forEach(k=>{s[k]=src[k];});});
+  hideBatchModal();
+  renderThumbs();render();
+  showToast(`${keys.length}項目を全${slides.length}スライドに適用しました`);
 }
 
 /* ═══ SLIDES + DRAG&DROP ═══ */
@@ -1711,6 +1797,29 @@ function renderThumbs(){
 }
 
 /* ═══ EXPORT ═══ */
+function showProgress(title,current,total){
+  const el=document.getElementById('progress-overlay');
+  const t=document.getElementById('progress-title');
+  const fill=document.getElementById('progress-fill');
+  const detail=document.getElementById('progress-detail');
+  if(!el)return;
+  el.style.display='flex';
+  if(t)t.textContent=title;
+  if(fill)fill.style.width=Math.round(current/total*100)+'%';
+  if(detail)detail.textContent=`${current} / ${total}`;
+}
+function hideProgress(){
+  const el=document.getElementById('progress-overlay');
+  if(el)el.style.display='none';
+}
+function getExportPrefix(){
+  // Use project name if available, otherwise 'preview'
+  if(currentProjectId){
+    const meta=getProjectMeta(currentProjectId);
+    if(meta&&meta.name)return meta.name.replace(/[\/\\?%*:|"<>\s]/g,'_');
+  }
+  return 'preview';
+}
 function exportCurrent(){exportSlide(curSlide);}
 function exportAll(){
   if(isIphone()){
@@ -1724,32 +1833,36 @@ function exportAll(){
 
 async function exportZip(){
   if(typeof JSZip==='undefined'){showToast('ZIPライブラリを読み込み中...');return;}
-  showToast('ZIP作成中...');
   const zip=new JSZip();
   const dev=DEVS[curDev];
-  const promises=slides.map((s,i)=>new Promise(resolve=>{
-    const oc=document.createElement('canvas');oc.width=dev.w;oc.height=dev.h;
-    renderSlide(oc.getContext('2d'),oc.width,oc.height,s);
-    oc.toBlob(blob=>{
-      blob.arrayBuffer().then(buf=>{
-        zip.file(`preview_${curDev}inch_slide${i+1}.png`,buf);
-        resolve();
-      });
-    },'image/png');
-  }));
-  await Promise.all(promises);
+  const total=slides.length;
+  showProgress('ZIP作成中...',0,total);
+  for(let i=0;i<slides.length;i++){
+    await new Promise(resolve=>{
+      const oc=document.createElement('canvas');oc.width=dev.w;oc.height=dev.h;
+      renderSlide(oc.getContext('2d'),oc.width,oc.height,slides[i]);
+      oc.toBlob(blob=>{
+        blob.arrayBuffer().then(buf=>{
+          zip.file(`${getExportPrefix()}_${curDev}_slide${i+1}.png`,buf);
+          showProgress('ZIP作成中...',i+1,total);
+          resolve();
+        });
+      },'image/png');
+    });
+  }
   const blob=await zip.generateAsync({type:'blob'});
+  hideProgress();
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=`preview_${curDev}inch_all${slides.length}slides.zip`;
+  a.download=`${getExportPrefix()}_${curDev}_${slides.length}slides.zip`;
   a.click();
-  showToast(`${slides.length}枚をZIPで書き出しました！🗜`);
+  showToast(`${slides.length}枚をZIPで書き出しました！`);
 }
 function exportSlide(i,silent=false){
   const dev=DEVS[curDev];
   const oc=document.createElement('canvas');oc.width=dev.w;oc.height=dev.h;
   renderSlide(oc.getContext('2d'),oc.width,oc.height,slides[i]);
-  const filename=`preview_${curDev}inch_slide${i+1}.png`;
+  const filename=`${getExportPrefix()}_${curDev}_slide${i+1}.png`;
 
   if(isIphone()){
     // iOS: convert to data URL and open in new tab → long-press → 写真に保存
@@ -1920,7 +2033,9 @@ function applyTemplate(tpl){
 async function exportAllSizesZip(){
   if(typeof JSZip==='undefined'){showToast('ZIPライブラリを読み込み中...');return;}
   const targetDevs=Object.keys(DEVS);
-  showToast(`全${targetDevs.length}サイズ × ${slides.length}枚 を作成中...`);
+  const total=targetDevs.length*slides.length;
+  let done=0;
+  showProgress(`全サイズZIP作成中...`,0,total);
   const zip=new JSZip();
   for(const devId of targetDevs){
     const dev=DEVS[devId];
@@ -1933,6 +2048,8 @@ async function exportAllSizesZip(){
         oc.toBlob(blob=>{
           blob.arrayBuffer().then(buf=>{
             folder.file(`slide${i+1}.png`,buf);
+            done++;
+            showProgress(`全サイズZIP作成中...`,done,total);
             resolve();
           });
         },'image/png');
@@ -1940,11 +2057,12 @@ async function exportAllSizesZip(){
     }
   }
   const blob=await zip.generateAsync({type:'blob'});
+  hideProgress();
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=`preview_allsizes_${slides.length}slides.zip`;
+  a.download=`${getExportPrefix()}_allsizes_${slides.length}slides.zip`;
   a.click();
-  showToast(`全サイズZIPを書き出しました 🗜`);
+  showToast(`全サイズZIPを書き出しました！`);
 }
 window.onload=async()=>{
   await document.fonts.ready;
@@ -1958,7 +2076,8 @@ window.onload=async()=>{
 
 /* ═══ IPHONE SUPPORT ═══ */
 function isIphone(){return window.innerWidth<=479;}
-function isIpadDev(){return curDev.startsWith('ipad');}
+function isIpadDev(){return curDev.startsWith('ipad')||curDev==='android-tab10';}
+function isAndroidDev(){return curDev.startsWith('android');}
 // Return the appropriate screenshot image for current device
 function getScreenshot(s){return isIpadDev()?(s.screenshotImgIpad||null):s.screenshotImg;}
 
@@ -2004,14 +2123,22 @@ function iphoneShowDevMenu(){
   // Build buttons
   const iphoneDevs=['6.9','6.7','6.5','5.5'];
   const ipadDevs=['ipad13','ipad11','ipad97'];
+  const androidDevs=['android-phone','android-7','android-tab10'];
   const btnStyle=`padding:10px 6px;border-radius:8px;border:1.5px solid var(--b1);background:var(--card);color:var(--dm);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;transition:.14s`;
   const selStyle=`padding:10px 6px;border-radius:8px;border:1.5px solid var(--acc);background:var(--adim);color:var(--acc);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center`;
 
+  function devLabel(id){
+    if(id.startsWith('ipad'))return id.replace('ipad','')+'"';
+    if(id==='android-phone')return 'Phone';
+    if(id==='android-7')return '7"';
+    if(id==='android-tab10')return 'Tablet 10"';
+    return id+'"';
+  }
   function makeBtn(id){
     const dev=DEVS[id];
     const btn=document.createElement('button');
     btn.style.cssText=(curDev===id?selStyle:btnStyle);
-    btn.innerHTML=`<div style="font-size:13px">${id.startsWith('ipad')?id.replace('ipad','')+'\"':id+'"'}</div><div style="font-size:9px;opacity:.7;margin-top:2px">${dev.w}×${dev.h}</div>`;
+    btn.innerHTML=`<div style="font-size:13px">${devLabel(id)}</div><div style="font-size:9px;opacity:.7;margin-top:2px">${dev.w}×${dev.h}</div>`;
     btn.onclick=()=>{setDevice(id);iphoneHideDevMenu();showToast(`${dev.lbl} に変更しました`);};
     return btn;
   }
@@ -2021,6 +2148,17 @@ function iphoneShowDevMenu(){
   iGrid.innerHTML=''; padGrid.innerHTML='';
   iphoneDevs.forEach(id=>iGrid.appendChild(makeBtn(id)));
   ipadDevs.forEach(id=>padGrid.appendChild(makeBtn(id)));
+  // Android section
+  let androidSection=document.getElementById('iph-dev-btns-android');
+  if(!androidSection){
+    const container=padGrid.parentElement;
+    const lbl=document.createElement('div');lbl.style.cssText='font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);padding:8px 0 4px;border-top:1px solid var(--b1);margin-top:4px';lbl.textContent='Android';
+    const grid=document.createElement('div');grid.id='iph-dev-btns-android';grid.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:6px';
+    container.appendChild(lbl);container.appendChild(grid);
+    androidSection=grid;
+  }
+  androidSection.innerHTML='';
+  androidDevs.forEach(id=>androidSection.appendChild(makeBtn(id)));
 
   document.getElementById('iphone-dev-sheet').classList.add('open');
 }
