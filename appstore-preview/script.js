@@ -522,6 +522,7 @@ function defSlide(){
     featureItems:'☕ カフェイン量を記録\n📊 グラフで確認\n⏰ 摂取上限アラート\n🌙 睡眠への影響を把握',
     screenshotScale:100,screenshotOffsetX:0,screenshotOffsetY:0,
     exportPrefix:'',
+    qrUrl:'',qrImg:null,
   };
 }
 
@@ -530,14 +531,14 @@ let slides=[defSlide()],curSlide=0,inStep=1;
 /* ═══ SERIALIZE / DESERIALIZE ═══ */
 function serializeSlides(){
   return JSON.stringify(slides.map(s=>{
-    const {screenshotImg,screenshotImg2,screenshotImg3,screenshotImg4,screenshotImgIpad,widgetSmallImg,widgetMediumImg,widgetLargeImg,...rest}=s;
+    const {screenshotImg,screenshotImg2,screenshotImg3,screenshotImg4,screenshotImgIpad,widgetSmallImg,widgetMediumImg,widgetLargeImg,qrImg,...rest}=s;
     return rest;
   }));
 }
 function deserializeSlides(json){
   const arr=JSON.parse(json);
   slides=arr.map(d=>{
-    const s={...defSlide(),...d,screenshotImg:null,screenshotImg2:null,screenshotImg3:null,screenshotImg4:null,screenshotImgIpad:null,widgetSmallImg:null,widgetMediumImg:null,widgetLargeImg:null};
+    const s={...defSlide(),...d,screenshotImg:null,screenshotImg2:null,screenshotImg3:null,screenshotImg4:null,screenshotImgIpad:null,widgetSmallImg:null,widgetMediumImg:null,widgetLargeImg:null,qrImg:null};
     if(s._src){const img=new Image();img.onload=()=>{s.screenshotImg=img;render();};img.src=s._src;}
     if(s._src2){const img=new Image();img.onload=()=>{s.screenshotImg2=img;render();};img.src=s._src2;}
     if(s._src3){const img=new Image();img.onload=()=>{s.screenshotImg3=img;render();};img.src=s._src3;}
@@ -546,6 +547,7 @@ function deserializeSlides(json){
     if(s._srcWidgetSmall){const img=new Image();img.onload=()=>{s.widgetSmallImg=img;render();};img.src=s._srcWidgetSmall;}
     if(s._srcWidgetMedium){const img=new Image();img.onload=()=>{s.widgetMediumImg=img;render();};img.src=s._srcWidgetMedium;}
     if(s._srcWidgetLarge){const img=new Image();img.onload=()=>{s.widgetLargeImg=img;render();};img.src=s._srcWidgetLarge;}
+    if(s.qrUrl){const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{s.qrImg=img;render();};img.src=generateQR(s.qrUrl,200);}
     return s;
   });
   if(curSlide>=slides.length)curSlide=0;
@@ -1182,6 +1184,18 @@ function renderSlide(ctx,W,H,s){
   if(!noPhoneLo.includes(s.phoneLayout)){
     drawPhoneAtZone(ctx,z,s);
   }
+
+  // QR Code overlay
+  if(s.qrUrl&&s.qrImg){
+    const qrSize=W*.12;
+    const qrX=W-qrSize-W*.04,qrY=H-qrSize-W*.04;
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.3)';ctx.shadowBlur=qrSize*.1;
+    rr(ctx,qrX-qrSize*.05,qrY-qrSize*.05,qrSize*1.1,qrSize*1.1,qrSize*.08);
+    ctx.fillStyle='#fff';ctx.fill();
+    ctx.restore();
+    ctx.drawImage(s.qrImg,qrX,qrY,qrSize,qrSize);
+  }
 }
 
 function drawPhoneAtZone(ctx,z,s){
@@ -1442,6 +1456,12 @@ function buildFields(){
     addFontWeightPicker(el);
     addSliderField(el,'文字サイズ（iPhone）','titleSize',60,160,s.titleSize||100,'%');
     addSliderField(el,'文字サイズ（iPad）','titleSizeIpad',60,160,s.titleSizeIpad||100,'%');
+    // Custom font button
+    const cfRow=addRow(el,null);
+    const cfBtn=document.createElement('button');cfBtn.className='btn btn-g';cfBtn.style.cssText='width:100%;font-size:11px;padding:7px';
+    cfBtn.textContent=curLang==='en'?'+ Add Google Font':'+ Google Fontsを追加';
+    cfBtn.onclick=addCustomFont;
+    cfRow.appendChild(cfBtn);
   }
   function buildFxSection(el){
     addSec(el,'テキストエフェクト');
@@ -1500,6 +1520,9 @@ function buildFields(){
       addSelectField(el,'フレームカラー','frameColor',[['black','ブラック'],['silver','シルバー'],['gold','ゴールド'],['none','フレームなし']]);
     }
     if(s.phoneLayout==='tilted')addSliderField(el,'傾き角度','phoneTilt',-30,30,s.phoneTilt||10,'°');
+    // QR Code
+    addSec(el,'QRコード');
+    addQRField(el);
   }
 
   // ── iPhone: populate tab panes ──
@@ -1571,8 +1594,14 @@ function addFontPicker(p){
   const r=addRow(p,'フォント選択');const grid=document.createElement('div');grid.className='font-grid';const s=slides[curSlide];
   FONTS.forEach(f=>{
     const chip=document.createElement('div');chip.className='font-chip'+(s.fontId===f.id?' sel':'');chip.id='fc-'+f.id;
+    chip.style.position='relative';
     chip.innerHTML=`<div class="font-chip-name" style="font-family:${f.css}">${f.name}</div><div class="font-chip-sample" style="font-family:${f.css}">${f.sample}</div>`;
     chip.onclick=()=>{pushUndo();slides[curSlide].fontId=f.id;const fw=slides[curSlide].fontWeight;if(!f.weights.includes(fw))slides[curSlide].fontWeight=f.weights[f.weights.length-1];buildFields();render();};
+    if(f.custom){
+      const del=document.createElement('button');del.className='cx';del.style.cssText='position:absolute;top:2px;right:2px;width:14px;height:14px;font-size:8px';
+      del.textContent='✕';del.onclick=e=>{e.stopPropagation();removeCustomFont(f.id);};
+      chip.appendChild(del);
+    }
     grid.appendChild(chip);
   });r.appendChild(grid);
 }
@@ -1649,6 +1678,29 @@ function addUploadField(p,label,key,srcKey='_src'){
   uz.appendChild(inp);uz.appendChild(t);uz.appendChild(sm);
   if(s[key]){const img=document.createElement('img');img.className='uz-img';img.src=s[srcKey]||'';uz.appendChild(img);const cx=document.createElement('button');cx.className='cx';cx.textContent='✕';cx.onclick=e=>{e.stopPropagation();pushUndo();slides[curSlide][key]=null;slides[curSlide][srcKey]='';buildFields();render();};uz.appendChild(cx);}
   r.appendChild(uz);
+}
+function addQRField(p){
+  const s=slides[curSlide];
+  const r=addRow(p,null);
+  const inp=document.createElement('input');inp.type='text';inp.className='fi';
+  inp.placeholder='https://apps.apple.com/app/...';inp.value=s.qrUrl||'';
+  inp.oninput=()=>{
+    slides[curSlide].qrUrl=inp.value;
+    if(inp.value){
+      const img=new Image();img.crossOrigin='anonymous';
+      img.onload=()=>{slides[curSlide].qrImg=img;render();};
+      img.onerror=()=>{slides[curSlide].qrImg=null;render();};
+      img.src=generateQR(inp.value,200);
+    }else{slides[curSlide].qrImg=null;render();}
+  };
+  inp.onchange=()=>pushUndo();
+  r.appendChild(inp);
+  if(s.qrUrl&&s.qrImg){
+    const rmBtn=document.createElement('button');rmBtn.className='btn btn-g';rmBtn.style.cssText='margin-top:4px;font-size:11px;padding:4px 10px';
+    rmBtn.textContent='QRを削除';
+    rmBtn.onclick=()=>{pushUndo();slides[curSlide].qrUrl='';slides[curSlide].qrImg=null;buildFields();render();};
+    r.appendChild(rmBtn);
+  }
 }
 function loadImg(file,key,srcKey='_src'){
   if(!file||!file.type.startsWith('image/'))return;
@@ -1986,34 +2038,69 @@ const TEMPLATES=[
 function showTemplates(){
   const grid=document.getElementById('tpl-grid');
   grid.innerHTML='';
+  // Custom templates first
+  const customTpls=getCustomTemplates();
+  if(customTpls.length){
+    const secLabel=document.createElement('div');
+    secLabel.style.cssText='grid-column:1/-1;font-size:11px;font-weight:800;color:var(--acc);text-transform:uppercase;letter-spacing:.06em;padding:4px 0';
+    secLabel.textContent=curLang==='en'?'YOUR TEMPLATES':'カスタムテンプレート';
+    grid.appendChild(secLabel);
+    customTpls.forEach(tpl=>{
+      const card=makeTplCard(tpl,true);
+      grid.appendChild(card);
+    });
+    const builtinLabel=document.createElement('div');
+    builtinLabel.style.cssText='grid-column:1/-1;font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;padding:4px 0;border-top:1px solid var(--b1);margin-top:4px';
+    builtinLabel.textContent=curLang==='en'?'BUILT-IN TEMPLATES':'プリセットテンプレート';
+    grid.appendChild(builtinLabel);
+  }
   TEMPLATES.forEach(tpl=>{
-    const card=document.createElement('div');
-    card.className='tpl-card';
-    card.onclick=()=>applyTemplate(tpl);
-    // Mini thumbs
-    const thumbs=document.createElement('div');
-    thumbs.className='tpl-thumbs';
-    const dev=DEVS[curDev];
-    const maxShow=Math.min(tpl.slides.length,4);
-    for(let i=0;i<maxShow;i++){
-      const c=document.createElement('canvas');
-      const tw=50,th=Math.round(tw*dev.h/dev.w);
-      c.width=tw;c.height=th;
-      const s={...defSlide(),...tpl.slides[i],screenshotImg:null,screenshotImg2:null,screenshotImgIpad:null};
-      renderSlide(c.getContext('2d'),tw,th,s);
-      thumbs.appendChild(c);
-    }
-    const info=document.createElement('div');info.className='tpl-info';
-    info.innerHTML=`<div class="tpl-name">${tpl.name}</div><div class="tpl-desc">${tpl.desc}</div><div class="tpl-slides">${tpl.slides.length}枚構成</div>`;
-    const applyBtn=document.createElement('button');
-    applyBtn.textContent='この構成で始める';
-    applyBtn.style.cssText='width:calc(100% - 20px);margin:0 10px 10px;padding:9px;border-radius:8px;border:none;background:var(--acc);color:#fff;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent';
-    applyBtn.onclick=(e)=>{e.stopPropagation();applyTemplate(tpl);};
-    card.onclick=null;// カードタップでは何もしない
-    card.appendChild(thumbs);card.appendChild(info);card.appendChild(applyBtn);
-    grid.appendChild(card);
+    grid.appendChild(makeTplCard(tpl,false));
   });
+  // Save current as template button
+  const saveRow=document.createElement('div');
+  saveRow.style.cssText='grid-column:1/-1;padding:8px 0 4px';
+  const saveBtn=document.createElement('button');
+  saveBtn.className='btn btn-g';
+  saveBtn.style.cssText='width:100%;padding:12px;font-size:13px';
+  saveBtn.textContent=curLang==='en'?'💾 Save current slides as template':'💾 現在のスライドをテンプレートとして保存';
+  saveBtn.onclick=()=>{hideTpl();saveCustomTemplate();};
+  saveRow.appendChild(saveBtn);
+  grid.appendChild(saveRow);
   document.getElementById('tpl-modal').style.display='flex';
+}
+function makeTplCard(tpl,isCustom){
+  const card=document.createElement('div');
+  card.className='tpl-card';
+  const thumbs=document.createElement('div');
+  thumbs.className='tpl-thumbs';
+  const dev=DEVS[curDev];
+  const maxShow=Math.min(tpl.slides.length,4);
+  for(let i=0;i<maxShow;i++){
+    const c=document.createElement('canvas');
+    const tw=50,th=Math.round(tw*dev.h/dev.w);
+    c.width=tw;c.height=th;
+    const s={...defSlide(),...tpl.slides[i],screenshotImg:null,screenshotImg2:null,screenshotImgIpad:null};
+    renderSlide(c.getContext('2d'),tw,th,s);
+    thumbs.appendChild(c);
+  }
+  const info=document.createElement('div');info.className='tpl-info';
+  info.innerHTML=`<div class="tpl-name">${tpl.name}</div><div class="tpl-desc">${tpl.desc}</div><div class="tpl-slides">${tpl.slides.length}枚構成</div>`;
+  const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:6px;padding:0 10px 10px';
+  const applyBtn=document.createElement('button');
+  applyBtn.textContent=curLang==='en'?'Use':'この構成で始める';
+  applyBtn.style.cssText='flex:1;padding:9px;border-radius:8px;border:none;background:var(--acc);color:#fff;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent';
+  applyBtn.onclick=(e)=>{e.stopPropagation();applyTemplate(tpl);};
+  btnRow.appendChild(applyBtn);
+  if(isCustom){
+    const delBtn=document.createElement('button');
+    delBtn.textContent='✕';
+    delBtn.style.cssText='width:36px;padding:9px;border-radius:8px;border:1px solid var(--red);background:transparent;color:var(--red);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer';
+    delBtn.onclick=(e)=>{e.stopPropagation();deleteCustomTemplate(tpl.id);};
+    btnRow.appendChild(delBtn);
+  }
+  card.appendChild(thumbs);card.appendChild(info);card.appendChild(btnRow);
+  return card;
 }
 function hideTpl(){
   document.getElementById('tpl-modal').style.display='none';
@@ -2064,12 +2151,301 @@ async function exportAllSizesZip(){
   a.click();
   showToast(`全サイズZIPを書き出しました！`);
 }
+/* ═══ THEME TOGGLE ═══ */
+const THEME_KEY='previewgen_theme';
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light');
+  localStorage.setItem(THEME_KEY,isLight?'light':'dark');
+  updateThemeIcons();
+}
+function updateThemeIcons(){
+  const isLight=document.body.classList.contains('light');
+  const icon=isLight?'☀️':'🌙';
+  document.querySelectorAll('#theme-toggle-dash,#theme-toggle-edit').forEach(b=>{if(b)b.textContent=icon;});
+}
+function applyStoredTheme(){
+  const t=localStorage.getItem(THEME_KEY);
+  if(t==='light')document.body.classList.add('light');
+  updateThemeIcons();
+}
+
+/* ═══ KEYBOARD SHORTCUTS ═══ */
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
+  if(inDashboard)return;
+  // Ctrl+S save
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveProjectToStorage();}
+  // Ctrl+E export current
+  if((e.ctrlKey||e.metaKey)&&e.key==='e'){e.preventDefault();exportCurrent();}
+  // Arrow left/right: switch slides
+  if(e.key==='ArrowLeft'&&!e.ctrlKey&&!e.metaKey){if(curSlide>0){selectSlide(curSlide-1);showToast(`スライド ${curSlide+1}`);}e.preventDefault();}
+  if(e.key==='ArrowRight'&&!e.ctrlKey&&!e.metaKey){if(curSlide<slides.length-1){selectSlide(curSlide+1);showToast(`スライド ${curSlide+1}`);}e.preventDefault();}
+  // 1/2: switch step
+  if(e.key==='1'&&!e.ctrlKey&&!e.metaKey)goStep(1);
+  if(e.key==='2'&&!e.ctrlKey&&!e.metaKey)goStep(2);
+  // N: add slide
+  if(e.key==='n'&&!e.ctrlKey&&!e.metaKey)addSlide();
+  // Delete: delete slide
+  if(e.key==='Delete')delSlide(curSlide);
+});
+
+/* ═══ LOCALIZATION (i18n) ═══ */
+const I18N={
+  ja:{
+    projList:'プロジェクト一覧', projSub:'App Storeプレビュー画像を管理',
+    newProj:'+ 新規プロジェクト', jsonLoad:'📂 JSONから読込',
+    noProj:'プロジェクトがありません', noProjSub:'「新規プロジェクト」をクリックして始めましょう',
+    step1:'パーツを選ぶ', step2:'内容を入力する',
+    bgStyle:'背景スタイル', phonePlacement:'iPhoneの配置', effects:'エフェクト',
+    slides:'スライド', addSlide:'スライドを追加', dragHint:'↕ ドラッグで並び替え',
+    save:'保存', json:'JSON', load:'読込', batch:'一括変更', zip:'ZIP', allZip:'全サイズZIP',
+    export:'書き出し', template:'テンプレ', undo:'元に戻す', redo:'やり直す',
+    shortcuts:'ショートカット一覧',
+  },
+  en:{
+    projList:'Projects', projSub:'Manage App Store preview images',
+    newProj:'+ New Project', jsonLoad:'📂 Import JSON',
+    noProj:'No projects yet', noProjSub:'Click "New Project" to get started',
+    step1:'Choose Parts', step2:'Edit Content',
+    bgStyle:'Background Style', phonePlacement:'Phone Layout', effects:'Effects',
+    slides:'Slides', addSlide:'Add Slide', dragHint:'↕ Drag to reorder',
+    save:'Save', json:'JSON', load:'Load', batch:'Batch', zip:'ZIP', allZip:'All Sizes ZIP',
+    export:'Export', template:'Templates', undo:'Undo', redo:'Redo',
+    shortcuts:'Shortcuts',
+  }
+};
+const LANG_KEY='previewgen_lang';
+let curLang=localStorage.getItem(LANG_KEY)||'ja';
+function t(key){return(I18N[curLang]||I18N.ja)[key]||(I18N.ja)[key]||key;}
+function toggleLang(){
+  curLang=curLang==='ja'?'en':'ja';
+  localStorage.setItem(LANG_KEY,curLang);
+  applyI18n();
+  showToast(curLang==='ja'?'日本語に切替':'Switched to English');
+}
+function applyI18n(){
+  // Dashboard
+  const dt=document.querySelector('.dash-title');if(dt)dt.textContent=t('projList');
+  const ds=document.querySelector('.dash-subtitle');if(ds)ds.textContent=t('projSub');
+  const de=document.querySelector('.dash-empty-text');if(de)de.textContent=t('noProj');
+  const des=document.querySelector('.dash-empty-sub');if(des)des.textContent=t('noProjSub');
+  // Step bar
+  const st1l=document.querySelector('#st1 .step-l');if(st1l)st1l.textContent=t('step1');
+  const st2l=document.querySelector('#st2 .step-l');if(st2l)st2l.textContent=t('step2');
+  // Slides panel
+  const srh=document.querySelector('.srh span');if(srh)srh.textContent=t('slides');
+  const dh=document.querySelector('.drag-hint');if(dh)dh.textContent=t('dragHint');
+}
+
+/* ═══ SLIDESHOW PREVIEW ═══ */
+let slideshowTimer=null,slideshowIdx=0;
+function startSlideshow(){
+  if(slides.length<2){showToast('スライドが2枚以上必要です');return;}
+  slideshowIdx=0;
+  const overlay=document.createElement('div');
+  overlay.id='slideshow-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:#000;z-index:400;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;cursor:pointer';
+  const cvs=document.createElement('canvas');
+  cvs.id='slideshow-canvas';
+  const dev=DEVS[curDev];
+  const maxH=window.innerHeight*.85,maxW=window.innerWidth*.9;
+  const ar=dev.h/dev.w;
+  let w=maxW,h=maxW*ar;
+  if(h>maxH){h=maxH;w=h/ar;}
+  cvs.width=Math.round(w);cvs.height=Math.round(h);
+  cvs.style.cssText='border-radius:8px';
+  const counter=document.createElement('div');
+  counter.id='slideshow-counter';
+  counter.style.cssText='color:#fff;font-size:14px;font-weight:700;font-family:inherit';
+  const hint=document.createElement('div');
+  hint.style.cssText='color:rgba(255,255,255,.5);font-size:11px;font-family:inherit';
+  hint.textContent=curLang==='en'?'Click or press Escape to close':'クリックまたはEscで終了';
+  overlay.appendChild(cvs);overlay.appendChild(counter);overlay.appendChild(hint);
+  document.body.appendChild(overlay);
+  overlay.onclick=stopSlideshow;
+  const escHandler=(e)=>{if(e.key==='Escape')stopSlideshow();};
+  document.addEventListener('keydown',escHandler);
+  overlay._escHandler=escHandler;
+  renderSlideshowFrame();
+  slideshowTimer=setInterval(()=>{slideshowIdx=(slideshowIdx+1)%slides.length;renderSlideshowFrame();},3000);
+}
+function renderSlideshowFrame(){
+  const cvs=document.getElementById('slideshow-canvas');
+  const counter=document.getElementById('slideshow-counter');
+  if(!cvs)return;
+  renderSlide(cvs.getContext('2d'),cvs.width,cvs.height,slides[slideshowIdx]);
+  if(counter)counter.textContent=`${slideshowIdx+1} / ${slides.length}`;
+}
+function stopSlideshow(){
+  clearInterval(slideshowTimer);slideshowTimer=null;
+  const overlay=document.getElementById('slideshow-overlay');
+  if(overlay){
+    if(overlay._escHandler)document.removeEventListener('keydown',overlay._escHandler);
+    overlay.remove();
+  }
+}
+
+/* ═══ CUSTOM TEMPLATE SAVE ═══ */
+const CUSTOM_TPL_KEY='previewgen_custom_templates';
+function getCustomTemplates(){try{return JSON.parse(localStorage.getItem(CUSTOM_TPL_KEY)||'[]');}catch{return[];}}
+function saveCustomTemplate(){
+  const name=prompt(curLang==='en'?'Template name:':'テンプレート名を入力：');
+  if(!name)return;
+  const data=JSON.parse(serializeSlides());
+  const tpls=getCustomTemplates();
+  tpls.unshift({id:'custom_'+Date.now(),name,desc:curLang==='en'?'Custom template':'カスタムテンプレート',slides:data,custom:true});
+  localStorage.setItem(CUSTOM_TPL_KEY,JSON.stringify(tpls));
+  showToast(curLang==='en'?`Saved template "${name}"`:`テンプレート「${name}」を保存しました`);
+}
+function deleteCustomTemplate(id){
+  let tpls=getCustomTemplates();
+  tpls=tpls.filter(t=>t.id!==id);
+  localStorage.setItem(CUSTOM_TPL_KEY,JSON.stringify(tpls));
+  showTemplates();
+  showToast('テンプレートを削除しました');
+}
+
+/* ═══ INDEXEDDB STORAGE ═══ */
+const IDB_NAME='previewgen_db',IDB_STORE='projects',IDB_VER=1;
+let idb=null;
+function openIDB(){
+  return new Promise((resolve,reject)=>{
+    if(idb){resolve(idb);return;}
+    const req=indexedDB.open(IDB_NAME,IDB_VER);
+    req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(IDB_STORE))db.createObjectStore(IDB_STORE);};
+    req.onsuccess=e=>{idb=e.target.result;resolve(idb);};
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function idbSet(key,val){
+  const db=await openIDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readwrite');
+    tx.objectStore(IDB_STORE).put(val,key);
+    tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);
+  });
+}
+async function idbGet(key){
+  const db=await openIDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readonly');
+    const req=tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
+async function idbDel(key){
+  const db=await openIDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readwrite');
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);
+  });
+}
+// Override project data storage to use IndexedDB with localStorage fallback
+const _origSetProjectData=setProjectData;
+const _origGetProjectData=getProjectData;
+const _origRemoveProjectData=removeProjectData;
+setProjectData=function(id,json){
+  _origSetProjectData(id,json); // localStorage fallback
+  idbSet('proj_'+id,json).catch(()=>{});
+};
+getProjectData=function(id){
+  return _origGetProjectData(id); // sync read from localStorage
+};
+removeProjectData=function(id){
+  _origRemoveProjectData(id);
+  idbDel('proj_'+id).catch(()=>{});
+};
+// On load, migrate large projects to IndexedDB
+async function migrateToIDB(){
+  try{
+    const list=getProjectsList();
+    for(const p of list){
+      const data=_origGetProjectData(p.id);
+      if(data&&data.length>100000){await idbSet('proj_'+p.id,data);} // migrate large data
+    }
+  }catch(e){}
+}
+
+/* ═══ CUSTOM FONTS ═══ */
+const CUSTOM_FONTS_KEY='previewgen_custom_fonts';
+function getCustomFonts(){try{return JSON.parse(localStorage.getItem(CUSTOM_FONTS_KEY)||'[]');}catch{return[];}}
+function addCustomFont(){
+  const name=prompt(curLang==='en'?'Google Font name (e.g., "Inter"):':'Google Fontsの名前（例: "Inter"）：');
+  if(!name)return;
+  const cf=getCustomFonts();
+  if(cf.find(f=>f.name===name)){showToast('このフォントは追加済みです');return;}
+  const id='custom_'+name.toLowerCase().replace(/\s+/g,'_');
+  const css=`'${name}'`;
+  cf.push({id,name,css,weights:['400','700']});
+  localStorage.setItem(CUSTOM_FONTS_KEY,JSON.stringify(cf));
+  // Load the font
+  loadCustomFontCSS(name);
+  // Reload FONTS array
+  rebuildFonts();
+  if(inStep===2)buildFields();
+  buildStep1();
+  showToast(`フォント「${name}」を追加しました`);
+}
+function removeCustomFont(id){
+  let cf=getCustomFonts();
+  cf=cf.filter(f=>f.id!==id);
+  localStorage.setItem(CUSTOM_FONTS_KEY,JSON.stringify(cf));
+  rebuildFonts();
+  if(inStep===2)buildFields();
+  showToast('カスタムフォントを削除しました');
+}
+function loadCustomFontCSS(name){
+  const encoded=name.replace(/\s+/g,'+');
+  const exists=document.querySelector(`link[data-custom-font="${name}"]`);
+  if(exists)return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href=`https://fonts.googleapis.com/css2?family=${encoded}:wght@400;700&display=swap`;
+  link.dataset.customFont=name;
+  document.head.appendChild(link);
+}
+function rebuildFonts(){
+  // Remove existing custom fonts from FONTS
+  while(FONTS.length>11)FONTS.pop(); // keep built-in 11 fonts
+  const cf=getCustomFonts();
+  cf.forEach(f=>{
+    FONTS.push({id:f.id,name:f.name,sample:f.name,css:f.css,weights:f.weights,custom:true});
+  });
+}
+function loadAllCustomFonts(){
+  const cf=getCustomFonts();
+  cf.forEach(f=>loadCustomFontCSS(f.name));
+  rebuildFonts();
+}
+
+/* ═══ QR CODE GENERATOR ═══ */
+function generateQR(text,size){
+  // Simple QR code using a canvas-based generator (alphanumeric mode, basic)
+  // For simplicity, use a public API to generate QR as image
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&bgcolor=ffffff&color=000000&format=png`;
+}
+function addQRToSlide(){
+  const url=prompt(curLang==='en'?'Enter URL for QR code:':'QRコードにするURLを入力：','https://apps.apple.com/app/id...');
+  if(!url)return;
+  const s=slides[curSlide];
+  pushUndo();
+  s.qrUrl=url;
+  if(inStep===2)buildFields();
+  render();
+  showToast('QRコードを追加しました');
+}
+
 window.onload=async()=>{
+  applyStoredTheme();
+  loadAllCustomFonts();
   await document.fonts.ready;
   initAllCanvas();
   buildStep1();
   updateUndoBtn();
   iphoneSetup();
+  applyI18n();
+  migrateToIDB();
   // Start with dashboard
   showDashboard();
 };

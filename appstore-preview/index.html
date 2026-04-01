@@ -36,6 +36,8 @@
     <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
     <button class="btn btn-undo" id="redo-btn" onclick="redo()" disabled title="やり直す (Ctrl+Shift+Z)">↪<span class="undo-count" id="redo-count"></span></button>
     <button class="btn btn-g" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
+    <button class="btn btn-g" onclick="startSlideshow()" title="スライドショー">▶</button>
+    <button class="btn btn-g" onclick="toggleLang()" id="lang-toggle" title="言語切替" style="font-size:10px;padding:6px 8px">EN/JA</button>
     <button class="btn btn-g" onclick="saveProjectToStorage()">💾 <span class="btn-lbl">保存</span></button>
     <button class="btn btn-g" onclick="saveProject()">📥 <span class="btn-lbl">JSON</span></button>
     <button class="btn btn-g" onclick="document.getElementById('load-input').click()">📂 <span class="btn-lbl">読込</span></button>
@@ -43,6 +45,7 @@
     <button class="btn btn-g" onclick="showBatchModal()">🔧 <span class="btn-lbl">一括変更</span></button>
     <button class="btn btn-g btn-export-all" onclick="exportZip()">🗜 <span class="btn-lbl">ZIP</span></button>
     <button class="btn btn-g btn-export-all" onclick="exportAllSizesZip()">🗜 <span class="btn-lbl">全サイズZIP</span></button>
+    <button class="btn btn-g" onclick="toggleTheme()" id="theme-toggle-edit" title="テーマ切替">🌙</button>
     <button class="btn btn-p" onclick="exportCurrent()">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">PNG保存</span></button>
   </div>
 </header>
@@ -54,6 +57,7 @@
       <span class="dash-subtitle">App Storeプレビュー画像を管理</span>
     </div>
     <div class="dash-actions">
+      <button class="btn btn-g" onclick="toggleTheme()" id="theme-toggle-dash" title="テーマ切替">🌙</button>
       <button class="btn btn-g" onclick="document.getElementById('import-input').click()">📂 JSONから読込</button>
       <input type="file" id="import-input" accept=".json" style="display:none" onchange="importProjectFromFile(event)">
       <button class="btn btn-p" onclick="createNewProject()">+ 新規プロジェクト</button>
