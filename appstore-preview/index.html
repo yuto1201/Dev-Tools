@@ -10,11 +10,11 @@
 </head>
 <body>
 <header>
-  <div class="logo">
+  <div class="logo" style="cursor:pointer" onclick="showDashboard()">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="5" fill="#0A84FF"/><path d="M5 15V8l5-3 5 3v7l-5 2.5L5 15z" fill="white" opacity=".9"/><rect x="8" y="10" width="4" height="5" rx="2" fill="#0A84FF"/></svg>
     Preview<em>Gen</em>
   </div>
-  <div class="dev-group">
+  <div class="dev-group" id="editor-header-controls">
     <span class="dev-label">iPhone</span>
     <button class="dev-btn active" onclick="setDevice('6.9')"  id="dev-6.9">6.9"</button>
     <button class="dev-btn"        onclick="setDevice('6.7')"  id="dev-6.7">6.7"</button>
@@ -25,10 +25,11 @@
     <button class="dev-btn"        onclick="setDevice('ipad11')" id="dev-ipad11">11"</button>
     <button class="dev-btn"        onclick="setDevice('ipad97')" id="dev-ipad97">9.7"</button>
   </div>
-  <div class="hbtns">
+  <div class="hbtns" id="editor-header-btns">
     <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
     <button class="btn btn-g" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
-    <button class="btn btn-g" onclick="saveProject()">💾 <span class="btn-lbl">保存</span></button>
+    <button class="btn btn-g" onclick="saveProjectToStorage()">💾 <span class="btn-lbl">保存</span></button>
+    <button class="btn btn-g" onclick="saveProject()">📥 <span class="btn-lbl">JSON</span></button>
     <button class="btn btn-g" onclick="document.getElementById('load-input').click()">📂 <span class="btn-lbl">読込</span></button>
     <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
     <button class="btn btn-g btn-export-all" onclick="exportZip()">🗜 <span class="btn-lbl">ZIP</span></button>
@@ -36,6 +37,30 @@
     <button class="btn btn-p" onclick="exportCurrent()">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">PNG保存</span></button>
   </div>
 </header>
+<!-- ═══ PROJECT DASHBOARD ═══ -->
+<div id="dashboard" class="dashboard">
+  <div class="dash-header">
+    <div class="dash-title-area">
+      <h1 class="dash-title">プロジェクト一覧</h1>
+      <span class="dash-subtitle">App Storeプレビュー画像を管理</span>
+    </div>
+    <div class="dash-actions">
+      <button class="btn btn-g" onclick="document.getElementById('import-input').click()">📂 JSONから読込</button>
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importProjectFromFile(event)">
+      <button class="btn btn-p" onclick="createNewProject()">+ 新規プロジェクト</button>
+    </div>
+  </div>
+  <div class="dash-grid" id="dash-grid"></div>
+  <div class="dash-empty" id="dash-empty" style="display:none">
+    <div class="dash-empty-icon">📱</div>
+    <div class="dash-empty-text">プロジェクトがありません</div>
+    <div class="dash-empty-sub">「新規プロジェクト」をクリックして始めましょう</div>
+    <button class="btn btn-p" onclick="createNewProject()" style="margin-top:16px;padding:12px 28px;font-size:14px">+ 新規プロジェクト</button>
+  </div>
+</div>
+
+<!-- ═══ EDITOR (hidden initially) ═══ -->
+<div id="editor-wrapper" style="display:none;flex-direction:column;flex:1;overflow:hidden">
 <div class="stepbar">
   <div class="step active" id="st1" onclick="goStep(1)"><div class="step-n">1</div><div class="step-l">パーツを選ぶ</div></div>
   <div class="step-arr">›</div>
@@ -139,6 +164,7 @@
   </div>
 
 </div>
+</div><!-- end editor-wrapper -->
 
 <!-- Convert Modal -->
 <div class="modal-overlay" id="conv-modal" style="display:none" onclick="if(event.target===this)hideConvModal()">
