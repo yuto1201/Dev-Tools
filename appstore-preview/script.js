@@ -501,14 +501,15 @@ function deserializeSlides(json){
   render();
 }
 
-/* ═══ PROJECT SAVE / LOAD ═══ */
+/* ═══ PROJECT SAVE / LOAD (file) ═══ */
 function saveProject(){
   const json=serializeSlides();
   const blob=new Blob([json],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download=`preview-project-${new Date().toISOString().slice(0,10)}.json`;
+  const name=currentProjectId?getProjectMeta(currentProjectId).name:'preview-project';
+  a.download=`${name}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
-  showToast('プロジェクトを保存しました 💾');
+  showToast('JSONファイルを保存しました 📥');
 }
 function loadProject(e){
   const file=e.target.files[0];if(!file)return;
@@ -517,12 +518,299 @@ function loadProject(e){
     try{
       pushUndo();
       deserializeSlides(ev.target.result);
+      if(currentProjectId) saveProjectToStorage();
       showToast('プロジェクトを読み込みました 📂');
     }catch(err){showToast('読み込みに失敗しました');}
   };
   reader.readAsText(file);
   e.target.value='';
 }
+
+/* ═══ PROJECT MANAGEMENT (localStorage) ═══ */
+const PROJECTS_KEY='previewgen_projects';
+const PROJECT_PREFIX='previewgen_proj_';
+let currentProjectId=null;
+let inDashboard=true;
+
+function getProjectsList(){
+  try{return JSON.parse(localStorage.getItem(PROJECTS_KEY)||'[]');}
+  catch{return [];}
+}
+function saveProjectsList(list){
+  localStorage.setItem(PROJECTS_KEY,JSON.stringify(list));
+}
+function getProjectMeta(id){
+  return getProjectsList().find(p=>p.id===id)||null;
+}
+function getProjectData(id){
+  try{return localStorage.getItem(PROJECT_PREFIX+id)||null;}
+  catch{return null;}
+}
+function setProjectData(id,json){
+  localStorage.setItem(PROJECT_PREFIX+id,json);
+}
+function removeProjectData(id){
+  localStorage.removeItem(PROJECT_PREFIX+id);
+}
+
+function generateId(){
+  return Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
+}
+
+function createNewProject(name){
+  const id=generateId();
+  const now=new Date().toISOString();
+  const pName=name||'新しいプロジェクト';
+  const list=getProjectsList();
+  list.unshift({id,name:pName,createdAt:now,updatedAt:now,slideCount:1});
+  saveProjectsList(list);
+  // Initialize with default slide
+  slides=[defSlide()];curSlide=0;inStep=1;undoStack=[];
+  setProjectData(id,serializeSlides());
+  openProject(id);
+}
+
+function openProject(id){
+  const data=getProjectData(id);
+  if(!data){showToast('プロジェクトデータが見つかりません');return;}
+  currentProjectId=id;
+  undoStack=[];updateUndoBtn();
+  deserializeSlides(data);
+  inStep=1;
+  showEditor();
+}
+
+function saveProjectToStorage(){
+  if(!currentProjectId)return;
+  const json=serializeSlides();
+  setProjectData(currentProjectId,json);
+  // Update meta
+  const list=getProjectsList();
+  const p=list.find(p=>p.id===currentProjectId);
+  if(p){
+    p.updatedAt=new Date().toISOString();
+    p.slideCount=slides.length;
+    saveProjectsList(list);
+  }
+  showToast('保存しました 💾');
+}
+
+// Auto-save on changes (debounced)
+let _autoSaveTimer=null;
+function autoSave(){
+  if(!currentProjectId||inDashboard)return;
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer=setTimeout(()=>{
+    if(!currentProjectId)return;
+    const json=serializeSlides();
+    setProjectData(currentProjectId,json);
+    const list=getProjectsList();
+    const p=list.find(p=>p.id===currentProjectId);
+    if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
+  },2000);
+}
+
+function deleteProject(id,ev){
+  if(ev){ev.stopPropagation();}
+  if(!confirm('このプロジェクトを削除しますか？'))return;
+  let list=getProjectsList();
+  list=list.filter(p=>p.id!==id);
+  saveProjectsList(list);
+  removeProjectData(id);
+  if(currentProjectId===id){currentProjectId=null;}
+  renderDashboard();
+  showToast('プロジェクトを削除しました');
+}
+
+function duplicateProject(id,ev){
+  if(ev){ev.stopPropagation();}
+  const meta=getProjectMeta(id);
+  const data=getProjectData(id);
+  if(!meta||!data)return;
+  const newId=generateId();
+  const now=new Date().toISOString();
+  const list=getProjectsList();
+  list.unshift({id:newId,name:meta.name+' (コピー)',createdAt:now,updatedAt:now,slideCount:meta.slideCount||1});
+  saveProjectsList(list);
+  setProjectData(newId,data);
+  renderDashboard();
+  showToast('プロジェクトを複製しました');
+}
+
+function exportProjectJson(id,ev){
+  if(ev){ev.stopPropagation();}
+  const meta=getProjectMeta(id);
+  const data=getProjectData(id);
+  if(!data)return;
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`${meta?meta.name:'project'}-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('JSONファイルを保存しました 📥');
+}
+
+function importProjectFromFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const arr=JSON.parse(ev.target.result);
+      if(!Array.isArray(arr)){showToast('無効なファイル形式です');return;}
+      const id=generateId();
+      const now=new Date().toISOString();
+      const name=file.name.replace(/\.json$/i,'').replace(/-\d{4}-\d{2}-\d{2}$/,'');
+      const list=getProjectsList();
+      list.unshift({id,name,createdAt:now,updatedAt:now,slideCount:arr.length});
+      saveProjectsList(list);
+      setProjectData(id,ev.target.result);
+      renderDashboard();
+      showToast('プロジェクトを読み込みました 📂');
+    }catch(err){showToast('読み込みに失敗しました');}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function renameProject(id,ev){
+  if(ev){ev.stopPropagation();}
+  const nameEl=document.querySelector(`.dash-card[data-id="${id}"] .dash-card-name`);
+  if(!nameEl)return;
+  const meta=getProjectMeta(id);
+  if(!meta)return;
+  const input=document.createElement('input');
+  input.className='dash-card-name-input';
+  input.value=meta.name;
+  input.onclick=e=>e.stopPropagation();
+  const finish=()=>{
+    const newName=input.value.trim()||meta.name;
+    const list=getProjectsList();
+    const p=list.find(p=>p.id===id);
+    if(p){p.name=newName;saveProjectsList(list);}
+    renderDashboard();
+  };
+  input.onblur=finish;
+  input.onkeydown=e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape'){input.value=meta.name;input.blur();}};
+  nameEl.replaceWith(input);
+  input.focus();input.select();
+}
+
+function showDashboard(){
+  // Auto-save current project before leaving
+  if(currentProjectId&&!inDashboard){
+    const json=serializeSlides();
+    setProjectData(currentProjectId,json);
+    const list=getProjectsList();
+    const p=list.find(p=>p.id===currentProjectId);
+    if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
+  }
+  inDashboard=true;
+  document.getElementById('dashboard').style.display='flex';
+  document.getElementById('editor-wrapper').style.display='none';
+  document.getElementById('editor-header-controls').style.display='none';
+  document.getElementById('editor-header-btns').style.display='none';
+  const nav=document.getElementById('iphone-nav');
+  if(nav)nav.style.display='none';
+  renderDashboard();
+}
+
+function showEditor(){
+  inDashboard=false;
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('editor-wrapper').style.display='flex';
+  document.getElementById('editor-header-controls').style.display='';
+  document.getElementById('editor-header-btns').style.display='';
+  initAllCanvas();
+  goStep(1);
+  render();
+  // Re-apply iPhone layout
+  const nav=document.getElementById('iphone-nav');
+  if(nav&&isIphone())nav.style.display='flex';
+}
+
+function renderDashboard(){
+  const list=getProjectsList();
+  const grid=document.getElementById('dash-grid');
+  const empty=document.getElementById('dash-empty');
+  if(!list.length){
+    grid.style.display='none';
+    empty.style.display='flex';
+    return;
+  }
+  grid.style.display='grid';
+  empty.style.display='none';
+  grid.innerHTML='';
+
+  list.forEach(meta=>{
+    const card=document.createElement('div');
+    card.className='dash-card';
+    card.dataset.id=meta.id;
+    card.onclick=()=>openProject(meta.id);
+
+    // Thumbnail area
+    const thumbs=document.createElement('div');
+    thumbs.className='dash-card-thumbs';
+    // Try rendering thumbnails from stored data
+    const data=getProjectData(meta.id);
+    if(data){
+      try{
+        const arr=JSON.parse(data);
+        const dev=DEVS['6.9'];
+        const maxThumbs=Math.min(arr.length,4);
+        for(let i=0;i<maxThumbs;i++){
+          const s={...defSlide(),...arr[i],screenshotImg:null,screenshotImg2:null,screenshotImg3:null,screenshotImg4:null,screenshotImgIpad:null,widgetSmallImg:null,widgetMediumImg:null,widgetLargeImg:null};
+          const tc=document.createElement('canvas');
+          const tw=100;
+          tc.width=tw;tc.height=Math.round(tw*dev.h/dev.w);
+          renderSlide(tc.getContext('2d'),tc.width,tc.height,s);
+          thumbs.appendChild(tc);
+        }
+      }catch(e){}
+    }
+
+    // Actions (overlay)
+    const actions=document.createElement('div');
+    actions.className='dash-card-actions';
+    actions.innerHTML=`
+      <button class="dash-card-btn dash-card-btn-dup" onclick="duplicateProject('${meta.id}',event)" title="複製">⧉</button>
+      <button class="dash-card-btn dash-card-btn-export" onclick="exportProjectJson('${meta.id}',event)" title="JSON書き出し">↓</button>
+      <button class="dash-card-btn dash-card-btn-del" onclick="deleteProject('${meta.id}',event)" title="削除">✕</button>
+    `;
+
+    // Info
+    const info=document.createElement('div');
+    info.className='dash-card-info';
+    const nameEl=document.createElement('div');
+    nameEl.className='dash-card-name';
+    nameEl.textContent=meta.name||'無題';
+    nameEl.ondblclick=e=>renameProject(meta.id,e);
+    const metaEl=document.createElement('div');
+    metaEl.className='dash-card-meta';
+    const slideCount=meta.slideCount||1;
+    const updated=meta.updatedAt?formatDate(meta.updatedAt):'';
+    metaEl.innerHTML=`<span>${slideCount}枚のスライド</span><span>${updated}</span>`;
+    info.appendChild(nameEl);
+    info.appendChild(metaEl);
+
+    card.appendChild(thumbs);
+    card.appendChild(actions);
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+
+function formatDate(iso){
+  try{
+    const d=new Date(iso);
+    const now=new Date();
+    const diff=now-d;
+    if(diff<60000)return 'たった今';
+    if(diff<3600000)return Math.floor(diff/60000)+'分前';
+    if(diff<86400000)return Math.floor(diff/3600000)+'時間前';
+    if(diff<604800000)return Math.floor(diff/86400000)+'日前';
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  }catch{return '';}
+}
+
 
 /* ═══ RENDER ═══ */
 function getFontCss(s){
@@ -889,6 +1177,7 @@ function render(){
   if(inStep===1){const c=document.getElementById('s1-canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
   if(inStep===2){const c=document.getElementById('canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
   renderThumbs();updateSummary();
+  autoSave();
 }
 
 /* ═══ STEP NAV ═══ */
@@ -1572,9 +1861,10 @@ window.onload=async()=>{
   await document.fonts.ready;
   initAllCanvas();
   buildStep1();
-  render();
   updateUndoBtn();
   iphoneSetup();
+  // Start with dashboard
+  showDashboard();
 };
 
 /* ═══ IPHONE SUPPORT ═══ */
@@ -1590,9 +1880,9 @@ function iphoneSetup(){
 
   const apply=()=>{
     const iph=isIphone();
-    nav.style.display=iph?'flex':'none';
-    s2tab.style.display=(iph&&inStep===2)?'flex':'none';
-    if(iph) iphoneApplyStep();
+    nav.style.display=(iph&&!inDashboard)?'flex':'none';
+    s2tab.style.display=(iph&&!inDashboard&&inStep===2)?'flex':'none';
+    if(iph&&!inDashboard) iphoneApplyStep();
   };
   apply();
   window.addEventListener('resize',apply);
