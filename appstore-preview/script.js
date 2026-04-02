@@ -421,7 +421,7 @@ const PHONE_LAYOUTS=[
    zone:(W,H,s)=>{
      const pw=W*.44,ph=pw*getDeviceAR();
      return{tx:W/2,ty:H*.04+getTextOffsetY(s)*H*.002,ta:'center',
-            px:W*.04,py:H*.24,pw,ph,multiDevice:true};
+            px:W*.04,py:H*.30,pw,ph,multiDevice:true};
    }},
 
   // 13. テキスト強調：テキストが主役、小さなiPhoneがアクセント
@@ -1125,8 +1125,8 @@ function renderSlide(ctx,W,H,s){
   // multi-device: iPhone front + iPad back + Apple Watch
   if(s.phoneLayout==='multi-device'){
     // iPad (background, right side, slightly tilted)
-    const ipadW=W*.50,ipadH=ipadW*1.33;
-    const ipadX=W*.38,ipadY=z.py-H*.01;
+    const ipadW=W*.58,ipadH=ipadW*1.33;
+    const ipadX=W*.34,ipadY=z.py-H*.02;
     ctx.save();ctx.translate(ipadX+ipadW/2,ipadY+ipadH/2);ctx.rotate(6*Math.PI/180);ctx.translate(-(ipadX+ipadW/2),-(ipadY+ipadH/2));
     // iPad frame (black)
     const ibw=ipadW*.028,ir=ipadW*.065;
