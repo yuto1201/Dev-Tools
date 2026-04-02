@@ -120,8 +120,8 @@ input[type=color]{width:20px;height:20px;border:none;border-radius:4px;cursor:po
 .fx-toggle-row{display:flex;gap:5px}
 .fx-toggle{flex:1;padding:6px 4px;border-radius:7px;border:1.5px solid var(--b1);background:var(--card);color:var(--dm);cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;text-align:center;transition:.14s}
 .fx-toggle.sel{border-color:var(--acc);background:var(--adim);color:var(--acc)}
-.edit-center{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:18px;background:var(--bg);flex-direction:column;gap:10px}
-.zoom-bar{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.edit-center{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:18px;background:var(--bg);flex-direction:column;gap:10px;position:relative}
+.zoom-bar{display:flex;align-items:center;gap:4px;position:fixed;bottom:16px;right:212px;z-index:10;background:var(--sf);border:1px solid var(--b1);border-radius:10px;padding:5px 8px;box-shadow:0 4px 16px rgba(0,0,0,.5)}
 .zoom-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--b1);background:var(--card);color:var(--dm);cursor:pointer;font-size:16px;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;transition:.14s}
 .zoom-btn:hover{color:var(--tx);border-color:var(--b2)}
 .zoom-btn-fit{width:auto;padding:0 10px;font-size:11px;gap:4px}
@@ -254,6 +254,7 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   .opt-panel{width:360px}
   .edit-left{width:248px}
   .edit-right{width:168px}
+  .zoom-bar{right:192px}
   .opt-lbl-desc{display:none}
 }
 
@@ -276,6 +277,7 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   /* Step 2 narrower panels */
   .edit-left{width:224px}
   .edit-right{width:150px}
+  .zoom-bar{right:174px}
   .fi{font-size:14px;padding:9px 10px}
   textarea.fi{font-size:14px}
 }
@@ -285,6 +287,7 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   .dev-group{display:none}
   .edit-left{width:200px}
   .edit-right{width:130px}
+  .zoom-bar{right:154px}
   .opt-grid{grid-template-columns:repeat(2,1fr)}
   .modal-grid{grid-template-columns:repeat(2,1fr)}
   .modal-box{padding:14px;gap:12px}
@@ -309,6 +312,7 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
 
   /* Always-visible slides panel: hide */
   .edit-right{display:none}
+  .zoom-bar{right:16px;bottom:70px}
 
   /* Step 1: tab layout (same as iPad portrait) */
   #s1{flex-direction:column;overflow:hidden}
