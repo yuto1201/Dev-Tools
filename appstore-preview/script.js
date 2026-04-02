@@ -472,10 +472,10 @@ function defSlide(){
   return{
     bgStyle:'grad-diag',phoneLayout:'text-top',effects:['glow'],
     bgColor1:'#0A84FF',bgColor2:'#5AC8FA',accentColor:'#FF9F0A',
-    title:'アプリ名を入力',titleColor:'#FFFFFF',
-    subtitle:'キャッチコピーを入力',subColor:'#FFFFFF',
+    title:'あなたのアプリ名',titleColor:'#FFFFFF',
+    subtitle:'ここにキャッチコピーが入ります',subColor:'#FFFFFF',
     iconEmoji:'📱',
-    badgeText:'バッジテキスト',badgeColor:'#FFFFFF',badgeTextColor:'#1a4a00',
+    badgeText:'NEW',badgeColor:'#FFFFFF',badgeTextColor:'#1a4a00',
     screenshotImg:null,_src:'',
     screenshotImg2:null,_src2:'',
     screenshotImg3:null,_src3:'',
@@ -492,7 +492,7 @@ function defSlide(){
     textEffect:'none',
     textShadowColor:'#000000',textShadowSize:12,
     textStrokeColor:'#000000',textStrokeSize:4,
-    featureItems:'✨ 機能1を入力\n📊 機能2を入力\n🔔 機能3を入力\n🎨 機能4を入力',
+    featureItems:'✨ かんたん操作\n📊 データを見える化\n🔔 通知でお知らせ\n🎨 自由にカスタマイズ',
     screenshotScale:100,screenshotOffsetX:0,screenshotOffsetY:0,
   };
 }
