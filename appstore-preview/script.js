@@ -779,6 +779,11 @@ function startEditProjName(){
     const list=getProjectsList();
     const p=list.find(p=>p.id===currentProjectId);
     if(p){p.name=newName;saveProjectsList(list);}
+    const span=document.createElement('span');
+    span.className='proj-name';
+    span.id='proj-name-display';
+    span.title='ダブルクリックで名前を変更';
+    input.replaceWith(span);
     updateProjNameDisplay();
   };
   input.onblur=finish;
