@@ -472,10 +472,10 @@ function defSlide(){
   return{
     bgStyle:'grad-diag',phoneLayout:'text-top',effects:['glow'],
     bgColor1:'#0A84FF',bgColor2:'#5AC8FA',accentColor:'#FF9F0A',
-    title:'使いやすい\nカフェインログ',titleColor:'#FFFFFF',
-    subtitle:'毎日の摂取量を記録・管理',subColor:'#FFFFFF',
-    iconEmoji:'☕',
-    badgeText:'無料で使える',badgeColor:'#FFFFFF',badgeTextColor:'#1a4a00',
+    title:'アプリ名を入力',titleColor:'#FFFFFF',
+    subtitle:'キャッチコピーを入力',subColor:'#FFFFFF',
+    iconEmoji:'📱',
+    badgeText:'バッジテキスト',badgeColor:'#FFFFFF',badgeTextColor:'#1a4a00',
     screenshotImg:null,_src:'',
     screenshotImg2:null,_src2:'',
     screenshotImg3:null,_src3:'',
@@ -492,7 +492,7 @@ function defSlide(){
     textEffect:'none',
     textShadowColor:'#000000',textShadowSize:12,
     textStrokeColor:'#000000',textStrokeSize:4,
-    featureItems:'☕ カフェイン量を記録\n📊 グラフで確認\n⏰ 摂取上限アラート\n🌙 睡眠への影響を把握',
+    featureItems:'✨ 機能1を入力\n📊 機能2を入力\n🔔 機能3を入力\n🎨 機能4を入力',
     screenshotScale:100,screenshotOffsetX:0,screenshotOffsetY:0,
   };
 }
