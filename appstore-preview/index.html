@@ -6,7 +6,7 @@
 <title>App Store Preview Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700;900&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=Hachi+Maru+Pop&family=DotGothic16&family=Yomogi&family=Rampart+One&family=RocknRoll+One&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 <header>
@@ -161,13 +161,13 @@
           <div class="edit-scroll" id="fields"></div>
         </div>
         <div class="edit-center">
+          <div class="cw"><canvas id="canvas"></canvas><div class="csz" id="csz">1320 × 2868 px</div></div>
           <div class="zoom-bar" id="zoom-bar">
             <button class="zoom-btn" onclick="zoomPreview(-1)" title="縮小">−</button>
             <span class="zoom-level" id="zoom-level">フィット</span>
             <button class="zoom-btn" onclick="zoomPreview(1)" title="拡大">+</button>
-            <button class="zoom-btn zoom-btn-fit" onclick="zoomPreviewReset()" title="画面にフィット">⤢ フィット</button>
+            <button class="zoom-btn zoom-btn-fit" onclick="zoomPreviewReset()" title="画面にフィット">⤢</button>
           </div>
-          <div class="cw"><canvas id="canvas"></canvas><div class="csz" id="csz">1320 × 2868 px</div></div>
         </div>
       </div><!-- end edit-layout -->
     </div><!-- end s2 -->
@@ -263,6 +263,6 @@
   </div>
 </div>
 
-<script src="script.js"></script>
+<script src="script.js?v=3"></script>
 </body>
 </html>

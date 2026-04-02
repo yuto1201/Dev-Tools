@@ -406,21 +406,22 @@ const PHONE_LAYOUTS=[
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.05,'center',W);
-     // iPad (back, slightly larger)
-     const ipadW=W*.48,ipadH=ipadW*.75;
-     rr(c,W*.44,H*.2,ipadW,ipadH,W*.03);c.fillStyle='rgba(50,80,160,.5)';c.fill();
-     c.strokeStyle='rgba(255,255,255,.2)';c.lineWidth=1;rr(c,W*.44,H*.2,ipadW,ipadH,W*.03);c.stroke();
-     // iPhone (front)
-     const pw=W*.36,ph=pw*getDeviceAR();
-     miniPhone(c,W*.06,H*.28,pw,ph);
-     // Widget
-     const ww=W*.32,wh=ww*.52;
-     rr(c,W*.5,H*.65,ww,wh,W*.02);c.fillStyle='rgba(60,100,200,.35)';c.fill();
+     // iPad (back, black frame)
+     const ipadW=W*.44,ipadH=ipadW*.75;
+     rr(c,W*.44,H*.22,ipadW,ipadH,W*.03);c.fillStyle='rgba(20,20,20,.9)';c.fill();
+     rr(c,W*.46,H*.24,ipadW-.04*W,ipadH-.04*W,W*.02);c.fillStyle='rgba(40,60,120,.4)';c.fill();
+     // iPhone (front, larger)
+     const pw=W*.42,ph=pw*getDeviceAR();
+     miniPhone(c,W*.04,H*.24,pw,ph);
+     // Apple Watch
+     const awW=W*.2,awH=awW*1.22;
+     rr(c,W*.58,H*.66,awW,awH,awW*.25);c.fillStyle='rgba(20,20,20,.9)';c.fill();
+     rr(c,W*.6,H*.68,awW-.04*W,awH-.04*W,awW*.2);c.fillStyle='rgba(60,100,200,.35)';c.fill();
    },
    zone:(W,H,s)=>{
-     const pw=W*.42,ph=pw*getDeviceAR();
+     const pw=W*.48,ph=pw*getDeviceAR();
      return{tx:W/2,ty:H*.04+getTextOffsetY(s)*H*.002,ta:'center',
-            px:W*.03,py:H*.25,pw,ph,multiDevice:true};
+            px:W*.03,py:H*.22,pw,ph,multiDevice:true};
    }},
 
   // 13. テキスト強調：テキストが主役、小さなiPhoneがアクセント
@@ -1121,36 +1122,61 @@ function renderSlide(ctx,W,H,s){
     });
   }
 
-  // multi-device: iPhone front + iPad back + widget
+  // multi-device: iPhone front + iPad back + Apple Watch
   if(s.phoneLayout==='multi-device'){
     // iPad (background, right side, slightly tilted)
-    const ipadW=W*.52,ipadH=ipadW*1.33;
-    const ipadX=W*.45,ipadY=z.py-H*.02;
+    const ipadW=z.pw*.88,ipadH=ipadW*1.33;
+    const ipadX=W*.46,ipadY=z.py+z.ph*.02;
     ctx.save();ctx.translate(ipadX+ipadW/2,ipadY+ipadH/2);ctx.rotate(5*Math.PI/180);ctx.translate(-(ipadX+ipadW/2),-(ipadY+ipadH/2));
-    // iPad frame
-    const ibw=ipadW*.025,ir=ipadW*.06;
+    // iPad frame (black)
+    const ibw=ipadW*.028,ir=ipadW*.065;
     const ifg=ctx.createLinearGradient(ipadX,ipadY,ipadX+ipadW,ipadY+ipadH);
-    ifg.addColorStop(0,'#e2e2e2');ifg.addColorStop(1,'#acacac');
-    ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=ipadW*.12;ctx.shadowOffsetY=ipadW*.05;
+    ifg.addColorStop(0,'#282828');ifg.addColorStop(1,'#0f0f0f');
+    ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=ipadW*.14;ctx.shadowOffsetY=ipadW*.06;
     rr(ctx,ipadX,ipadY,ipadW,ipadH,ir);ctx.fillStyle=ifg;ctx.fill();
     ctx.shadowBlur=0;ctx.shadowOffsetY=0;
     // iPad screen
-    const isx=ipadX+ibw,isy=ipadY+ibw,isw=ipadW-ibw*2,ish=ipadH-ibw*2,isr=ir*.8;
+    const isx=ipadX+ibw,isy=ipadY+ibw,isw=ipadW-ibw*2,ish=ipadH-ibw*2,isr=ir*.75;
     rr(ctx,isx,isy,isw,ish,isr);ctx.clip();
     if(s.screenshotImg2){drawImgCover(ctx,s.screenshotImg2,isx,isy,isw,ish);}
-    else{ctx.fillStyle='#111828';ctx.fillRect(isx,isy,isw,ish);ctx.fillStyle='rgba(255,255,255,.08)';ctx.font=`${isw*.06}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('iPadスクショ',isx+isw/2,isy+ish/2);}
+    else{ctx.fillStyle='#0a0a18';ctx.fillRect(isx,isy,isw,ish);ctx.fillStyle='rgba(255,255,255,.06)';ctx.font=`${isw*.06}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('iPadスクショ',isx+isw/2,isy+ish/2);}
+    ctx.restore();
+    // iPad front camera
+    ctx.save();const icr=ipadW*.012;
+    ctx.translate(ipadX+ipadW/2,ipadY+ipadH/2);ctx.rotate(5*Math.PI/180);ctx.translate(-(ipadX+ipadW/2),-(ipadY+ipadH/2));
+    ctx.beginPath();ctx.arc(ipadX+ipadW/2,ipadY+ibw+icr*2.5,icr,0,Math.PI*2);ctx.fillStyle='#0a0a18';ctx.fill();
+    ctx.beginPath();ctx.arc(ipadX+ipadW/2,ipadY+ibw+icr*2.5,icr*.5,0,Math.PI*2);ctx.fillStyle='#1a1a2a';ctx.fill();
     ctx.restore();
 
-    // iPhone (foreground)
+    // iPhone (foreground, larger)
     drawPhoneAtZone(ctx,z,s);
 
-    // Widget (bottom right)
-    const ww2=W*.38,wh2=ww2*.48,wx2=W*.56,wy2=H*.74;
-    ctx.save();ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=W*.03;ctx.shadowOffsetY=W*.015;
-    rr(ctx,wx2,wy2,ww2,wh2,W*.03);ctx.fillStyle='rgba(40,60,120,.6)';ctx.fill();ctx.restore();
-    ctx.save();rr(ctx,wx2,wy2,ww2,wh2,W*.03);ctx.clip();
-    if(s.widgetMediumImg){drawImgCover(ctx,s.widgetMediumImg,wx2,wy2,ww2,wh2);}
-    else{ctx.fillStyle='rgba(255,255,255,.08)';ctx.fillRect(wx2,wy2,ww2,wh2);ctx.fillStyle='rgba(255,255,255,.18)';ctx.font=`${W*.035}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Widget',wx2+ww2/2,wy2+wh2/2);}
+    // Apple Watch (bottom right)
+    const awSize=W*.22,awH=awSize*1.22;
+    const awX=W*.68,awY=H*.72;
+    const awR=awSize*.28,awBw=awSize*.06;
+    ctx.save();
+    // Watch body shadow
+    ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=W*.04;ctx.shadowOffsetY=W*.02;
+    // Watch body (rounded rect, black frame)
+    const awFg=ctx.createLinearGradient(awX,awY,awX+awSize,awY+awH);
+    awFg.addColorStop(0,'#2a2a2a');awFg.addColorStop(1,'#111');
+    rr(ctx,awX,awY,awSize,awH,awR);ctx.fillStyle=awFg;ctx.fill();
+    ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+    // Digital Crown (side button)
+    const crownW=awSize*.06,crownH=awH*.18,crownR=crownW*.4;
+    rr(ctx,awX+awSize-crownW*.3,awY+awH*.28,crownW,crownH,crownR);
+    ctx.fillStyle='#3a3a3a';ctx.fill();
+    // Side button (smaller, below crown)
+    const sbH=crownH*.45;
+    rr(ctx,awX+awSize-crownW*.3,awY+awH*.52,crownW,sbH,crownR);
+    ctx.fillStyle='#333';ctx.fill();
+    ctx.restore();
+    // Watch screen
+    const wsx=awX+awBw,wsy=awY+awBw,wsw=awSize-awBw*2,wsh=awH-awBw*2,wsr=awR*.78;
+    ctx.save();rr(ctx,wsx,wsy,wsw,wsh,wsr);ctx.clip();
+    if(s.widgetMediumImg){drawImgCover(ctx,s.widgetMediumImg,wsx,wsy,wsw,wsh);}
+    else{ctx.fillStyle='#000';ctx.fillRect(wsx,wsy,wsw,wsh);ctx.fillStyle='rgba(255,255,255,.12)';ctx.font=`${wsw*.12}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Watch',wsx+wsw/2,wsy+wsh/2);}
     ctx.restore();
   }
 
