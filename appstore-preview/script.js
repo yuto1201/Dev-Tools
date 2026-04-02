@@ -35,6 +35,7 @@ function undo(){
   redoStack.push(current);
   const snap=undoStack.pop();
   deserializeSlides(snap);
+  if(inStep===2)buildFields();
   updateUndoBtn();
   showToast('元に戻しました ↩');
 }
@@ -44,6 +45,7 @@ function redo(){
   undoStack.push(current);
   const snap=redoStack.pop();
   deserializeSlides(snap);
+  if(inStep===2)buildFields();
   updateUndoBtn();
   showToast('やり直しました ↪');
 }
@@ -419,9 +421,9 @@ const PHONE_LAYOUTS=[
      rr(c,W*.6,H*.68,awW-.04*W,awH-.04*W,awW*.2);c.fillStyle='rgba(60,100,200,.35)';c.fill();
    },
    zone:(W,H,s)=>{
-     const pw=W*.48,ph=pw*getDeviceAR();
+     const pw=W*.44,ph=pw*getDeviceAR();
      return{tx:W/2,ty:H*.04+getTextOffsetY(s)*H*.002,ta:'center',
-            px:W*.03,py:H*.22,pw,ph,multiDevice:true};
+            px:W*.04,py:H*.30,pw,ph,multiDevice:true};
    }},
 
   // 13. テキスト強調：テキストが主役、小さなiPhoneがアクセント
@@ -530,10 +532,11 @@ function deserializeSlides(json){
 function saveProject(){
   const json=serializeSlides();
   const blob=new Blob([json],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;
   const name=currentProjectId?getProjectMeta(currentProjectId).name:'preview-project';
   a.download=`${name}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('JSONファイルを保存しました 📥');
 }
 function loadProject(e){
@@ -668,9 +671,10 @@ function exportProjectJson(id,ev){
   const data=getProjectData(id);
   if(!data)return;
   const blob=new Blob([data],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;
   a.download=`${meta?meta.name:'project'}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('JSONファイルを保存しました 📥');
 }
 
@@ -1125,9 +1129,9 @@ function renderSlide(ctx,W,H,s){
   // multi-device: iPhone front + iPad back + Apple Watch
   if(s.phoneLayout==='multi-device'){
     // iPad (background, right side, slightly tilted)
-    const ipadW=z.pw*.88,ipadH=ipadW*1.33;
-    const ipadX=W*.46,ipadY=z.py+z.ph*.02;
-    ctx.save();ctx.translate(ipadX+ipadW/2,ipadY+ipadH/2);ctx.rotate(5*Math.PI/180);ctx.translate(-(ipadX+ipadW/2),-(ipadY+ipadH/2));
+    const ipadW=W*.58,ipadH=ipadW*1.33;
+    const ipadX=W*.34,ipadY=z.py-H*.02;
+    ctx.save();ctx.translate(ipadX+ipadW/2,ipadY+ipadH/2);ctx.rotate(6*Math.PI/180);ctx.translate(-(ipadX+ipadW/2),-(ipadY+ipadH/2));
     // iPad frame (black)
     const ibw=ipadW*.028,ir=ipadW*.065;
     const ifg=ctx.createLinearGradient(ipadX,ipadY,ipadX+ipadW,ipadY+ipadH);
@@ -1143,31 +1147,29 @@ function renderSlide(ctx,W,H,s){
     ctx.restore();
     // iPad front camera
     ctx.save();const icr=ipadW*.012;
-    ctx.translate(ipadX+ipadW/2,ipadY+ipadH/2);ctx.rotate(5*Math.PI/180);ctx.translate(-(ipadX+ipadW/2),-(ipadY+ipadH/2));
+    ctx.translate(ipadX+ipadW/2,ipadY+ipadH/2);ctx.rotate(6*Math.PI/180);ctx.translate(-(ipadX+ipadW/2),-(ipadY+ipadH/2));
     ctx.beginPath();ctx.arc(ipadX+ipadW/2,ipadY+ibw+icr*2.5,icr,0,Math.PI*2);ctx.fillStyle='#0a0a18';ctx.fill();
     ctx.beginPath();ctx.arc(ipadX+ipadW/2,ipadY+ibw+icr*2.5,icr*.5,0,Math.PI*2);ctx.fillStyle='#1a1a2a';ctx.fill();
     ctx.restore();
 
-    // iPhone (foreground, larger)
+    // iPhone (foreground)
     drawPhoneAtZone(ctx,z,s);
 
-    // Apple Watch (bottom right)
-    const awSize=W*.22,awH=awSize*1.22;
-    const awX=W*.68,awY=H*.72;
+    // Apple Watch (bottom right, balanced size)
+    const awSize=W*.16,awH=awSize*1.22;
+    const awX=W*.72,awY=H*.78;
     const awR=awSize*.28,awBw=awSize*.06;
     ctx.save();
-    // Watch body shadow
-    ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=W*.04;ctx.shadowOffsetY=W*.02;
-    // Watch body (rounded rect, black frame)
+    ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=W*.03;ctx.shadowOffsetY=W*.015;
     const awFg=ctx.createLinearGradient(awX,awY,awX+awSize,awY+awH);
     awFg.addColorStop(0,'#2a2a2a');awFg.addColorStop(1,'#111');
     rr(ctx,awX,awY,awSize,awH,awR);ctx.fillStyle=awFg;ctx.fill();
     ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-    // Digital Crown (side button)
-    const crownW=awSize*.06,crownH=awH*.18,crownR=crownW*.4;
-    rr(ctx,awX+awSize-crownW*.3,awY+awH*.28,crownW,crownH,crownR);
+    // Digital Crown
+    const crownW=awSize*.07,crownH=awH*.16,crownR=crownW*.4;
+    rr(ctx,awX+awSize-crownW*.3,awY+awH*.3,crownW,crownH,crownR);
     ctx.fillStyle='#3a3a3a';ctx.fill();
-    // Side button (smaller, below crown)
+    // Side button
     const sbH=crownH*.45;
     rr(ctx,awX+awSize-crownW*.3,awY+awH*.52,crownW,sbH,crownR);
     ctx.fillStyle='#333';ctx.fill();
@@ -1176,7 +1178,7 @@ function renderSlide(ctx,W,H,s){
     const wsx=awX+awBw,wsy=awY+awBw,wsw=awSize-awBw*2,wsh=awH-awBw*2,wsr=awR*.78;
     ctx.save();rr(ctx,wsx,wsy,wsw,wsh,wsr);ctx.clip();
     if(s.widgetMediumImg){drawImgCover(ctx,s.widgetMediumImg,wsx,wsy,wsw,wsh);}
-    else{ctx.fillStyle='#000';ctx.fillRect(wsx,wsy,wsw,wsh);ctx.fillStyle='rgba(255,255,255,.12)';ctx.font=`${wsw*.12}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Watch',wsx+wsw/2,wsy+wsh/2);}
+    else{ctx.fillStyle='#000';ctx.fillRect(wsx,wsy,wsw,wsh);ctx.fillStyle='rgba(255,255,255,.12)';ctx.font=`${wsw*.13}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Watch',wsx+wsw/2,wsy+wsh/2);}
     ctx.restore();
   }
 
@@ -1275,17 +1277,18 @@ function zoomPreview(dir){
 function zoomPreviewReset(){zoomIdx=-1;applyZoom();}
 function calcFitPercent(){
   const center=document.querySelector('.edit-center');
-  if(!center)return 100;
+  if(!center||center.clientWidth===0||center.clientHeight===0)return 100;
   const dev=DEVS[curDev],ar=dev.h/dev.w;
   const pad=40;
   const zoomBarH=44;
   const cszH=28;
   const availW=center.clientWidth-pad*2;
   const availH=center.clientHeight-pad*2-zoomBarH-cszH;
+  if(availW<=0||availH<=0)return 100;
   const fitByW=availW;
   const fitByH=availH/ar;
   const fitW=Math.min(fitByW,fitByH);
-  return Math.round(fitW/PW*100);
+  return Math.max(25,Math.round(fitW/PW*100));
 }
 function applyZoom(){
   let pct;
@@ -1316,11 +1319,15 @@ window.addEventListener('resize',()=>{
   clearTimeout(_resizeTimer);
   _resizeTimer=setTimeout(()=>{if(zoomIdx===-1&&inStep===2)applyZoom();},120);
 });
+let _rendering=false;
 function render(){
-  const s=slides[curSlide];if(!s)return;
+  if(_rendering)return;
+  _rendering=true;
+  const s=slides[curSlide];if(!s){_rendering=false;return;}
   if(inStep===1){const c=document.getElementById('s1-canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
   if(inStep===2){const c=document.getElementById('canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
   renderThumbs();updateSummary();
+  _rendering=false;
   autoSave();
 }
 
@@ -1755,10 +1762,10 @@ function renderThumbs(){
     div.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';if(dragSrc!==null&&dragSrc!==i){document.querySelectorAll('.sth').forEach(el=>el.classList.remove('drag-over'));div.classList.add('drag-over');}});
     div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
     div.addEventListener('drop',e=>{
-      e.preventDefault();div.classList.remove('drag-over');if(dragSrc===null||dragSrc===i)return;
+      e.preventDefault();div.classList.remove('drag-over');if(dragSrc===null||dragSrc===i){dragSrc=null;return;}
       pushUndo();const moved=slides.splice(dragSrc,1)[0];const newIdx=dragSrc<i?i-1:i;slides.splice(newIdx,0,moved);
       let newCur=curSlide;if(curSlide===dragSrc)newCur=newIdx;else if(curSlide>Math.min(dragSrc,newIdx)&&curSlide<=Math.max(dragSrc,newIdx))newCur=dragSrc<newIdx?curSlide-1:curSlide+1;
-      curSlide=newCur;renderThumbs();if(inStep===2)buildFields();render();showToast('スライドを移動しました');
+      curSlide=newCur;dragSrc=null;renderThumbs();if(inStep===2)buildFields();render();showToast('スライドを移動しました');
     });
     div.onclick=e=>{if(!e.target.classList.contains('sth-del')&&!e.target.classList.contains('sth-dup')&&!e.target.classList.contains('sth-conv'))selectSlide(i);};
     const tw=160;const tc=document.createElement('canvas');tc.width=tw;tc.height=Math.round(tw*dev.h/dev.w);
@@ -1801,9 +1808,10 @@ async function exportZip(){
   await Promise.all(promises);
   const blob=await zip.generateAsync({type:'blob'});
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
+  const url=URL.createObjectURL(blob);a.href=url;
   a.download=`preview_${curDev}inch_all${slides.length}slides.zip`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast(`${slides.length}枚をZIPで書き出しました！🗜`);
 }
 function exportSlide(i,silent=false){
@@ -1841,13 +1849,15 @@ function exportSlide(i,silent=false){
   } else {
     // Desktop: normal download
     oc.toBlob(blob=>{
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;
       a.download=filename;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
       if(!silent)showToast(`スライド${i+1}を書き出しました！`);
     },'image/png');
   }
 }
-function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+let _toastTimer=null;
+function showToast(m){const t=document.getElementById('toast');if(_toastTimer)clearTimeout(_toastTimer);t.textContent=m;t.classList.add('show');_toastTimer=setTimeout(()=>{t.classList.remove('show');_toastTimer=null;},2400);}
 
 /* ═══ TEMPLATES ═══ */
 const TEMPLATES=[
@@ -2002,9 +2012,10 @@ async function exportAllSizesZip(){
   }
   const blob=await zip.generateAsync({type:'blob'});
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
+  const url2=URL.createObjectURL(blob);a.href=url2;
   a.download=`preview_allsizes_${slides.length}slides.zip`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url2),1000);
   showToast(`全サイズZIPを書き出しました 🗜`);
 }
 window.onload=async()=>{
