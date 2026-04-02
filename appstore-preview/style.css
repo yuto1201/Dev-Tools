@@ -124,7 +124,8 @@ input[type=color]{width:20px;height:20px;border:none;border-radius:4px;cursor:po
 .zoom-bar{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .zoom-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--b1);background:var(--card);color:var(--dm);cursor:pointer;font-size:16px;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;transition:.14s}
 .zoom-btn:hover{color:var(--tx);border-color:var(--b2)}
-.zoom-level{font-size:11px;font-weight:700;color:var(--dm);min-width:40px;text-align:center}
+.zoom-btn-fit{width:auto;padding:0 10px;font-size:11px;gap:4px}
+.zoom-level{font-size:11px;font-weight:700;color:var(--dm);min-width:50px;text-align:center}
 .cw{position:relative}
 .cw canvas{display:block;border-radius:6px;box-shadow:0 40px 80px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.04)}
 .csz{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:10px;color:var(--sub);font-weight:600}
