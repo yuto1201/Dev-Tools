@@ -18,7 +18,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 1
 .dev-label{font-size:9px;font-weight:800;color:var(--sub);padding:0 2px 0 4px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;display:flex;align-items:center}
 .dev-label-ipad{border-left:1px solid var(--b2);margin-left:4px;padding-left:6px}
 .dev-btn.active{background:var(--adim);border-color:var(--acc);color:var(--acc)}
-.hbtns{display:flex;gap:6px;flex-wrap:nowrap}
+.hbtns{display:flex;gap:8px;flex-wrap:nowrap;align-items:center}
+.hbtn-group{display:flex;gap:4px;align-items:center}
+.hbtn-sep{width:1px;height:20px;background:var(--b2);flex-shrink:0}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-family:inherit;font-weight:700;transition:.14s;white-space:nowrap}
 .btn-p{background:var(--acc);color:#fff}.btn-p:hover{background:#0070e0;transform:translateY(-1px)}
 .btn-g{background:transparent;color:var(--dm);border:1px solid var(--b1)}.btn-g:hover{color:var(--tx);border-color:var(--b2)}
@@ -260,7 +262,9 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   .logo{font-size:13px}
   .btn-lbl{display:none}
   .hbtns .btn-p .btn-lbl{display:inline}
-  .hbtns{gap:4px}
+  .hbtns{gap:5px}
+  .hbtn-group{gap:3px}
+  .hbtn-sep{height:16px}
   .btn{padding:7px 9px}
   /* Step 1: switch to tab layout */
   .opt-panel{display:none}
@@ -292,6 +296,8 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   .logo em{display:none}
   .dev-group{display:none}
   .hbtns{gap:3px}
+  .hbtn-sep{height:14px}
+  .hbtn-group{gap:2px}
   .btn{padding:6px 8px;font-size:11px}
   .btn-lbl{display:none!important}
   .btn-undo{padding:5px 8px;font-size:13px}

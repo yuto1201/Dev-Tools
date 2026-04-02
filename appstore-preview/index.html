@@ -29,16 +29,27 @@
     <button class="dev-btn"        onclick="setDevice('ipad97')" id="dev-ipad97">9.7"</button>
   </div>
   <div class="hbtns" id="editor-header-btns">
-    <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
-    <button class="btn btn-undo" id="redo-btn" onclick="redo()" disabled title="やり直す (Ctrl+Shift+Z)">↪<span class="undo-count" id="redo-count"></span></button>
-    <button class="btn btn-g" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
-    <button class="btn btn-g" onclick="saveProjectToStorage()">💾 <span class="btn-lbl">保存</span></button>
-    <button class="btn btn-g" onclick="saveProject()">📥 <span class="btn-lbl">JSON</span></button>
-    <button class="btn btn-g" onclick="document.getElementById('load-input').click()">📂 <span class="btn-lbl">読込</span></button>
-    <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
-    <button class="btn btn-g btn-export-all" onclick="exportZip()">🗜 <span class="btn-lbl">ZIP</span></button>
-    <button class="btn btn-g btn-export-all" onclick="exportAllSizesZip()">🗜 <span class="btn-lbl">全サイズZIP</span></button>
-    <button class="btn btn-p" onclick="exportCurrent()">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">PNG保存</span></button>
+    <div class="hbtn-group">
+      <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
+      <button class="btn btn-undo" id="redo-btn" onclick="redo()" disabled title="やり直す (Ctrl+Shift+Z)">↪<span class="undo-count" id="redo-count"></span></button>
+    </div>
+    <div class="hbtn-sep"></div>
+    <div class="hbtn-group">
+      <button class="btn btn-g" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
+    </div>
+    <div class="hbtn-sep"></div>
+    <div class="hbtn-group">
+      <button class="btn btn-g" onclick="saveProjectToStorage()">💾 <span class="btn-lbl">保存</span></button>
+      <button class="btn btn-g" onclick="saveProject()">📥 <span class="btn-lbl">JSON</span></button>
+      <button class="btn btn-g" onclick="document.getElementById('load-input').click()">📂 <span class="btn-lbl">読込</span></button>
+      <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
+    </div>
+    <div class="hbtn-sep"></div>
+    <div class="hbtn-group">
+      <button class="btn btn-g btn-export-all" onclick="exportZip()">🗜 <span class="btn-lbl">ZIP</span></button>
+      <button class="btn btn-g btn-export-all" onclick="exportAllSizesZip()">🗜 <span class="btn-lbl">全サイズZIP</span></button>
+      <button class="btn btn-p" onclick="exportCurrent()">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">PNG保存</span></button>
+    </div>
   </div>
 </header>
 <!-- ═══ PROJECT DASHBOARD ═══ -->
