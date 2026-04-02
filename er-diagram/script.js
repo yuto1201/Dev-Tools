@@ -1690,33 +1690,130 @@ document.addEventListener('keydown',function(e){
   }
 });
 
+// ─── Project Select Screen ──────────────────────────────
+function showProjectSelectScreen(){
+  document.getElementById('projectSelectScreen').style.display='flex';
+  document.getElementById('editorWrapper').style.display='none';
+  renderPSSList();
+}
+
+function showEditor(){
+  document.getElementById('projectSelectScreen').style.display='none';
+  document.getElementById('editorWrapper').style.display='flex';
+}
+
+function renderPSSList(){
+  var list=document.getElementById('pssProjectList');
+  if(!list)return;
+  list.innerHTML='';
+  var sorted=Object.entries(projectList).sort(function(a,b){return(b[1].updatedAt||'').localeCompare(a[1].updatedAt||'');});
+  if(!sorted.length){
+    list.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:32px 0;">プロジェクトがありません。<br>「＋ 新規プロジェクト」から作成してください。</div>';
+    return;
+  }
+  sorted.forEach(function(e){
+    var id=e[0],proj=e[1];
+    var card=document.createElement('div');
+    card.className='pss-card';
+    var d=proj.updatedAt?new Date(proj.updatedAt):new Date();
+    var dateStr=d.toLocaleDateString('ja-JP')+' '+d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+    card.innerHTML='<div class="pss-card-icon">📄</div>'
+      +'<div class="pss-card-body">'
+      +'<div class="pss-card-name">'+proj.name+'</div>'
+      +'<div class="pss-card-meta">'+(proj.tableCount||0)+' tables / '+dateStr+'</div>'
+      +'</div>'
+      +'<div class="pss-card-actions">'
+      +'<button class="pss-card-btn rename-btn">✏ 名前変更</button>'
+      +'<button class="pss-card-btn del del-btn">🗑</button>'
+      +'</div>'
+      +'<div class="pss-card-arrow">→</div>';
+    // クリックでプロジェクトを開く（ボタン以外）
+    (function(pid){
+      card.addEventListener('click',function(ev){
+        if(ev.target.closest('.pss-card-actions'))return;
+        pssOpenProject(pid);
+      });
+      card.querySelector('.rename-btn').addEventListener('click',function(ev){
+        ev.stopPropagation();
+        pssRenameProject(pid);
+      });
+      card.querySelector('.del-btn').addEventListener('click',function(ev){
+        ev.stopPropagation();
+        pssDeleteProject(pid);
+      });
+    })(id);
+    list.appendChild(card);
+  });
+}
+
+function pssOpenProject(id){
+  currentProjectId=id;
+  localStorage.setItem(LS_CURRENT,id);
+  try{
+    var raw=localStorage.getItem(LS_PROJECT_PREFIX+id);
+    if(raw){loadERState(JSON.parse(raw));}
+    else{clearERState();}
+  }catch(e){clearERState();}
+  updateProjectUI();
+  showEditor();
+}
+
+function pssCreateNew(){
+  var input=prompt('プロジェクト名を入力してください:','新しいプロジェクト');
+  if(input===null)return;
+  var pName=input.trim()||'untitled';
+  var id=generateId();
+  projectList[id]={name:pName,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:0};
+  saveProjectList();
+  currentProjectId=id;
+  localStorage.setItem(LS_CURRENT,id);
+  clearERState();
+  updateProjectUI();
+  showEditor();
+  showToast('✓ "'+pName+'" を作成しました','success');
+}
+
+function pssRenameProject(id){
+  var proj=projectList[id];if(!proj)return;
+  var newName=prompt('新しい名前:',proj.name);
+  if(newName===null||!newName.trim())return;
+  proj.name=newName.trim();
+  proj.updatedAt=new Date().toISOString();
+  saveProjectList();
+  renderPSSList();
+}
+
+function pssDeleteProject(id){
+  var proj=projectList[id];if(!proj)return;
+  var ids=Object.keys(projectList);
+  if(ids.length<=1){showToast('最後のプロジェクトは削除できません','error');return;}
+  if(!confirm('"'+proj.name+'" を削除しますか？'))return;
+  delete projectList[id];
+  try{localStorage.removeItem(LS_PROJECT_PREFIX+id);}catch(e){}
+  saveProjectList();
+  if(id===currentProjectId){currentProjectId=null;}
+  renderPSSList();
+  showToast('プロジェクトを削除しました');
+}
+
+// ヘッダーロゴクリックでプロジェクト選択画面に戻る
+document.querySelector('.logo').addEventListener('click',function(){
+  if(currentProjectId)autoSaveNow();
+  showProjectSelectScreen();
+});
+document.querySelector('.logo').style.cursor='pointer';
+
 // ─── Initialize Projects ─────────────────────────────────
 function initProjects(){
   loadProjectList();
   var ids=Object.keys(projectList);
-  // プロジェクトがなければデフォルトを作成
   if(!ids.length){
     var id=generateId();
     projectList[id]={name:'untitled',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:0};
     saveProjectList();
-    currentProjectId=id;
-    localStorage.setItem(LS_CURRENT,id);
-  }else{
-    // 前回のプロジェクトを復元
-    var lastId=localStorage.getItem(LS_CURRENT);
-    if(lastId&&projectList[lastId]){
-      currentProjectId=lastId;
-    }else{
-      currentProjectId=ids[0];
-      localStorage.setItem(LS_CURRENT,currentProjectId);
-    }
-    // プロジェクトデータを読み込み
-    try{
-      var raw=localStorage.getItem(LS_PROJECT_PREFIX+currentProjectId);
-      if(raw)loadERState(JSON.parse(raw));
-    }catch(e){}
   }
-  updateProjectUI();
+  // 常にプロジェクト選択画面を表示
+  showProjectSelectScreen();
 }
 
 initProjects();
