@@ -35,6 +35,7 @@ function undo(){
   redoStack.push(current);
   const snap=undoStack.pop();
   deserializeSlides(snap);
+  if(inStep===2)buildFields();
   updateUndoBtn();
   showToast('元に戻しました ↩');
 }
@@ -44,6 +45,7 @@ function redo(){
   undoStack.push(current);
   const snap=redoStack.pop();
   deserializeSlides(snap);
+  if(inStep===2)buildFields();
   updateUndoBtn();
   showToast('やり直しました ↪');
 }
@@ -530,10 +532,11 @@ function deserializeSlides(json){
 function saveProject(){
   const json=serializeSlides();
   const blob=new Blob([json],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;
   const name=currentProjectId?getProjectMeta(currentProjectId).name:'preview-project';
   a.download=`${name}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('JSONファイルを保存しました 📥');
 }
 function loadProject(e){
@@ -668,9 +671,10 @@ function exportProjectJson(id,ev){
   const data=getProjectData(id);
   if(!data)return;
   const blob=new Blob([data],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;
   a.download=`${meta?meta.name:'project'}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('JSONファイルを保存しました 📥');
 }
 
@@ -1273,17 +1277,18 @@ function zoomPreview(dir){
 function zoomPreviewReset(){zoomIdx=-1;applyZoom();}
 function calcFitPercent(){
   const center=document.querySelector('.edit-center');
-  if(!center)return 100;
+  if(!center||center.clientWidth===0||center.clientHeight===0)return 100;
   const dev=DEVS[curDev],ar=dev.h/dev.w;
   const pad=40;
   const zoomBarH=44;
   const cszH=28;
   const availW=center.clientWidth-pad*2;
   const availH=center.clientHeight-pad*2-zoomBarH-cszH;
+  if(availW<=0||availH<=0)return 100;
   const fitByW=availW;
   const fitByH=availH/ar;
   const fitW=Math.min(fitByW,fitByH);
-  return Math.round(fitW/PW*100);
+  return Math.max(25,Math.round(fitW/PW*100));
 }
 function applyZoom(){
   let pct;
@@ -1314,11 +1319,15 @@ window.addEventListener('resize',()=>{
   clearTimeout(_resizeTimer);
   _resizeTimer=setTimeout(()=>{if(zoomIdx===-1&&inStep===2)applyZoom();},120);
 });
+let _rendering=false;
 function render(){
-  const s=slides[curSlide];if(!s)return;
+  if(_rendering)return;
+  _rendering=true;
+  const s=slides[curSlide];if(!s){_rendering=false;return;}
   if(inStep===1){const c=document.getElementById('s1-canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
   if(inStep===2){const c=document.getElementById('canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
   renderThumbs();updateSummary();
+  _rendering=false;
   autoSave();
 }
 
@@ -1753,10 +1762,10 @@ function renderThumbs(){
     div.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';if(dragSrc!==null&&dragSrc!==i){document.querySelectorAll('.sth').forEach(el=>el.classList.remove('drag-over'));div.classList.add('drag-over');}});
     div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
     div.addEventListener('drop',e=>{
-      e.preventDefault();div.classList.remove('drag-over');if(dragSrc===null||dragSrc===i)return;
+      e.preventDefault();div.classList.remove('drag-over');if(dragSrc===null||dragSrc===i){dragSrc=null;return;}
       pushUndo();const moved=slides.splice(dragSrc,1)[0];const newIdx=dragSrc<i?i-1:i;slides.splice(newIdx,0,moved);
       let newCur=curSlide;if(curSlide===dragSrc)newCur=newIdx;else if(curSlide>Math.min(dragSrc,newIdx)&&curSlide<=Math.max(dragSrc,newIdx))newCur=dragSrc<newIdx?curSlide-1:curSlide+1;
-      curSlide=newCur;renderThumbs();if(inStep===2)buildFields();render();showToast('スライドを移動しました');
+      curSlide=newCur;dragSrc=null;renderThumbs();if(inStep===2)buildFields();render();showToast('スライドを移動しました');
     });
     div.onclick=e=>{if(!e.target.classList.contains('sth-del')&&!e.target.classList.contains('sth-dup')&&!e.target.classList.contains('sth-conv'))selectSlide(i);};
     const tw=160;const tc=document.createElement('canvas');tc.width=tw;tc.height=Math.round(tw*dev.h/dev.w);
@@ -1799,9 +1808,10 @@ async function exportZip(){
   await Promise.all(promises);
   const blob=await zip.generateAsync({type:'blob'});
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
+  const url=URL.createObjectURL(blob);a.href=url;
   a.download=`preview_${curDev}inch_all${slides.length}slides.zip`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast(`${slides.length}枚をZIPで書き出しました！🗜`);
 }
 function exportSlide(i,silent=false){
@@ -1839,13 +1849,15 @@ function exportSlide(i,silent=false){
   } else {
     // Desktop: normal download
     oc.toBlob(blob=>{
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;
       a.download=filename;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
       if(!silent)showToast(`スライド${i+1}を書き出しました！`);
     },'image/png');
   }
 }
-function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+let _toastTimer=null;
+function showToast(m){const t=document.getElementById('toast');if(_toastTimer)clearTimeout(_toastTimer);t.textContent=m;t.classList.add('show');_toastTimer=setTimeout(()=>{t.classList.remove('show');_toastTimer=null;},2400);}
 
 /* ═══ TEMPLATES ═══ */
 const TEMPLATES=[
@@ -2000,9 +2012,10 @@ async function exportAllSizesZip(){
   }
   const blob=await zip.generateAsync({type:'blob'});
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
+  const url2=URL.createObjectURL(blob);a.href=url2;
   a.download=`preview_allsizes_${slides.length}slides.zip`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url2),1000);
   showToast(`全サイズZIPを書き出しました 🗜`);
 }
 window.onload=async()=>{
