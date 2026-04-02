@@ -1232,19 +1232,47 @@ function drawTextBlock(ctx,W,H,z,s){
 }
 
 /* ═══ CANVAS INIT & ZOOM ═══ */
-const ZOOM_STEPS=[50,75,100,125,150,200];
-let zoomIdx=2; // default 100%
+const ZOOM_STEPS=[25,50,75,100,125,150,200];
+let zoomIdx=-1; // -1 = auto-fit mode
 function zoomPreview(dir){
-  zoomIdx=Math.max(0,Math.min(ZOOM_STEPS.length-1,zoomIdx+dir));
+  if(zoomIdx===-1){
+    // Leaving auto-fit: find nearest step to current fit size
+    const fitPct=calcFitPercent();
+    let nearest=0;
+    for(let i=0;i<ZOOM_STEPS.length;i++){if(Math.abs(ZOOM_STEPS[i]-fitPct)<Math.abs(ZOOM_STEPS[nearest]-fitPct))nearest=i;}
+    zoomIdx=Math.max(0,Math.min(ZOOM_STEPS.length-1,nearest+dir));
+  } else {
+    zoomIdx=Math.max(0,Math.min(ZOOM_STEPS.length-1,zoomIdx+dir));
+  }
   applyZoom();
 }
-function zoomPreviewReset(){zoomIdx=2;applyZoom();}
-function applyZoom(){
-  const pct=ZOOM_STEPS[zoomIdx];
-  const el=document.getElementById('zoom-level');if(el)el.textContent=pct+'%';
+function zoomPreviewReset(){zoomIdx=-1;applyZoom();}
+function calcFitPercent(){
+  const center=document.querySelector('.edit-center');
+  if(!center)return 100;
   const dev=DEVS[curDev],ar=dev.h/dev.w;
-  const base=PW;
-  const w=Math.round(base*pct/100);
+  const pad=40;
+  const zoomBarH=44;
+  const cszH=28;
+  const availW=center.clientWidth-pad*2;
+  const availH=center.clientHeight-pad*2-zoomBarH-cszH;
+  const fitByW=availW;
+  const fitByH=availH/ar;
+  const fitW=Math.min(fitByW,fitByH);
+  return Math.round(fitW/PW*100);
+}
+function applyZoom(){
+  let pct;
+  if(zoomIdx===-1){
+    pct=calcFitPercent();
+    pct=Math.max(25,Math.min(400,pct));
+  } else {
+    pct=ZOOM_STEPS[zoomIdx];
+  }
+  const el=document.getElementById('zoom-level');
+  if(el)el.textContent=zoomIdx===-1?'フィット':pct+'%';
+  const dev=DEVS[curDev],ar=dev.h/dev.w;
+  const w=Math.round(PW*pct/100);
   const c=document.getElementById('canvas');
   if(c){c.width=w;c.height=Math.round(w*ar);}
   render();
@@ -1253,13 +1281,15 @@ function initAllCanvas(){
   const dev=DEVS[curDev],ar=dev.h/dev.w;
   const c1=document.getElementById('s1-canvas');
   if(c1){c1.width=PW;c1.height=Math.round(PW*ar);}
-  const pct=ZOOM_STEPS[zoomIdx]||100;
-  const w2=Math.round(PW*pct/100);
-  const c2=document.getElementById('canvas');
-  if(c2){c2.width=w2;c2.height=Math.round(w2*ar);}
+  applyZoom();
   const el=document.getElementById('csz');if(el)el.textContent=dev.lbl;
-  const zl=document.getElementById('zoom-level');if(zl)zl.textContent=pct+'%';
 }
+/* Re-fit on window resize when in auto-fit mode */
+let _resizeTimer;
+window.addEventListener('resize',()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(()=>{if(zoomIdx===-1&&inStep===2)applyZoom();},120);
+});
 function render(){
   const s=slides[curSlide];if(!s)return;
   if(inStep===1){const c=document.getElementById('s1-canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
