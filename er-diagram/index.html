@@ -7,6 +7,22 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- ===== PROJECT SELECT SCREEN ===== -->
+<div id="projectSelectScreen" class="pss">
+  <div class="pss-inner">
+    <div class="pss-header">
+      <div class="pss-logo"><div class="logo-icon" style="width:36px;height:36px;font-size:18px;">⬡</div><span>ER Diagram Generator</span></div>
+      <p class="pss-sub">プロジェクトを選択して開始</p>
+    </div>
+    <div class="pss-actions">
+      <button class="btn success" onclick="pssCreateNew()" style="padding:8px 18px;">＋ 新規プロジェクト</button>
+    </div>
+    <div class="pss-list" id="pssProjectList"></div>
+  </div>
+</div>
+
+<!-- ===== EDITOR (initially hidden) ===== -->
+<div id="editorWrapper" style="display:none;flex-direction:column;height:100vh;">
 <header>
   <div class="logo"><div class="logo-icon">⬡</div>ER Diagram Generator</div>
   <div class="header-right">
@@ -304,6 +320,7 @@
   </div>
 </div>
 
+</div><!-- /editorWrapper -->
 <div id="toast"></div>
 <script src="script.js"></script>
 </body>
