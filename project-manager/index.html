@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Manager — yuto's dev tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="scanline"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="wrapper">
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <a href="../index.html" class="back-link">&larr; Back to Toolbox</a>
+    <div class="header-eyebrow">management</div>
+    <h1>Project Manager</h1>
+    <p class="header-sub">// 開発プロジェクトを一元管理</p>
+  </header>
+
+  <!-- ツールバー -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" id="searchInput" placeholder="プロジェクトを検索...">
+      </div>
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all">すべて</button>
+        <button class="filter-btn" data-filter="active">進行中</button>
+        <button class="filter-btn" data-filter="planning">企画中</button>
+        <button class="filter-btn" data-filter="paused">一時停止</button>
+        <button class="filter-btn" data-filter="completed">完了</button>
+      </div>
+    </div>
+    <button class="btn-primary" id="addProjectBtn">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      新規プロジェクト
+    </button>
+  </div>
+
+  <!-- 統計サマリー -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-value" id="statTotal">0</span>
+      <span class="stat-label">合計</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value stat-active" id="statActive">0</span>
+      <span class="stat-label">進行中</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value stat-planning" id="statPlanning">0</span>
+      <span class="stat-label">企画中</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value stat-completed" id="statCompleted">0</span>
+      <span class="stat-label">完了</span>
+    </div>
+  </div>
+
+  <!-- プロジェクト一覧 -->
+  <div class="projects-list" id="projectsList">
+    <!-- JSで動的に生成 -->
+  </div>
+
+  <!-- 空状態 -->
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="empty-icon">📋</div>
+    <p class="empty-title">プロジェクトがありません</p>
+    <p class="empty-desc">「新規プロジェクト」ボタンから最初のプロジェクトを追加しましょう。</p>
+  </div>
+
+</div>
+
+<!-- プロジェクト追加/編集モーダル -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle">新規プロジェクト</h2>
+      <button class="modal-close" id="modalClose">&times;</button>
+    </div>
+    <form id="projectForm">
+      <input type="hidden" id="projectId">
+      <div class="form-group">
+        <label for="projectName">プロジェクト名 <span class="required">*</span></label>
+        <input type="text" id="projectName" required placeholder="例: My Awesome App">
+      </div>
+      <div class="form-group">
+        <label for="projectDesc">説明</label>
+        <textarea id="projectDesc" rows="3" placeholder="プロジェクトの概要を入力..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="projectStatus">ステータス</label>
+          <select id="projectStatus">
+            <option value="planning">企画中</option>
+            <option value="active">進行中</option>
+            <option value="paused">一時停止</option>
+            <option value="completed">完了</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="projectPriority">優先度</label>
+          <select id="projectPriority">
+            <option value="low">低</option>
+            <option value="medium" selected>中</option>
+            <option value="high">高</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="projectTech">技術スタック</label>
+        <input type="text" id="projectTech" placeholder="例: Swift, React, Node.js（カンマ区切り）">
+      </div>
+      <div class="form-group">
+        <label for="projectRepo">リポジトリURL</label>
+        <input type="url" id="projectRepo" placeholder="https://github.com/...">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" id="modalCancel">キャンセル</button>
+        <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- タスク管理モーダル -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2 class="modal-title" id="taskModalTitle">タスク管理</h2>
+      <button class="modal-close" id="taskModalClose">&times;</button>
+    </div>
+    <div class="task-toolbar">
+      <input type="text" id="newTaskInput" placeholder="新しいタスクを追加... (Enter で追加)">
+      <button class="btn-primary btn-sm" id="addTaskBtn">追加</button>
+    </div>
+    <div class="kanban" id="kanbanBoard">
+      <div class="kanban-column" data-status="todo">
+        <div class="kanban-header">
+          <span class="kanban-dot dot-todo"></span>
+          <span>TODO</span>
+          <span class="kanban-count" id="countTodo">0</span>
+        </div>
+        <div class="kanban-items" id="kanbanTodo"></div>
+      </div>
+      <div class="kanban-column" data-status="in_progress">
+        <div class="kanban-header">
+          <span class="kanban-dot dot-progress"></span>
+          <span>進行中</span>
+          <span class="kanban-count" id="countProgress">0</span>
+        </div>
+        <div class="kanban-items" id="kanbanProgress"></div>
+      </div>
+      <div class="kanban-column" data-status="done">
+        <div class="kanban-header">
+          <span class="kanban-dot dot-done"></span>
+          <span>完了</span>
+          <span class="kanban-count" id="countDone">0</span>
+        </div>
+        <div class="kanban-items" id="kanbanDone"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 class="modal-title">プロジェクトの削除</h2>
+      <button class="modal-close" id="deleteModalClose">&times;</button>
+    </div>
+    <p class="delete-msg">このプロジェクトを削除しますか？この操作は取り消せません。</p>
+    <div class="form-actions">
+      <button class="btn-secondary" id="deleteCancelBtn">キャンセル</button>
+      <button class="btn-danger" id="deleteConfirmBtn">削除</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
