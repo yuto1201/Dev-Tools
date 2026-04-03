@@ -509,6 +509,8 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   padding:32px 40px;display:flex;flex-direction:column;gap:24px;
   background:var(--bg);
 }
+.home-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--dm);text-decoration:none;padding:8px 14px;border:1px solid var(--b1);border-radius:8px;margin-bottom:16px;transition:all .2s;font-family:inherit;}
+.home-link:hover{color:var(--acc);border-color:var(--acc);}
 .dash-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .dash-title-area{display:flex;flex-direction:column;gap:4px}
 .dash-title{font-size:22px;font-weight:900;color:var(--tx);margin:0}

@@ -145,6 +145,8 @@ textarea.fi{font-family:'JetBrains Mono',monospace;}
 .proj-mgr-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border2);}
 .proj-mgr-btn.del:hover{background:rgba(248,113,113,.1);border-color:var(--red);color:var(--red);}
 /* Project Select Screen */
+.home-link{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);text-decoration:none;padding:8px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:24px;transition:all .2s;}
+.home-link:hover{color:var(--accent2);border-color:var(--accent2);}
 .pss{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;overflow-y:auto;}
 .pss-inner{width:100%;max-width:640px;padding:40px 24px;}
 .pss-header{text-align:center;margin-bottom:32px;}
