@@ -913,11 +913,11 @@ function renderSidebarDBList(){
       dbBadge.title=db;
       item.appendChild(dbBadge);
     }
-    var dupB=document.createElement('button');dupB.className='tbl-edit';dupB.textContent='⧉';
+    var dupB=document.createElement('button');dupB.className='tbl-edit';dupB.textContent='⧉';dupB.title='テーブルを複製';
     (function(tn){dupB.onclick=function(e){e.stopPropagation();duplicateTable(tn);};})(n);
-    var editB=document.createElement('button');editB.className='tbl-edit';editB.textContent='✏';
+    var editB=document.createElement('button');editB.className='tbl-edit';editB.textContent='✏';editB.title='テーブルを編集';
     (function(tn){editB.onclick=function(e){e.stopPropagation();openEditModal(tn);};})(n);
-    var cnt=document.createElement('span');cnt.className='tbl-cnt';cnt.textContent=cols.length;
+    var cnt=document.createElement('span');cnt.className='tbl-cnt';cnt.textContent=cols.length;cnt.title='カラム数';
     item.appendChild(dupB);item.appendChild(editB);item.appendChild(cnt);
     (function(tn){item.onclick=function(){focusTable(tn);};})(n);
     return item;
