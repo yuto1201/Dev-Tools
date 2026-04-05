@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -c appstore-preview/script.js)",
+      "Bash(node -c /Users/uesugiyuuto/Documents/GitHub/Dev-Tools/appstore-preview/script.js)"
+    ]
+  }
+}

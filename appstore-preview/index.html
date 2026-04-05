@@ -17,17 +17,7 @@
   <div class="proj-name-area" id="proj-name-area" style="display:none">
     <span class="proj-name" id="proj-name-display" title="ダブルクリックで名前を変更"></span>
   </div>
-  <div class="dev-group" id="editor-header-controls">
-    <span class="dev-label">iPhone</span>
-    <button class="dev-btn active" onclick="setDevice('6.9')"  id="dev-6.9">6.9"</button>
-    <button class="dev-btn"        onclick="setDevice('6.7')"  id="dev-6.7">6.7"</button>
-    <button class="dev-btn"        onclick="setDevice('6.5')"  id="dev-6.5">6.5"</button>
-    <button class="dev-btn"        onclick="setDevice('5.5')"  id="dev-5.5">5.5"</button>
-    <span class="dev-label dev-label-ipad">iPad</span>
-    <button class="dev-btn"        onclick="setDevice('ipad13')" id="dev-ipad13">12.9"</button>
-    <button class="dev-btn"        onclick="setDevice('ipad11')" id="dev-ipad11">11"</button>
-    <button class="dev-btn"        onclick="setDevice('ipad97')" id="dev-ipad97">9.7"</button>
-  </div>
+  <div class="header-spacer"></div>
   <div class="hbtns" id="editor-header-btns">
     <div class="hbtn-group">
       <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
@@ -39,16 +29,25 @@
     </div>
     <div class="hbtn-sep"></div>
     <div class="hbtn-group">
-      <button class="btn btn-g" onclick="saveProjectToStorage()">💾 <span class="btn-lbl">保存</span></button>
-      <button class="btn btn-g" onclick="saveProject()">📥 <span class="btn-lbl">JSON</span></button>
-      <button class="btn btn-g" onclick="document.getElementById('load-input').click()">📂 <span class="btn-lbl">読込</span></button>
-      <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
+      <div class="hdr-dropdown">
+        <button class="btn btn-g" onclick="toggleDropdown(this)">📁 <span class="btn-lbl">ファイル</span> <span class="dd-arrow">▾</span></button>
+        <div class="dd-menu">
+          <button class="dd-item" onclick="saveProjectToStorage();closeDropdowns()">💾 保存</button>
+          <button class="dd-item" onclick="saveProject();closeDropdowns()">📥 JSON書出</button>
+          <button class="dd-item" onclick="document.getElementById('load-input').click();closeDropdowns()">📂 読込</button>
+        </div>
+        <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
+      </div>
     </div>
-    <div class="hbtn-sep"></div>
     <div class="hbtn-group">
-      <button class="btn btn-g btn-export-all" onclick="exportZip()">🗜 <span class="btn-lbl">ZIP</span></button>
-      <button class="btn btn-g btn-export-all" onclick="exportAllSizesZip()">🗜 <span class="btn-lbl">全サイズZIP</span></button>
-      <button class="btn btn-p" onclick="exportCurrent()">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">PNG保存</span></button>
+      <div class="hdr-dropdown">
+        <button class="btn btn-p" onclick="toggleDropdown(this)">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">↓</span> <span class="dd-arrow">▾</span></button>
+        <div class="dd-menu">
+          <button class="dd-item" onclick="exportCurrent();closeDropdowns()">🖼 PNG書き出し</button>
+          <button class="dd-item" onclick="exportZip();closeDropdowns()">🗜 ZIP</button>
+          <button class="dd-item" onclick="exportAllSizesZip();closeDropdowns()">🗜 全サイズZIP</button>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -80,6 +79,18 @@
   <div class="step active" id="st1" onclick="goStep(1)"><div class="step-n">1</div><div class="step-l">パーツを選ぶ</div></div>
   <div class="step-arr">›</div>
   <div class="step" id="st2"><div class="step-n">2</div><div class="step-l">内容を入力する</div></div>
+  <div class="stepbar-spacer"></div>
+  <div class="dev-group" id="editor-header-controls">
+    <span class="dev-label">iPhone</span>
+    <button class="dev-btn active" onclick="setDevice('6.9')"  id="dev-6.9">6.9"</button>
+    <button class="dev-btn"        onclick="setDevice('6.7')"  id="dev-6.7">6.7"</button>
+    <button class="dev-btn"        onclick="setDevice('6.5')"  id="dev-6.5">6.5"</button>
+    <button class="dev-btn"        onclick="setDevice('5.5')"  id="dev-5.5">5.5"</button>
+    <span class="dev-label dev-label-ipad">iPad</span>
+    <button class="dev-btn"        onclick="setDevice('ipad13')" id="dev-ipad13">12.9"</button>
+    <button class="dev-btn"        onclick="setDevice('ipad11')" id="dev-ipad11">11"</button>
+    <button class="dev-btn"        onclick="setDevice('ipad97')" id="dev-ipad97">9.7"</button>
+  </div>
 </div>
 
 <!-- Main wrapper: step content + always-visible slides panel -->
@@ -95,10 +106,12 @@
         <div class="compose-sec">
           <div class="compose-head"><div class="compose-num">1</div><div class="compose-title">背景スタイル</div></div>
           <div class="opt-grid" id="bg-grid"></div>
+          <div class="bg-adjust" id="bg-adjust"></div>
         </div>
         <div class="compose-sec">
           <div class="compose-head"><div class="compose-num">2</div><div class="compose-title">iPhoneの配置</div></div>
-          <div class="opt-grid" id="layout-grid"></div>
+          <div class="lo-grid-wrap" id="layout-grid"></div>
+          <div class="bg-adjust" id="lo-adjust"></div>
         </div>
         <div class="compose-sec">
           <div class="compose-head"><div class="compose-num">3</div><div class="compose-title">エフェクト<span class="multi-tag">複数選択可</span></div></div>
@@ -116,12 +129,14 @@
         <div class="compose-sec">
           <div class="compose-head"><div class="compose-num">1</div><div class="compose-title">背景スタイル</div></div>
           <div class="opt-grid" id="bg-grid-t"></div>
+          <div class="bg-adjust" id="bg-adjust-t"></div>
         </div>
       </div>
       <div class="s1-tab-pane" id="s1-pane-layout">
         <div class="compose-sec">
           <div class="compose-head"><div class="compose-num">2</div><div class="compose-title">iPhoneの配置</div></div>
-          <div class="opt-grid" id="layout-grid-t"></div>
+          <div class="lo-grid-wrap" id="layout-grid-t"></div>
+          <div class="bg-adjust" id="lo-adjust-t"></div>
         </div>
       </div>
       <div class="s1-tab-pane" id="s1-pane-fx">

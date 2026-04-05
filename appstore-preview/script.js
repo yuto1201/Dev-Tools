@@ -1,3 +1,17 @@
+/* ═══ ヘッダー ドロップダウン ═══ */
+function toggleDropdown(btn){
+  const dd=btn.closest('.hdr-dropdown');
+  const wasOpen=dd.classList.contains('open');
+  closeDropdowns();
+  if(!wasOpen) dd.classList.add('open');
+}
+function closeDropdowns(){
+  document.querySelectorAll('.hdr-dropdown.open').forEach(d=>d.classList.remove('open'));
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.hdr-dropdown')) closeDropdowns();
+});
+
 /* ═══ DEVICES ═══ */
 const DEVS={
   /* iPhone */
@@ -203,25 +217,86 @@ function miniTextLines(ctx,x,y,align,W){
 
 /* ═══ BG STYLES ═══ */
 const BG_STYLES=[
-  {id:'grad-diag',name:'グラデ斜め',desc:'定番の斜めグラデ',
+  {id:'gradient',name:'グラデーション',desc:'2色グラデ（角度調整可）',
    mini:(c,W,H)=>{drawGrad(c,W,H,'#0A84FF','#5AC8FA',135);},
-   draw:(c,W,H,s)=>{drawGrad(c,W,H,s.bgColor1||'#0A84FF',s.bgColor2||'#5AC8FA',135);}},
-  {id:'grad-vert',name:'グラデ縦',desc:'上から下へのグラデ',
-   mini:(c,W,H)=>{drawGrad(c,W,H,'#FF6B6B','#FFE66D',180);},
-   draw:(c,W,H,s)=>{drawGrad(c,W,H,s.bgColor1||'#FF6B6B',s.bgColor2||'#FFE66D',180);}},
+   draw:(c,W,H,s)=>{drawGrad(c,W,H,s.bgColor1||'#0A84FF',s.bgColor2||'#5AC8FA',s.bgAngle!=null?s.bgAngle:135);}},
   {id:'solid',name:'単色',desc:'シンプルな単色背景',
    mini:(c,W,H)=>{c.fillStyle='#667EEA';c.fillRect(0,0,W,H);},
    draw:(c,W,H,s)=>{c.fillStyle=s.bgColor1||'#667EEA';c.fillRect(0,0,W,H);}},
-  {id:'split',name:'上下スプリット',desc:'上半分と下半分で別の色',
-   mini:(c,W,H)=>{c.fillStyle='#667EEA';c.fillRect(0,0,W,H*.5);c.fillStyle='#eef0ff';c.fillRect(0,H*.5,W,H*.5);},
-   draw:(c,W,H,s)=>{c.fillStyle=s.bgColor1||'#667EEA';c.fillRect(0,0,W,H*.5);c.fillStyle=s.bgColor2||'#eef0ff';c.fillRect(0,H*.5,W,H*.5);}},
-  {id:'white-accent',name:'ホワイト+アクセント',desc:'白背景に丸いアクセント',
-   mini:(c,W,H)=>{c.fillStyle='#fff';c.fillRect(0,0,W,H);c.save();c.globalAlpha=.15;c.fillStyle='#FF9F0A';c.beginPath();c.ellipse(W*.95,H*.7,W*.65,W*.65,0,0,Math.PI*2);c.fill();c.restore();},
-   draw:(c,W,H,s)=>{c.fillStyle='#fff';c.fillRect(0,0,W,H);const ac=s.accentColor||'#FF9F0A';c.save();c.globalAlpha=.13;c.fillStyle=ac;c.beginPath();c.ellipse(W*1.08,H*.7,W*.85,W*.85,0,0,Math.PI*2);c.fill();c.beginPath();c.ellipse(-W*.08,H*.88,W*.65,W*.65,0,0,Math.PI*2);c.fill();c.restore();}},
-  {id:'dark',name:'ダーク',desc:'深みある暗背景+グロウ',
-   mini:(c,W,H)=>{drawGrad(c,W,H,'#0a0a1a','#1a0830',135);const g=c.createRadialGradient(W/2,H*.5,0,W/2,H*.5,W*.6);g.addColorStop(0,'rgba(120,80,255,.25)');g.addColorStop(1,'transparent');c.fillStyle=g;c.fillRect(0,0,W,H);},
-   draw:(c,W,H,s)=>{drawGrad(c,W,H,s.bgColor1||'#0a0a1a',s.bgColor2||'#1a0830',135);const ac=s.accentColor||'#7B5FF2';const g=c.createRadialGradient(W/2,H*.48,0,W/2,H*.48,W*.72);g.addColorStop(0,ha(ac,.28));g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,W,H);}},
+  {id:'split',name:'スプリット',desc:'カーブで上下分割（曲がり調整可）',
+   mini:(c,W,H)=>{c.fillStyle='#667EEA';c.fillRect(0,0,W,H);c.fillStyle='#eef0ff';c.beginPath();c.moveTo(0,H*.45);c.quadraticCurveTo(W*.5,H*.58,W,H*.45);c.lineTo(W,H);c.lineTo(0,H);c.closePath();c.fill();},
+   draw:(c,W,H,s)=>{
+     const curve=(s.splitCurve!=null?s.splitCurve:30)/100;
+     c.fillStyle=s.bgColor1||'#667EEA';c.fillRect(0,0,W,H);
+     c.fillStyle=s.bgColor2||'#eef0ff';
+     const midY=H*.5,bulge=H*curve;
+     c.beginPath();c.moveTo(0,midY);
+     c.bezierCurveTo(W*.33,midY+bulge,W*.67,midY-bulge,W,midY);
+     c.lineTo(W,H);c.lineTo(0,H);c.closePath();c.fill();
+   }},
+  {id:'radial',name:'ラジアル',desc:'中心から外側への放射状グラデ',
+   mini:(c,W,H)=>{const g=c.createRadialGradient(W*.5,H*.4,0,W*.5,H*.4,W*.8);g.addColorStop(0,'#FF6B6B');g.addColorStop(1,'#5856D6');c.fillStyle=g;c.fillRect(0,0,W,H);},
+   draw:(c,W,H,s)=>{
+     const cx=W*.5,cy=H*((s.radialY!=null?s.radialY:40)/100);
+     const r=Math.max(W,H)*((s.radialSize!=null?s.radialSize:80)/100);
+     const g=c.createRadialGradient(cx,cy,0,cx,cy,r);
+     g.addColorStop(0,s.bgColor1||'#FF6B6B');g.addColorStop(1,s.bgColor2||'#5856D6');
+     c.fillStyle=g;c.fillRect(0,0,W,H);
+   }},
+  {id:'mesh',name:'メッシュ',desc:'複数色のぼかしブロブが重なるApple風',
+   mini:(c,W,H)=>{
+     c.fillStyle='#1a1040';c.fillRect(0,0,W,H);
+     c.save();c.filter='blur('+W*.18+'px)';
+     c.globalAlpha=.7;c.fillStyle='#0A84FF';c.beginPath();c.ellipse(W*.25,H*.3,W*.35,W*.35,0,0,Math.PI*2);c.fill();
+     c.fillStyle='#BF5AF2';c.beginPath();c.ellipse(W*.75,H*.25,W*.3,W*.3,0,0,Math.PI*2);c.fill();
+     c.fillStyle='#FF375F';c.beginPath();c.ellipse(W*.5,H*.7,W*.35,W*.35,0,0,Math.PI*2);c.fill();
+     c.restore();},
+   draw:(c,W,H,s)=>{
+     c.fillStyle=s.bgColor1||'#1a1040';c.fillRect(0,0,W,H);
+     const c1=s.bgColor2||'#0A84FF',c2=s.meshColor3||'#BF5AF2',c3=s.meshColor4||'#FF375F';
+     const blur=W*.15;
+     c.save();c.filter='blur('+blur+'px)';c.globalAlpha=.7;
+     c.fillStyle=c1;c.beginPath();c.ellipse(W*.2,H*.25,W*.45,W*.45,0,0,Math.PI*2);c.fill();
+     c.fillStyle=c2;c.beginPath();c.ellipse(W*.8,H*.2,W*.4,W*.4,0,0,Math.PI*2);c.fill();
+     c.fillStyle=c3;c.beginPath();c.ellipse(W*.5,H*.72,W*.45,W*.45,0,0,Math.PI*2);c.fill();
+     c.restore();
+   }},
+  {id:'pattern',name:'パターン',desc:'ドット・ストライプ等の幾何学模様',
+   mini:(c,W,H)=>{
+     c.fillStyle='#667EEA';c.fillRect(0,0,W,H);
+     c.fillStyle='rgba(255,255,255,.12)';
+     for(let y=0;y<H;y+=W*.12)for(let x=0;x<W;x+=W*.12){c.beginPath();c.arc(x,y,W*.025,0,Math.PI*2);c.fill();}
+   },
+   draw:(c,W,H,s)=>{
+     c.fillStyle=s.bgColor1||'#667EEA';c.fillRect(0,0,W,H);
+     const pt=s.patternType||'dots';
+     const col=s.bgColor2||'#ffffff';
+     const opacity=(s.patternOpacity!=null?s.patternOpacity:12)/100;
+     const gap=W*((s.patternScale!=null?s.patternScale:50)/500+.04);
+     c.save();c.fillStyle=ha(col,opacity);c.strokeStyle=ha(col,opacity);c.lineWidth=Math.max(1,W*.004);
+     if(pt==='dots'){
+       for(let y=0;y<H+gap;y+=gap)for(let x=0;x<W+gap;x+=gap){c.beginPath();c.arc(x,y,gap*.1,0,Math.PI*2);c.fill();}
+     }else if(pt==='stripes'){
+       const ang=(s.bgAngle!=null?s.bgAngle:45)*Math.PI/180;
+       c.translate(W/2,H/2);c.rotate(ang);c.translate(-W/2,-H/2);
+       const diag=Math.sqrt(W*W+H*H);
+       for(let x=-diag;x<diag*2;x+=gap){c.fillRect(x,-diag,gap*.3,diag*3);}
+     }else if(pt==='grid'){
+       for(let x=0;x<W+gap;x+=gap){c.fillRect(x,0,Math.max(1,W*.002),H);}
+       for(let y=0;y<H+gap;y+=gap){c.fillRect(0,y,W,Math.max(1,W*.002));}
+     }else if(pt==='diamonds'){
+       const sz=gap*.35;
+       for(let row=0;row<H/gap+1;row++)for(let col2=0;col2<W/gap+1;col2++){
+         const cx2=col2*gap+(row%2?gap*.5:0),cy2=row*gap;
+         c.beginPath();c.moveTo(cx2,cy2-sz);c.lineTo(cx2+sz,cy2);c.lineTo(cx2,cy2+sz);c.lineTo(cx2-sz,cy2);c.closePath();c.fill();
+       }
+     }
+     c.restore();
+   }},
 ];
+/* 旧ID → 新IDマッピング（保存済みプロジェクトの後方互換） */
+const BG_COMPAT={'grad-diag':'gradient','grad-vert':'gradient','white-accent':'solid','dark':'gradient'};
+function resolveBgStyle(id){return BG_COMPAT[id]||id;}
 
 /* ═══ PHONE LAYOUTS ═══ */
 function miniBase(c,W,H){drawGrad(c,W,H,'#1c2d50','#263660',135);}
@@ -232,7 +307,7 @@ function getDeviceAR(){return DEVS[curDev].h/DEVS[curDev].w;}
 const PHONE_LAYOUTS=[
 
   // 1. テキスト上：テキスト上部20%、iPhoneが画面の大部分を占める
-  {id:'text-top',name:'テキスト上',desc:'テキストが上、iPhoneが下',
+  {id:'text-top',name:'テキスト上',desc:'テキストが上、iPhoneが下',cat:'fixed',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.06,'center',W);
@@ -246,7 +321,7 @@ const PHONE_LAYOUTS=[
    }},
 
   // 2. テキスト下：iPhoneが上部70%、テキストが下
-  {id:'text-bottom',name:'テキスト下',desc:'iPhoneが上、テキストが下',
+  {id:'text-bottom',name:'テキスト下',desc:'iPhoneが上、テキストが下',cat:'fixed',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      const pw=W*.62,ph=pw*getDeviceAR();
@@ -260,7 +335,7 @@ const PHONE_LAYOUTS=[
    }},
 
   // 3. フルスクリーン↓：iPhone全面、テキストを下部に重ねる
-  {id:'center-large',name:'フルスクリーン↓',desc:'大きなiPhone、テキストを下に重ねる',
+  {id:'center-large',name:'フルスクリーン↓',desc:'大きなiPhone、テキストを下に重ねる',cat:'fixed',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      const pw=W*.76,ph=pw*getDeviceAR();
@@ -277,7 +352,7 @@ const PHONE_LAYOUTS=[
    }},
 
   // 4. フルスクリーン↑：iPhone全面、テキストを上部に重ねる
-  {id:'center-large-top',name:'フルスクリーン↑',desc:'大きなiPhone、テキストを上に重ねる',
+  {id:'center-large-top',name:'フルスクリーン↑',desc:'大きなiPhone、テキストを上に重ねる',cat:'fixed',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      const pw=W*.76,ph=pw*getDeviceAR();
@@ -294,7 +369,7 @@ const PHONE_LAYOUTS=[
    }},
 
   // 5. 全面スクショ↓：スクショが全画面、テキスト下部オーバーレイ
-  {id:'screen-fill',name:'全面スクショ↓',desc:'スクショを全画面、テキストを下に重ねる',
+  {id:'screen-fill',name:'全面スクショ↓',desc:'スクショを全画面、テキストを下に重ねる',cat:'fixed',
    mini:(c,W,H)=>{
      c.clearRect(0,0,W,H);
      c.fillStyle='#2255aa';c.fillRect(0,0,W,H);
@@ -310,7 +385,7 @@ const PHONE_LAYOUTS=[
      px:0,py:0,pw:W,ph:H,screenFill:'bottom'})},
 
   // 6. 全面スクショ↑：スクショが全画面、テキスト上部オーバーレイ
-  {id:'screen-fill-top',name:'全面スクショ↑',desc:'スクショを全画面、テキストを上に重ねる',
+  {id:'screen-fill-top',name:'全面スクショ↑',desc:'スクショを全画面、テキストを上に重ねる',cat:'fixed',
    mini:(c,W,H)=>{
      c.clearRect(0,0,W,H);
      c.fillStyle='#2255aa';c.fillRect(0,0,W,H);
@@ -325,7 +400,7 @@ const PHONE_LAYOUTS=[
      px:0,py:0,pw:W,ph:H,screenFill:'top'})},
 
   // 7. 傾き：大きなiPhoneをダイナミックに傾ける
-  {id:'tilted',name:'傾き',desc:'傾きをスライダーで調整',
+  {id:'tilted',name:'傾き',desc:'傾きをスライダーで調整',cat:'custom',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.06,'center',W);
@@ -336,7 +411,7 @@ const PHONE_LAYOUTS=[
      px:(W-W*.68)/2,py:H*.28,pw:W*.68,ph:W*.68*getDeviceAR()})},
 
   // 8. ウィジェット紹介：ウィジェット画像を小中大で並べて表示
-  {id:'widget-showcase',name:'ウィジェット紹介',desc:'小・中・大ウィジェットを並べて紹介',
+  {id:'widget-showcase',name:'ウィジェット紹介',desc:'小・中・大ウィジェットを並べて紹介',cat:'custom',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.06,'center',W);
@@ -357,7 +432,7 @@ const PHONE_LAYOUTS=[
      px:-9999,py:-9999,pw:0,ph:0,widgetShowcase:true})},
 
   // 9. ウィジェット+iPhone：左にiPhone、右にウィジェット群
-  {id:'widget-phone',name:'ウィジェット+iPhone',desc:'iPhoneとウィジェットを同時にアピール',
+  {id:'widget-phone',name:'ウィジェット+iPhone',desc:'iPhoneとウィジェットを同時にアピール',cat:'custom',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.05,'center',W);
@@ -375,7 +450,7 @@ const PHONE_LAYOUTS=[
    }},
 
   // 10. テーマ比較：2台のiPhoneを左右に並べて比較
-  {id:'theme-compare',name:'テーマ比較',desc:'ライト/ダーク等を左右に並べて比較',
+  {id:'theme-compare',name:'テーマ比較',desc:'ライト/ダーク等を左右に並べて比較',cat:'custom',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.05,'center',W);
@@ -391,7 +466,7 @@ const PHONE_LAYOUTS=[
      px:-9999,py:-9999,pw:0,ph:0,themeCompare:true})},
 
   // 11. テーマ一覧：2×2グリッドでスクショを4枚表示
-  {id:'theme-grid',name:'テーマ一覧',desc:'4枚のスクショをグリッドで表示',
+  {id:'theme-grid',name:'テーマ一覧',desc:'4枚のスクショをグリッドで表示',cat:'custom',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.06,'center',W);
@@ -404,7 +479,7 @@ const PHONE_LAYOUTS=[
      px:-9999,py:-9999,pw:0,ph:0,themeGrid:true})},
 
   // 12. マルチデバイス：iPhone + iPad + ウィジェットを1枚に
-  {id:'multi-device',name:'マルチデバイス',desc:'iPhone・iPad・ウィジェットを1枚に',
+  {id:'multi-device',name:'マルチデバイス',desc:'iPhone・iPad・ウィジェットを1枚に',cat:'custom',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.05,'center',W);
@@ -426,8 +501,23 @@ const PHONE_LAYOUTS=[
             px:W*.04,py:H*.30,pw,ph,multiDevice:true};
    }},
 
-  // 13. テキスト強調：テキストが主役、小さなiPhoneがアクセント
-  {id:'text-hero',name:'テキスト強調',desc:'テキストが主役、iPhoneはアクセント',
+  // 13. Watch + iPhone：Watchが主役、iPhoneが左下にアクセント
+  {id:'watch-phone',name:'Watch + iPhone',desc:'Apple Watchが主役、iPhoneが左下に',cat:'custom',
+   mini:(c,W,H)=>{
+     miniBase(c,W,H);
+     // Watch (large, center)
+     const awW=W*.7,awH=awW*1.22;
+     rr(c,W*.18,H*.12,awW,awH,awW*.25);c.fillStyle='rgba(20,20,20,.9)';c.fill();
+     rr(c,W*.20,H*.14,awW-W*.04,awH-W*.04,awW*.2);c.fillStyle='rgba(60,100,200,.35)';c.fill();
+     // iPhone (bottom-left, partially off-screen)
+     const pw=W*.38,ph=pw*getDeviceAR();
+     miniPhone(c,W*.0,H*.62,pw,ph);
+   },
+   zone:(W,H,s)=>({tx:W*.08,ty:H*.04+getTextOffsetY(s)*H*.002,ta:'left',maxW:W*.8,
+     px:-9999,py:-9999,pw:0,ph:0,watchPhone:true})},
+
+  // 14. テキスト強調：テキストが主役、小さなiPhoneがアクセント
+  {id:'text-hero',name:'テキスト強調',desc:'テキストが主役、iPhoneはアクセント',cat:'fixed',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      const lw=W*.82,lx=(W-lw)/2;
@@ -444,7 +534,7 @@ const PHONE_LAYOUTS=[
    }},
 
   // 9. 機能リスト：タイトル＋アイコン付き箇条書き
-  {id:'feature-list',name:'機能リスト',desc:'アイコン＋テキストの箇条書き風',
+  {id:'feature-list',name:'機能リスト',desc:'アイコン＋テキストの箇条書き風',cat:'fixed',
    mini:(c,W,H)=>{
      miniBase(c,W,H);
      miniTextLines(c,W/2,H*.07,'center',W*.82);
@@ -457,6 +547,27 @@ const PHONE_LAYOUTS=[
    },
    zone:(W,H,s)=>({tx:W/2,ty:H*.06+getTextOffsetY(s)*H*.002,ta:'center',
      px:-9999,py:-9999,pw:0,ph:0,featureList:true})},
+
+  // 15. フリー配置：iPhone/iPad/Watchを自由に配置
+  {id:'free-device',name:'フリー配置',desc:'各デバイスの位置・サイズを自由に調整',cat:'custom',
+   mini:(c,W,H)=>{
+     miniBase(c,W,H);
+     // iPad
+     const iw=W*.38,ih=iw*.75;
+     rr(c,W*.5,H*.15,iw,ih,W*.03);c.fillStyle='rgba(20,20,20,.9)';c.fill();
+     rr(c,W*.52,H*.17,iw-W*.04,ih-W*.04,W*.02);c.fillStyle='rgba(40,60,120,.4)';c.fill();
+     // iPhone
+     const pw=W*.3,ph=pw*getDeviceAR();
+     miniPhone(c,W*.06,H*.25,pw,ph);
+     // Watch
+     const awW=W*.22,awH=awW*1.22;
+     rr(c,W*.6,H*.6,awW,awH,awW*.25);c.fillStyle='rgba(20,20,20,.9)';c.fill();
+     rr(c,W*.62,H*.62,awW-W*.04,awH-W*.04,awW*.2);c.fillStyle='rgba(60,100,200,.35)';c.fill();
+     // Free icon
+     c.fillStyle='rgba(255,255,255,.4)';c.font=`${W*.12}px sans-serif`;c.textAlign='center';c.fillText('✦',W*.5,H*.88);
+   },
+   zone:(W,H,s)=>({tx:W/2,ty:H*.04+getTextOffsetY(s)*H*.002,ta:'center',
+     px:-9999,py:-9999,pw:0,ph:0,freeDevice:true})},
 ];
 
 
@@ -473,7 +584,7 @@ const PRESETS=['#0A84FF','#30D158','#FF453A','#FF9F0A','#BF5AF2','#FF375F','#5AC
 
 function defSlide(){
   return{
-    bgStyle:'grad-diag',phoneLayout:'text-top',effects:['glow'],
+    bgStyle:'gradient',phoneLayout:'text-top',effects:['glow'],
     bgColor1:'#0A84FF',bgColor2:'#5AC8FA',accentColor:'#FF9F0A',
     title:'あなたのアプリ名',titleColor:'#FFFFFF',
     subtitle:'ここにキャッチコピーが入ります',subColor:'#FFFFFF',
@@ -891,7 +1002,7 @@ function getFontCss(s){
 
 function renderSlide(ctx,W,H,s){
   ctx.clearRect(0,0,W,H);
-  const bg=BG_STYLES.find(b=>b.id===s.bgStyle)||BG_STYLES[0];
+  const bg=BG_STYLES.find(b=>b.id===resolveBgStyle(s.bgStyle))||BG_STYLES[0];
   bg.draw(ctx,W,H,s);
   // Grain
   if((s.grain||0)>0)drawGrain(ctx,W,H,s.grain);
@@ -1182,8 +1293,110 @@ function renderSlide(ctx,W,H,s){
     ctx.restore();
   }
 
+  // watch-phone: Watch large (main), iPhone bottom-left overlapping
+  if(s.phoneLayout==='watch-phone'){
+    // Apple Watch（画面の主役、大きく中央上寄り）
+    const awSize=W*.75,awH=awSize*1.22;
+    const awX=W*.2,awY=H*.12;
+    const awR=awSize*.28,awBw=awSize*.045;
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=W*.08;ctx.shadowOffsetY=W*.03;
+    const awFg=ctx.createLinearGradient(awX,awY,awX+awSize,awY+awH);
+    awFg.addColorStop(0,'#2a2a2a');awFg.addColorStop(1,'#0f0f0f');
+    rr(ctx,awX,awY,awSize,awH,awR);ctx.fillStyle=awFg;ctx.fill();
+    ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+    // Digital Crown
+    const crW=awSize*.055,crH=awH*.13,crR=crW*.4;
+    rr(ctx,awX+awSize-crW*.3,awY+awH*.3,crW,crH,crR);ctx.fillStyle='#3a3a3a';ctx.fill();
+    rr(ctx,awX+awSize-crW*.3,awY+awH*.48,crW,crH*.5,crR);ctx.fillStyle='#333';ctx.fill();
+    ctx.restore();
+    // Watch screen
+    const wsx=awX+awBw,wsy=awY+awBw,wsw=awSize-awBw*2,wsh=awH-awBw*2,wsr=awR*.75;
+    ctx.save();rr(ctx,wsx,wsy,wsw,wsh,wsr);ctx.clip();
+    if(s.widgetMediumImg){drawImgCover(ctx,s.widgetMediumImg,wsx,wsy,wsw,wsh);}
+    else{ctx.fillStyle='#000';ctx.fillRect(wsx,wsy,wsw,wsh);ctx.fillStyle='rgba(255,255,255,.1)';ctx.font=`${wsw*.07}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Watchスクショ',wsx+wsw/2,wsy+wsh/2);}
+    ctx.restore();
+
+    // iPhone（左下に重ねて配置、下部は画面外へ）
+    const iphW=W*.42,iphH=iphW*getDeviceAR();
+    const iphX=W*.0,iphY=H-iphH*.6;
+    drawPhone(ctx,iphX,iphY,iphW,iphH,s);
+  }
+
+  // free-device: ユーザーが自由に配置
+  if(s.phoneLayout==='free-device'){
+    // 描画順序を管理（奥から手前へ）
+    const devs=[];
+    if(s.fdIpadOn!==false) devs.push({type:'ipad',z:s.fdIpadZ||0});
+    if(s.fdIphoneOn!==false) devs.push({type:'iphone',z:s.fdIphoneZ||1});
+    if(s.fdWatchOn!==false) devs.push({type:'watch',z:s.fdWatchZ||2});
+    devs.sort((a,b)=>a.z-b.z);
+
+    devs.forEach(d=>{
+      if(d.type==='iphone'){
+        const sz=(s.fdIphoneSize||50)/100;
+        const pw=W*sz,ph=pw*getDeviceAR();
+        const px=W*(s.fdIphoneX!=null?s.fdIphoneX:10)/100;
+        const py=H*(s.fdIphoneY!=null?s.fdIphoneY:25)/100;
+        const rot=(s.fdIphoneRot||0)*Math.PI/180;
+        ctx.save();
+        if(rot){const cx=px+pw/2,cy=py+ph/2;ctx.translate(cx,cy);ctx.rotate(rot);ctx.translate(-cx,-cy);}
+        drawPhone(ctx,px,py,pw,ph,s);
+        ctx.restore();
+      }
+      if(d.type==='ipad'){
+        const sz=(s.fdIpadSize||45)/100;
+        const iw=W*sz,ih=iw*1.33;
+        const ix=W*(s.fdIpadX!=null?s.fdIpadX:40)/100;
+        const iy=H*(s.fdIpadY!=null?s.fdIpadY:15)/100;
+        const rot=(s.fdIpadRot||0)*Math.PI/180;
+        ctx.save();
+        if(rot){const cx=ix+iw/2,cy=iy+ih/2;ctx.translate(cx,cy);ctx.rotate(rot);ctx.translate(-cx,-cy);}
+        // iPad frame
+        const ibw=iw*.025,ir=iw*.06;
+        ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=iw*.1;ctx.shadowOffsetY=iw*.04;
+        const ifg=ctx.createLinearGradient(ix,iy,ix+iw,iy+ih);
+        ifg.addColorStop(0,'#282828');ifg.addColorStop(1,'#0f0f0f');
+        rr(ctx,ix,iy,iw,ih,ir);ctx.fillStyle=ifg;ctx.fill();
+        ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+        // iPad screen
+        const isx=ix+ibw,isy=iy+ibw,isw=iw-ibw*2,ish=ih-ibw*2,isr=ir*.7;
+        rr(ctx,isx,isy,isw,ish,isr);ctx.clip();
+        if(s.screenshotImg2){drawImgCover(ctx,s.screenshotImg2,isx,isy,isw,ish);}
+        else{ctx.fillStyle='#0a0a18';ctx.fillRect(isx,isy,isw,ish);ctx.fillStyle='rgba(255,255,255,.06)';ctx.font=`${isw*.05}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('iPadスクショ',isx+isw/2,isy+ish/2);}
+        ctx.restore();
+      }
+      if(d.type==='watch'){
+        const sz=(s.fdWatchSize||22)/100;
+        const aw=W*sz,ah=aw*1.22;
+        const ax=W*(s.fdWatchX!=null?s.fdWatchX:68)/100;
+        const ay=H*(s.fdWatchY!=null?s.fdWatchY:65)/100;
+        const rot=(s.fdWatchRot||0)*Math.PI/180;
+        const aR=aw*.28,abw=aw*.05;
+        ctx.save();
+        if(rot){const cx=ax+aw/2,cy=ay+ah/2;ctx.translate(cx,cy);ctx.rotate(rot);ctx.translate(-cx,-cy);}
+        ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=aw*.12;ctx.shadowOffsetY=aw*.05;
+        const afg=ctx.createLinearGradient(ax,ay,ax+aw,ay+ah);
+        afg.addColorStop(0,'#2a2a2a');afg.addColorStop(1,'#111');
+        rr(ctx,ax,ay,aw,ah,aR);ctx.fillStyle=afg;ctx.fill();
+        ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+        // Crown
+        const crW2=aw*.06,crH2=ah*.13,crR2=crW2*.4;
+        rr(ctx,ax+aw-crW2*.3,ay+ah*.3,crW2,crH2,crR2);ctx.fillStyle='#3a3a3a';ctx.fill();
+        rr(ctx,ax+aw-crW2*.3,ay+ah*.5,crW2,crH2*.5,crR2);ctx.fillStyle='#333';ctx.fill();
+        // Watch screen
+        const wsx2=ax+abw,wsy2=ay+abw,wsw2=aw-abw*2,wsh2=ah-abw*2,wsr2=aR*.75;
+        ctx.save();rr(ctx,wsx2,wsy2,wsw2,wsh2,wsr2);ctx.clip();
+        if(s.widgetMediumImg){drawImgCover(ctx,s.widgetMediumImg,wsx2,wsy2,wsw2,wsh2);}
+        else{ctx.fillStyle='#000';ctx.fillRect(wsx2,wsy2,wsw2,wsh2);ctx.fillStyle='rgba(255,255,255,.1)';ctx.font=`${wsw2*.1}px -apple-system`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Watch',wsx2+wsw2/2,wsy2+wsh2/2);}
+        ctx.restore();
+        ctx.restore();
+      }
+    });
+  }
+
   // Draw phone for standard phone-based layouts
-  const noPhoneLo=['text-bottom','center-large','center-large-top','screen-fill','screen-fill-top','feature-list','center-text','before-after','widget-showcase','widget-phone','theme-compare','theme-grid','multi-device'];
+  const noPhoneLo=['text-bottom','center-large','center-large-top','screen-fill','screen-fill-top','feature-list','center-text','before-after','widget-showcase','widget-phone','theme-compare','theme-grid','multi-device','watch-phone','free-device'];
   if(!noPhoneLo.includes(s.phoneLayout)){
     drawPhoneAtZone(ctx,z,s);
   }
@@ -1249,6 +1462,7 @@ function drawTextBlock(ctx,W,H,z,s){
   }
 
   if(s.subtitle){
+    ty+=tz*.25;
     const sz=W*.054*sizeScale;
     ctx.font=`${weight==='900'?'700':weight} ${sz}px ${css}`;
     ctx.fillStyle=ha(s.subColor||'#fff',.8);ctx.textAlign=z.ta;
@@ -1324,12 +1538,137 @@ function render(){
   if(_rendering)return;
   _rendering=true;
   const s=slides[curSlide];if(!s){_rendering=false;return;}
-  if(inStep===1){const c=document.getElementById('s1-canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
-  if(inStep===2){const c=document.getElementById('canvas');if(c)renderSlide(c.getContext('2d'),c.width,c.height,s);}
+  const isFree=s.phoneLayout==='free-device';
+  if(inStep===1){const c=document.getElementById('s1-canvas');if(c){renderSlide(c.getContext('2d'),c.width,c.height,s);c.classList.toggle('free-drag',isFree);}}
+  if(inStep===2){const c=document.getElementById('canvas');if(c){renderSlide(c.getContext('2d'),c.width,c.height,s);c.classList.toggle('free-drag',isFree);}}
   renderThumbs();updateSummary();
   _rendering=false;
   autoSave();
 }
+
+/* ═══ フリー配置：ドラッグ＆ホイール操作 ═══ */
+(function(){
+  let dragDev=null,dragStartX=0,dragStartY=0,dragOrigX=0,dragOrigY=0,dragUndoPushed=false;
+
+  // デバイスごとの矩形を計算（canvas座標系）
+  function getDevRects(s,cW,cH){
+    const W=cW,H=cH,rects=[];
+    if(s.fdIphoneOn!==false){
+      const sz=(s.fdIphoneSize||50)/100,pw=W*sz,ph=pw*getDeviceAR();
+      const px=W*(s.fdIphoneX!=null?s.fdIphoneX:10)/100;
+      const py=H*(s.fdIphoneY!=null?s.fdIphoneY:25)/100;
+      rects.push({id:'iphone',x:px,y:py,w:pw,h:ph,z:s.fdIphoneZ!=null?s.fdIphoneZ:1,
+        xKey:'fdIphoneX',yKey:'fdIphoneY',sKey:'fdIphoneSize',
+        xDef:10,yDef:25,sDef:50,sMin:15,sMax:80,arFn:()=>getDeviceAR()});
+    }
+    if(s.fdIpadOn!==false){
+      const sz=(s.fdIpadSize||45)/100,iw=W*sz,ih=iw*1.33;
+      const ix=W*(s.fdIpadX!=null?s.fdIpadX:40)/100;
+      const iy=H*(s.fdIpadY!=null?s.fdIpadY:15)/100;
+      rects.push({id:'ipad',x:ix,y:iy,w:iw,h:ih,z:s.fdIpadZ!=null?s.fdIpadZ:0,
+        xKey:'fdIpadX',yKey:'fdIpadY',sKey:'fdIpadSize',
+        xDef:40,yDef:15,sDef:45,sMin:15,sMax:80,arFn:()=>1.33});
+    }
+    if(s.fdWatchOn!==false){
+      const sz=(s.fdWatchSize||22)/100,aw=W*sz,ah=aw*1.22;
+      const ax=W*(s.fdWatchX!=null?s.fdWatchX:68)/100;
+      const ay=H*(s.fdWatchY!=null?s.fdWatchY:65)/100;
+      rects.push({id:'watch',x:ax,y:ay,w:aw,h:ah,z:s.fdWatchZ!=null?s.fdWatchZ:2,
+        xKey:'fdWatchX',yKey:'fdWatchY',sKey:'fdWatchSize',
+        xDef:68,yDef:65,sDef:22,sMin:10,sMax:60,arFn:()=>1.22});
+    }
+    // 手前のデバイスを優先的にヒットするため逆順ソート
+    rects.sort((a,b)=>b.z-a.z);
+    return rects;
+  }
+
+  function canvasToSlide(e,canvas){
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
+    return{x:(e.clientX-rect.left)*scaleX,y:(e.clientY-rect.top)*scaleY};
+  }
+
+  function hitTest(mx,my,rects){
+    for(const r of rects){if(mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h)return r;}
+    return null;
+  }
+
+  function getCanvas(){
+    if(inStep===1)return document.getElementById('s1-canvas');
+    if(inStep===2)return document.getElementById('canvas');
+    return null;
+  }
+
+  function onDown(e){
+    const s=slides[curSlide];if(!s||s.phoneLayout!=='free-device')return;
+    const canvas=getCanvas();if(!canvas)return;
+    const pos=canvasToSlide(e.touches?e.touches[0]:e,canvas);
+    const rects=getDevRects(s,canvas.width,canvas.height);
+    const hit=hitTest(pos.x,pos.y,rects);
+    if(!hit)return;
+    e.preventDefault();
+    dragDev=hit;dragUndoPushed=false;
+    dragStartX=pos.x;dragStartY=pos.y;
+    dragOrigX=s[hit.xKey]!=null?s[hit.xKey]:hit.xDef;
+    dragOrigY=s[hit.yKey]!=null?s[hit.yKey]:hit.yDef;
+    canvas.style.cursor='grabbing';
+  }
+
+  function onMove(e){
+    if(!dragDev)return;
+    const s=slides[curSlide];if(!s)return;
+    const canvas=getCanvas();if(!canvas)return;
+    e.preventDefault();
+    if(!dragUndoPushed){pushUndo();dragUndoPushed=true;}
+    const pos=canvasToSlide(e.touches?e.touches[0]:e,canvas);
+    const dx=(pos.x-dragStartX)/canvas.width*100;
+    const dy=(pos.y-dragStartY)/canvas.height*100;
+    s[dragDev.xKey]=Math.max(0,Math.min(100,dragOrigX+dx));
+    s[dragDev.yKey]=Math.max(0,Math.min(100,dragOrigY+dy));
+    render();buildAllLoAdjust();
+  }
+
+  function onUp(){
+    if(!dragDev)return;
+    const canvas=getCanvas();if(canvas)canvas.style.cursor='';
+    dragDev=null;
+  }
+
+  function onWheel(e){
+    const s=slides[curSlide];if(!s||s.phoneLayout!=='free-device')return;
+    const canvas=getCanvas();if(!canvas)return;
+    const pos=canvasToSlide(e,canvas);
+    const rects=getDevRects(s,canvas.width,canvas.height);
+    const hit=hitTest(pos.x,pos.y,rects);
+    if(!hit)return;
+    e.preventDefault();
+    pushUndo();
+    const cur=s[hit.sKey]!=null?s[hit.sKey]:hit.sDef;
+    const delta=e.deltaY>0?-2:2;
+    s[hit.sKey]=Math.max(hit.sMin,Math.min(hit.sMax,cur+delta));
+    render();buildAllLoAdjust();
+  }
+
+  // イベント登録（両キャンバスに）
+  function bind(canvas){
+    if(!canvas||canvas._freeBound)return;
+    canvas._freeBound=true;
+    canvas.addEventListener('mousedown',onDown);
+    canvas.addEventListener('touchstart',onDown,{passive:false});
+    canvas.addEventListener('wheel',onWheel,{passive:false});
+  }
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
+
+  // canvasが生成された後にバインド
+  const _origRender=render;
+  const _bindCheck=()=>{bind(document.getElementById('s1-canvas'));bind(document.getElementById('canvas'));};
+  const obs=new MutationObserver(_bindCheck);
+  obs.observe(document.body,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',_bindCheck);
+})();
 
 /* ═══ STEP NAV ═══ */
 function goStep(n){
@@ -1358,18 +1697,143 @@ function switchS1Tab(id,btn){
 function buildBgGrid(el){
   if(!el)return;el.innerHTML='';
   BG_STYLES.forEach(b=>{
-    const card=makeOptCard(b,'bgStyle',BG_STYLES,()=>{pushUndo();slides[curSlide].bgStyle=b.id;render();});
+    const card=makeOptCard(b,'bgStyle',BG_STYLES,()=>{pushUndo();slides[curSlide].bgStyle=b.id;buildAllBgAdjust();render();});
     const mc=document.createElement('canvas');mc.width=117;mc.height=88;b.mini(mc.getContext('2d'),117,88);
     card.querySelector('.opt-prev').appendChild(mc);el.appendChild(card);
   });
 }
+const COLOR_PRESETS=[
+  {name:'オーシャン',icon:'🌊',bgColor1:'#0057FF',bgColor2:'#00D4AA',meshColor3:'#00B4D8',meshColor4:'#7DF9FF'},
+  {name:'サンセット',icon:'🌅',bgColor1:'#FF4500',bgColor2:'#FFD700',meshColor3:'#FF6347',meshColor4:'#FFA500'},
+  {name:'フォレスト',icon:'🌿',bgColor1:'#0B6623',bgColor2:'#ADFF2F',meshColor3:'#228B22',meshColor4:'#7CFC00'},
+  {name:'ダーク',icon:'🌑',bgColor1:'#0a0a1a',bgColor2:'#1a0830',meshColor3:'#7B5FF2',meshColor4:'#3a1a6e'},
+  {name:'ホワイト',icon:'⬜',bgColor1:'#FFFFFF',bgColor2:'#C7D2FE',meshColor3:'#A5B4FC',meshColor4:'#DDD6FE',titleColor:'#1a1a1a',subColor:'#555555'},
+  {name:'パステル',icon:'🍬',bgColor1:'#f093fb',bgColor2:'#f5576c',meshColor3:'#c471f5',meshColor4:'#fa709a'},
+  {name:'ネオン',icon:'💜',bgColor1:'#0d0221',bgColor2:'#150734',meshColor3:'#BF5AF2',meshColor4:'#FF375F'},
+  {name:'モノクロ',icon:'◻️',bgColor1:'#2c2c2e',bgColor2:'#636366',meshColor3:'#48484a',meshColor4:'#8e8e93'},
+];
+
+function buildBgAdjust(el){
+  if(!el)return;el.innerHTML='';
+  const s=slides[curSlide];
+  const resolved=resolveBgStyle(s.bgStyle);
+  const isSolid=resolved==='solid';
+  const isGrad=resolved==='gradient';
+  const isSplit=resolved==='split';
+  const isRadial=resolved==='radial';
+  const isMesh=resolved==='mesh';
+  const isPattern=resolved==='pattern';
+  // 配色プリセット
+  const presetRow=document.createElement('div');presetRow.className='color-preset-row';
+  COLOR_PRESETS.forEach(p=>{
+    const btn=document.createElement('button');btn.className='color-preset-btn';
+    btn.innerHTML=`<span class="cp-swatch" style="background:${p.bgColor1}"></span><span class="cp-swatch" style="background:${p.bgColor2}"></span><span class="cp-name">${p.name}</span>`;
+    btn.onclick=()=>{
+      pushUndo();
+      s.bgColor1=p.bgColor1;s.bgColor2=p.bgColor2;
+      if(p.meshColor3)s.meshColor3=p.meshColor3;
+      if(p.meshColor4)s.meshColor4=p.meshColor4;
+      if(p.titleColor)s.titleColor=p.titleColor;
+      if(p.subColor)s.subColor=p.subColor;
+      buildAllBgAdjust();render();
+    };
+    presetRow.appendChild(btn);
+  });
+  el.appendChild(presetRow);
+  // メインカラー（全スタイル共通）
+  addColorField(el,'メインカラー','bgColor1');
+  // サブカラー（単色以外）
+  if(!isSolid)addColorField(el,'サブカラー','bgColor2');
+  // グラデーション
+  if(isGrad)addSliderField(el,'グラデ角度','bgAngle',0,360,s.bgAngle!=null?s.bgAngle:135,'°');
+  // スプリット
+  if(isSplit)addSliderField(el,'カーブの強さ','splitCurve',-50,50,s.splitCurve!=null?s.splitCurve:30,'');
+  // ラジアル
+  if(isRadial){
+    addSliderField(el,'中心位置（上下）','radialY',0,100,s.radialY!=null?s.radialY:40,'%');
+    addSliderField(el,'広がり','radialSize',30,150,s.radialSize!=null?s.radialSize:80,'%');
+  }
+  // メッシュ
+  if(isMesh){
+    addColorField(el,'アクセント 1','meshColor3');
+    addColorField(el,'アクセント 2','meshColor4');
+  }
+  // パターン
+  if(isPattern){
+    addSelectField(el,'パターン種類','patternType',[['dots','ドット'],['stripes','ストライプ'],['grid','グリッド'],['diamonds','ダイヤ']]);
+    // パターン種類変更時にUIを再構築（ストライプ角度の出し分け）
+    const sel=el.querySelector('select');if(sel){const orig=sel.onchange;sel.onchange=()=>{orig();buildAllBgAdjust();};}
+    addSliderField(el,'模様の大きさ','patternScale',10,100,s.patternScale!=null?s.patternScale:50,'');
+    addSliderField(el,'模様の濃さ','patternOpacity',3,40,s.patternOpacity!=null?s.patternOpacity:12,'%');
+    if((s.patternType||'dots')==='stripes')addSliderField(el,'ストライプ角度','bgAngle',0,180,s.bgAngle!=null?s.bgAngle:45,'°');
+  }
+}
+function buildAllBgAdjust(){
+  buildBgAdjust(document.getElementById('bg-adjust'));
+  buildBgAdjust(document.getElementById('bg-adjust-t'));
+}
 function buildLoGrid(el){
   if(!el)return;el.innerHTML='';
-  PHONE_LAYOUTS.forEach(lo=>{
-    const card=makeOptCard(lo,'phoneLayout',PHONE_LAYOUTS,()=>{pushUndo();slides[curSlide].phoneLayout=lo.id;render();});
-    const mc=document.createElement('canvas');mc.width=100;mc.height=190;lo.mini(mc.getContext('2d'),100,190);
-    card.querySelector('.opt-prev').appendChild(mc);el.appendChild(card);
+  const cats=[
+    {id:'fixed',label:'テンプレート'},
+    {id:'custom',label:'カスタム配置'},
+  ];
+  cats.forEach(cat=>{
+    const items=PHONE_LAYOUTS.filter(lo=>lo.cat===cat.id);
+    if(!items.length)return;
+    const lbl=document.createElement('div');lbl.className='lo-cat-label';lbl.textContent=cat.label;
+    el.appendChild(lbl);
+    const grid=document.createElement('div');grid.className='opt-grid';
+    items.forEach(lo=>{
+      const card=makeOptCard(lo,'phoneLayout',PHONE_LAYOUTS,()=>{pushUndo();slides[curSlide].phoneLayout=lo.id;buildAllLoAdjust();render();});
+      const mc=document.createElement('canvas');mc.width=100;mc.height=190;lo.mini(mc.getContext('2d'),100,190);
+      card.querySelector('.opt-prev').appendChild(mc);grid.appendChild(card);
+    });
+    el.appendChild(grid);
   });
+}
+function buildLoAdjust(el){
+  if(!el)return;el.innerHTML='';
+  const s=slides[curSlide];
+  const lo=s.phoneLayout;
+  // 傾き
+  if(lo==='tilted'){
+    addSliderField(el,'傾き角度','phoneTilt',-30,30,s.phoneTilt||10,'°');
+  }
+  // フリー配置
+  if(lo==='free-device'){
+    addToggleField_s1(el,'📱 iPhone 表示','fdIphoneOn',true);
+    if(s.fdIphoneOn!==false){
+      addSliderField(el,'📱 サイズ','fdIphoneSize',15,80,s.fdIphoneSize||50,'%');
+      addSliderField(el,'📱 回転','fdIphoneRot',-30,30,s.fdIphoneRot||0,'°');
+      addSliderField(el,'📱 重なり順','fdIphoneZ',0,2,s.fdIphoneZ!=null?s.fdIphoneZ:1,'');
+    }
+    addToggleField_s1(el,'📱 iPad 表示','fdIpadOn',true);
+    if(s.fdIpadOn!==false){
+      addSliderField(el,'📱 iPad サイズ','fdIpadSize',15,80,s.fdIpadSize||45,'%');
+      addSliderField(el,'📱 iPad 回転','fdIpadRot',-30,30,s.fdIpadRot||0,'°');
+      addSliderField(el,'📱 iPad 重なり順','fdIpadZ',0,2,s.fdIpadZ!=null?s.fdIpadZ:0,'');
+    }
+    addToggleField_s1(el,'⌚ Watch 表示','fdWatchOn',true);
+    if(s.fdWatchOn!==false){
+      addSliderField(el,'⌚ サイズ','fdWatchSize',10,60,s.fdWatchSize||22,'%');
+      addSliderField(el,'⌚ 回転','fdWatchRot',-30,30,s.fdWatchRot||0,'°');
+      addSliderField(el,'⌚ 重なり順','fdWatchZ',0,2,s.fdWatchZ!=null?s.fdWatchZ:2,'');
+    }
+  }
+}
+function addToggleField_s1(p,label,key,defVal){
+  const r=addRow(p,label);
+  const btn=document.createElement('button');
+  const on=slides[curSlide][key]!=null?slides[curSlide][key]:defVal;
+  btn.className='fi';btn.style.cssText='width:auto;padding:5px 14px;cursor:pointer;'+(on?'border-color:var(--acc);background:var(--adim);color:var(--acc)':'');
+  btn.textContent=on?'ON':'OFF';
+  btn.onclick=()=>{pushUndo();slides[curSlide][key]=!on;buildAllLoAdjust();render();};
+  r.appendChild(btn);
+}
+function buildAllLoAdjust(){
+  buildLoAdjust(document.getElementById('lo-adjust'));
+  buildLoAdjust(document.getElementById('lo-adjust-t'));
 }
 function buildFxList(el,idSuffix=''){
   if(!el)return;el.innerHTML='';
@@ -1401,11 +1865,16 @@ function buildStep1(){
   buildBgGrid(document.getElementById('bg-grid-t'));
   buildLoGrid(document.getElementById('layout-grid-t'));
   buildFxList(document.getElementById('fx-list-t'),'t');
+  // 背景調整UI
+  buildAllBgAdjust();
+  // レイアウト調整UI
+  buildAllLoAdjust();
 }
 
 function makeOptCard(item,stateKey,group,onChange){
   const card=document.createElement('div');const s=slides[curSlide];
-  card.className='opt-card'+(s[stateKey]===item.id?' sel':'');card.id='oc-'+item.id+'-'+Math.random().toString(36).slice(2,6);
+  const curVal=stateKey==='bgStyle'?resolveBgStyle(s[stateKey]):s[stateKey];
+  card.className='opt-card'+(curVal===item.id?' sel':'');card.id='oc-'+item.id+'-'+Math.random().toString(36).slice(2,6);
   card.dataset.itemId=item.id;card.dataset.stateKey=stateKey;
   card.onclick=()=>{
     // Deselect all cards with same stateKey across both desktop+tablet grids
@@ -1422,7 +1891,7 @@ function makeOptCard(item,stateKey,group,onChange){
 
 function updateSummary(){
   const s=slides[curSlide];const sum=document.getElementById('prev-summary');if(!sum)return;
-  const bg=BG_STYLES.find(b=>b.id===s.bgStyle)||BG_STYLES[0];
+  const bg=BG_STYLES.find(b=>b.id===resolveBgStyle(s.bgStyle))||BG_STYLES[0];
   const lo=PHONE_LAYOUTS.find(l=>l.id===s.phoneLayout)||PHONE_LAYOUTS[0];
   const fxNames=s.effects.map(id=>EFFECTS.find(e=>e.id===id)?.name||id).join('、');
   const font=FONTS.find(f=>f.id===s.fontId)||FONTS[0];
@@ -1437,23 +1906,20 @@ function updateSummary(){
 /* ═══ STEP 2: FIELDS ═══ */
 function buildFields(){
   const s=slides[curSlide];
-  const bg=BG_STYLES.find(b=>b.id===s.bgStyle)||BG_STYLES[0];
+  const bg=BG_STYLES.find(b=>b.id===resolveBgStyle(s.bgStyle))||BG_STYLES[0];
   const lo=PHONE_LAYOUTS.find(l=>l.id===s.phoneLayout)||PHONE_LAYOUTS[0];
 
   // Tags bar (desktop)
   const tags=document.getElementById('edit-tags');
   tags.innerHTML=`<span class="tag tag-bg">${bg.name}</span><span class="tag tag-layout">${lo.name}</span>${s.effects.map(id=>`<span class="tag tag-fx">${EFFECTS.find(e=>e.id===id)?.name||id}</span>`).join('')}<button class="btn btn-g" onclick="goStep(1)" style="font-size:10px;padding:3px 8px;margin-left:auto">← パーツ変更</button>`;
 
-  const needBg2=!['solid','white-accent'].includes(s.bgStyle);
-  const needAccent=['white-accent','dark'].includes(s.bgStyle)||s.effects.includes('deco');
+  const needDecoAccent=s.effects.includes('deco');
   const hasBadge=s.effects.includes('badge');
   const hasEmoji=s.effects.includes('emoji');
 
   // Helper: build a section's content into a container el
   function buildBgSection(el){
-    addColorField(el,'カラー 1','bgColor1');
-    if(needBg2)addColorField(el,'カラー 2','bgColor2');
-    if(needAccent)addColorField(el,'アクセントカラー','accentColor');
+    if(needDecoAccent)addColorField(el,'アクセントカラー','accentColor');
     addSliderField(el,'グレイン（ノイズ質感）','grain',0,100,s.grain||0,'');
   }
   function buildTextSection(el){
@@ -1495,8 +1961,18 @@ function buildFields(){
       addSliderField(el,'アウトラインの太さ','textStrokeSize',1,20,s.textStrokeSize||4,'px');
     }
   }
+  function addToggleField(p,label,key,defVal){
+    const r=addRow(p,label);
+    const btn=document.createElement('button');
+    const on=slides[curSlide][key]!=null?slides[curSlide][key]:defVal;
+    btn.className='fi';btn.style.cssText='width:auto;padding:5px 14px;cursor:pointer;'+(on?'border-color:var(--acc);background:var(--adim);color:var(--acc)':'');
+    btn.textContent=on?'ON':'OFF';
+    btn.onclick=()=>{pushUndo();slides[curSlide][key]=!on;buildFields();render();};
+    r.appendChild(btn);
+  }
   function buildDeviceSection(el){
-    const isWidgetLayout=['widget-showcase','widget-phone','multi-device'].includes(s.phoneLayout);
+    const isFree=s.phoneLayout==='free-device';
+    const isWidgetLayout=['widget-showcase','widget-phone','multi-device','watch-phone','free-device'].includes(s.phoneLayout);
     const isThemeLayout=['theme-compare','theme-grid'].includes(s.phoneLayout);
     const needsPhone=!['widget-showcase','theme-grid'].includes(s.phoneLayout);
 
@@ -1506,7 +1982,7 @@ function buildFields(){
       addSec(el,'iPad用スクショ');
       addUploadField(el,'スクリーンショット（iPad）','screenshotImgIpad','_srcIpad');
     }
-    if(s.phoneLayout==='before-after'||s.phoneLayout==='theme-compare'||s.phoneLayout==='multi-device') addUploadField(el,'スクリーンショット 2'+(s.phoneLayout==='theme-compare'?'（右側）':s.phoneLayout==='multi-device'?'（iPad用）':'（下段）'),'screenshotImg2','_src2');
+    if(s.phoneLayout==='before-after'||s.phoneLayout==='theme-compare'||s.phoneLayout==='multi-device'||s.phoneLayout==='free-device') addUploadField(el,'スクリーンショット 2'+(s.phoneLayout==='theme-compare'?'（右側）':(s.phoneLayout==='multi-device'||s.phoneLayout==='free-device')?'（iPad用）':'（下段）'),'screenshotImg2','_src2');
     if(s.phoneLayout==='theme-grid'){
       addSec(el,'テーマスクショ（4枚）');
       addUploadField(el,'スクリーンショット 1（左上）','screenshotImg','_src');
@@ -1540,6 +2016,32 @@ function buildFields(){
       addSelectField(el,'フレームカラー','frameColor',[['black','ブラック'],['silver','シルバー'],['gold','ゴールド'],['none','フレームなし']]);
     }
     if(s.phoneLayout==='tilted')addSliderField(el,'傾き角度','phoneTilt',-30,30,s.phoneTilt||10,'°');
+    if(isFree){
+      // iPhone
+      addSec(el,'📱 iPhone');
+      addToggleField(el,'表示','fdIphoneOn',true);
+      if(s.fdIphoneOn!==false){
+        addSliderField(el,'サイズ','fdIphoneSize',15,80,s.fdIphoneSize||50,'%');
+        addSliderField(el,'回転','fdIphoneRot',-30,30,s.fdIphoneRot||0,'°');
+        addSliderField(el,'重なり順','fdIphoneZ',0,2,s.fdIphoneZ!=null?s.fdIphoneZ:1,'');
+      }
+      // iPad
+      addSec(el,'📱 iPad');
+      addToggleField(el,'表示','fdIpadOn',true);
+      if(s.fdIpadOn!==false){
+        addSliderField(el,'サイズ','fdIpadSize',15,80,s.fdIpadSize||45,'%');
+        addSliderField(el,'回転','fdIpadRot',-30,30,s.fdIpadRot||0,'°');
+        addSliderField(el,'重なり順','fdIpadZ',0,2,s.fdIpadZ!=null?s.fdIpadZ:0,'');
+      }
+      // Watch
+      addSec(el,'⌚ Apple Watch');
+      addToggleField(el,'表示','fdWatchOn',true);
+      if(s.fdWatchOn!==false){
+        addSliderField(el,'サイズ','fdWatchSize',10,60,s.fdWatchSize||22,'%');
+        addSliderField(el,'回転','fdWatchRot',-30,30,s.fdWatchRot||0,'°');
+        addSliderField(el,'重なり順','fdWatchZ',0,2,s.fdWatchZ!=null?s.fdWatchZ:2,'');
+      }
+    }
   }
 
   // ── iPhone: populate tab panes ──
@@ -1655,17 +2157,13 @@ function addSelectField(p,label,key,opts){
 }
 function addColorField(p,label,key){
   const r=addRow(p,label);const crow=document.createElement('div');crow.className='crow';const s=slides[curSlide];
-  PRESETS.forEach(c=>{
-    const ch=document.createElement('div');ch.className='chip'+(s[key]===c?' sel':'');
-    ch.style.background=c;if(c==='#FFFFFF')ch.style.outline='1px solid #444';
-    ch.onclick=()=>{pushUndo();slides[curSlide][key]=c;buildFields();render();};
-    crow.appendChild(ch);
-  });
-  const ccw=document.createElement('div');ccw.className='ccw';const cp=document.createElement('input');cp.type='color';cp.value=s[key]||'#FFFFFF';const hx=document.createElement('input');hx.className='chex';hx.value=s[key]||'#FFFFFF';hx.maxLength=7;
+  const cp=document.createElement('input');cp.type='color';cp.value=s[key]||'#FFFFFF';
+  const hx=document.createElement('input');hx.className='chex';hx.value=s[key]||'#FFFFFF';hx.maxLength=7;
   cp.oninput=()=>{slides[curSlide][key]=cp.value;hx.value=cp.value;render();};
   cp.onchange=()=>pushUndo();
   hx.oninput=()=>{if(/^#[0-9a-fA-F]{6}$/.test(hx.value)){slides[curSlide][key]=hx.value;cp.value=hx.value;render();}};
-  ccw.appendChild(cp);ccw.appendChild(hx);crow.appendChild(ccw);r.appendChild(crow);
+  hx.onchange=()=>pushUndo();
+  crow.appendChild(cp);crow.appendChild(hx);r.appendChild(crow);
 }
 function addUploadField(p,label,key,srcKey='_src'){
   const r=addRow(p,label);const s=slides[curSlide];const uz=document.createElement('div');uz.className='uz';
@@ -1687,7 +2185,7 @@ let convTargetIdx=null,convSelBg=null,convSelLo=null;
 
 function showConvModal(idx){
   convTargetIdx=idx;const s=slides[idx];
-  convSelBg=s.bgStyle;convSelLo=s.phoneLayout;
+  convSelBg=resolveBgStyle(s.bgStyle);convSelLo=s.phoneLayout;
   // Build bg grid
   const bgG=document.getElementById('conv-bg-grid');bgG.innerHTML='';
   BG_STYLES.forEach(b=>{
@@ -1717,7 +2215,7 @@ function applyConv(){
   slides[convTargetIdx].bgStyle=convSelBg;
   slides[convTargetIdx].phoneLayout=convSelLo;
   hideConvModal();
-  if(convTargetIdx===curSlide){if(inStep===2)buildFields();}
+  if(convTargetIdx===curSlide){if(inStep===2)buildFields();if(inStep===1){buildAllBgAdjust();buildAllLoAdjust();}}
   render();showToast('パーツを変換しました 🔄');
 }
 
@@ -1743,8 +2241,10 @@ function selectSlide(i){
   document.querySelectorAll('.sth').forEach((el,j)=>el.classList.toggle('active',j===i));
   if(inStep===1){
     // Update sel state on opt-cards without full rebuild
-    document.querySelectorAll('.opt-card[data-state-key="bgStyle"]').forEach(c=>c.classList.toggle('sel',c.dataset.itemId===slides[i].bgStyle));
+    document.querySelectorAll('.opt-card[data-state-key="bgStyle"]').forEach(c=>c.classList.toggle('sel',c.dataset.itemId===resolveBgStyle(slides[i].bgStyle)));
     document.querySelectorAll('.opt-card[data-state-key="phoneLayout"]').forEach(c=>c.classList.toggle('sel',c.dataset.itemId===slides[i].phoneLayout));
+    buildAllBgAdjust();
+    buildAllLoAdjust();
     updateSummary();
   }
   if(inStep===2) buildFields();
@@ -1866,11 +2366,11 @@ const TEMPLATES=[
     name:'スタンダード5枚',
     desc:'王道の5枚構成。機能紹介に最適',
     slides:[
-      {bgStyle:'grad-diag',phoneLayout:'center-large',effects:['glow'],bgColor1:'#0A84FF',bgColor2:'#5856D6',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:105},
-      {bgStyle:'grad-diag',phoneLayout:'text-top',effects:['glow'],bgColor1:'#30D158',bgColor2:'#34C759',title:'機能その1\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'grad-diag',phoneLayout:'text-top',effects:['glow'],bgColor1:'#FF9F0A',bgColor2:'#FF6B00',title:'機能その2\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'grad-diag',phoneLayout:'text-top',effects:['glow'],bgColor1:'#BF5AF2',bgColor2:'#9B59B6',title:'機能その3\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'grad-diag',phoneLayout:'text-hero',effects:['glow','badge'],bgColor1:'#FF375F',bgColor2:'#FF2D55',title:'今すぐ\nダウンロード',subtitle:'無料で始められます',titleColor:'#fff',subColor:'#fff',badgeText:'App Storeで配信中',badgeColor:'#fff',badgeTextColor:'#c00',fontId:'dela',fontWeight:'400',titleSize:110},
+      {bgStyle:'gradient',phoneLayout:'center-large',effects:['glow'],bgColor1:'#0A84FF',bgColor2:'#5856D6',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:105},
+      {bgStyle:'gradient',phoneLayout:'text-top',effects:['glow'],bgColor1:'#30D158',bgColor2:'#34C759',title:'機能その1\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'text-top',effects:['glow'],bgColor1:'#FF9F0A',bgColor2:'#FF6B00',title:'機能その2\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'text-top',effects:['glow'],bgColor1:'#BF5AF2',bgColor2:'#9B59B6',title:'機能その3\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'text-hero',effects:['glow','badge'],bgColor1:'#FF375F',bgColor2:'#FF2D55',title:'今すぐ\nダウンロード',subtitle:'無料で始められます',titleColor:'#fff',subColor:'#fff',badgeText:'App Storeで配信中',badgeColor:'#fff',badgeTextColor:'#c00',fontId:'dela',fontWeight:'400',titleSize:110},
     ]
   },
   {
@@ -1878,11 +2378,11 @@ const TEMPLATES=[
     name:'ダークテーマ5枚',
     desc:'かっこいいダーク系。ゲーム・ツール系に',
     slides:[
-      {bgStyle:'dark',phoneLayout:'center-large',effects:['glow','deco'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#7B5FF2',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#fff',subColor:'#aaa',fontId:'dela',fontWeight:'400',titleSize:105},
-      {bgStyle:'dark',phoneLayout:'text-top',effects:['glow'],bgColor1:'#0d1117',bgColor2:'#1a1040',accentColor:'#0A84FF',title:'機能その1\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#aaa',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'dark',phoneLayout:'text-top',effects:['glow'],bgColor1:'#0d1117',bgColor2:'#0d2040',accentColor:'#30D158',title:'機能その2\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#aaa',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'dark',phoneLayout:'feature-list',effects:['glow'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#BF5AF2',title:'主な機能',subtitle:'',titleColor:'#fff',subColor:'#aaa',fontId:'noto',fontWeight:'700',titleSize:100,featureItems:'✨ 機能その1\n🚀 機能その2\n🔒 機能その3\n📊 機能その4\n⚡ 機能その5'},
-      {bgStyle:'dark',phoneLayout:'text-hero',effects:['glow','badge'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#FF375F',title:'今すぐ\nダウンロード',subtitle:'無料で始められます',titleColor:'#fff',subColor:'#aaa',badgeText:'App Storeで配信中',badgeColor:'#FF375F',badgeTextColor:'#fff',fontId:'dela',fontWeight:'400',titleSize:110},
+      {bgStyle:'gradient',phoneLayout:'center-large',effects:['glow','deco'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#7B5FF2',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#fff',subColor:'#aaa',fontId:'dela',fontWeight:'400',titleSize:105},
+      {bgStyle:'gradient',phoneLayout:'text-top',effects:['glow'],bgColor1:'#0d1117',bgColor2:'#1a1040',accentColor:'#0A84FF',title:'機能その1\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#aaa',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'text-top',effects:['glow'],bgColor1:'#0d1117',bgColor2:'#0d2040',accentColor:'#30D158',title:'機能その2\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#aaa',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'feature-list',effects:['glow'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#BF5AF2',title:'主な機能',subtitle:'',titleColor:'#fff',subColor:'#aaa',fontId:'noto',fontWeight:'700',titleSize:100,featureItems:'✨ 機能その1\n🚀 機能その2\n🔒 機能その3\n📊 機能その4\n⚡ 機能その5'},
+      {bgStyle:'gradient',phoneLayout:'text-hero',effects:['glow','badge'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#FF375F',title:'今すぐ\nダウンロード',subtitle:'無料で始められます',titleColor:'#fff',subColor:'#aaa',badgeText:'App Storeで配信中',badgeColor:'#FF375F',badgeTextColor:'#fff',fontId:'dela',fontWeight:'400',titleSize:110},
     ]
   },
   {
@@ -1890,11 +2390,11 @@ const TEMPLATES=[
     name:'機能紹介5枚',
     desc:'機能リストを使った詳細紹介構成',
     slides:[
-      {bgStyle:'grad-vert',phoneLayout:'center-large',effects:['glow'],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'800',titleSize:105},
-      {bgStyle:'grad-vert',phoneLayout:'text-top',effects:['glow'],bgColor1:'#4facfe',bgColor2:'#00f2fe',title:'機能その1\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'800',titleSize:100},
-      {bgStyle:'grad-vert',phoneLayout:'text-top',effects:['glow'],bgColor1:'#43e97b',bgColor2:'#38f9d7',title:'機能その2\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'800',titleSize:100},
-      {bgStyle:'grad-vert',phoneLayout:'feature-list',effects:[],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'できること',subtitle:'',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'700',titleSize:100,featureItems:'📌 機能その1\n🎯 機能その2\n💡 機能その3\n🔔 機能その4\n❤️ 機能その5'},
-      {bgStyle:'grad-vert',phoneLayout:'text-hero',effects:['badge'],bgColor1:'#f093fb',bgColor2:'#f5576c',title:'今すぐ\n試してみて',subtitle:'',titleColor:'#fff',subColor:'#ddd',badgeText:'無料ダウンロード',badgeColor:'#fff',badgeTextColor:'#c00',fontId:'dela',fontWeight:'400',titleSize:110},
+      {bgStyle:'gradient',bgAngle:180,phoneLayout:'center-large',effects:['glow'],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'800',titleSize:105},
+      {bgStyle:'gradient',bgAngle:180,phoneLayout:'text-top',effects:['glow'],bgColor1:'#4facfe',bgColor2:'#00f2fe',title:'機能その1\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'800',titleSize:100},
+      {bgStyle:'gradient',bgAngle:180,phoneLayout:'text-top',effects:['glow'],bgColor1:'#43e97b',bgColor2:'#38f9d7',title:'機能その2\nの説明',subtitle:'詳細説明をここに',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'800',titleSize:100},
+      {bgStyle:'gradient',bgAngle:180,phoneLayout:'feature-list',effects:[],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'できること',subtitle:'',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'700',titleSize:100,featureItems:'📌 機能その1\n🎯 機能その2\n💡 機能その3\n🔔 機能その4\n❤️ 機能その5'},
+      {bgStyle:'gradient',bgAngle:180,phoneLayout:'text-hero',effects:['badge'],bgColor1:'#f093fb',bgColor2:'#f5576c',title:'今すぐ\n試してみて',subtitle:'',titleColor:'#fff',subColor:'#ddd',badgeText:'無料ダウンロード',badgeColor:'#fff',badgeTextColor:'#c00',fontId:'dela',fontWeight:'400',titleSize:110},
     ]
   },
   {
@@ -1902,9 +2402,9 @@ const TEMPLATES=[
     name:'ミニマル3枚',
     desc:'シンプルに3枚でまとめる。スタイリッシュ',
     slides:[
-      {bgStyle:'white-accent',phoneLayout:'center-large',effects:[],bgColor1:'#fff',bgColor2:'#fff',accentColor:'#0A84FF',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#1a1a1a',subColor:'#555',fontId:'noto',fontWeight:'900',titleSize:105},
-      {bgStyle:'white-accent',phoneLayout:'text-top',effects:[],bgColor1:'#fff',bgColor2:'#fff',accentColor:'#30D158',title:'一番の\n特徴はこれ',subtitle:'詳細説明をここに',titleColor:'#1a1a1a',subColor:'#555',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'white-accent',phoneLayout:'text-hero',effects:['badge'],bgColor1:'#fff',bgColor2:'#fff',accentColor:'#FF9F0A',title:'今すぐ\n始めよう',subtitle:'',titleColor:'#1a1a1a',subColor:'#555',badgeText:'App Storeで無料配信',badgeColor:'#0A84FF',badgeTextColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:110},
+      {bgStyle:'solid',phoneLayout:'center-large',effects:['deco'],bgColor1:'#fff',accentColor:'#0A84FF',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#1a1a1a',subColor:'#555',fontId:'noto',fontWeight:'900',titleSize:105},
+      {bgStyle:'solid',phoneLayout:'text-top',effects:['deco'],bgColor1:'#fff',accentColor:'#30D158',title:'一番の\n特徴はこれ',subtitle:'詳細説明をここに',titleColor:'#1a1a1a',subColor:'#555',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'solid',phoneLayout:'text-hero',effects:['badge','deco'],bgColor1:'#fff',accentColor:'#FF9F0A',title:'今すぐ\n始めよう',subtitle:'',titleColor:'#1a1a1a',subColor:'#555',badgeText:'App Storeで無料配信',badgeColor:'#0A84FF',badgeTextColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:110},
     ]
   },
   {
@@ -1912,9 +2412,9 @@ const TEMPLATES=[
     name:'ウィジェット紹介3枚',
     desc:'ウィジェット機能をアピールする構成',
     slides:[
-      {bgStyle:'grad-diag',phoneLayout:'widget-showcase',effects:['glow'],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'ウィジェットで\nもっと便利に',subtitle:'ホーム画面からすぐアクセス',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'grad-diag',phoneLayout:'widget-phone',effects:['glow'],bgColor1:'#4facfe',bgColor2:'#00f2fe',title:'アプリと連携',subtitle:'リアルタイムで情報を表示',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'grad-diag',phoneLayout:'text-hero',effects:['glow','badge'],bgColor1:'#30D158',bgColor2:'#34C759',title:'今すぐ\nダウンロード',subtitle:'',titleColor:'#fff',subColor:'#fff',badgeText:'ウィジェット対応',badgeColor:'#fff',badgeTextColor:'#1a6e00',fontId:'dela',fontWeight:'400',titleSize:110},
+      {bgStyle:'gradient',phoneLayout:'widget-showcase',effects:['glow'],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'ウィジェットで\nもっと便利に',subtitle:'ホーム画面からすぐアクセス',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'widget-phone',effects:['glow'],bgColor1:'#4facfe',bgColor2:'#00f2fe',title:'アプリと連携',subtitle:'リアルタイムで情報を表示',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'text-hero',effects:['glow','badge'],bgColor1:'#30D158',bgColor2:'#34C759',title:'今すぐ\nダウンロード',subtitle:'',titleColor:'#fff',subColor:'#fff',badgeText:'ウィジェット対応',badgeColor:'#fff',badgeTextColor:'#1a6e00',fontId:'dela',fontWeight:'400',titleSize:110},
     ]
   },
   {
@@ -1922,9 +2422,9 @@ const TEMPLATES=[
     name:'テーマ紹介3枚',
     desc:'豊富なテーマ・カラーをアピール',
     slides:[
-      {bgStyle:'dark',phoneLayout:'theme-compare',effects:['glow'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#BF5AF2',title:'ライト & ダーク\n自由に切り替え',subtitle:'目に優しいデザイン',titleColor:'#fff',subColor:'#aaa',themeLabel1:'Light',themeLabel2:'Dark',fontId:'noto',fontWeight:'900',titleSize:95},
-      {bgStyle:'grad-vert',phoneLayout:'theme-grid',effects:['glow'],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'10種類以上の\nカラーテーマ',subtitle:'あなた好みにカスタマイズ',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'800',titleSize:100},
-      {bgStyle:'grad-diag',phoneLayout:'text-hero',effects:['glow','badge'],bgColor1:'#FF375F',bgColor2:'#FF2D55',title:'自分だけの\nスタイルを',subtitle:'',titleColor:'#fff',subColor:'#fff',badgeText:'テーマ機能搭載',badgeColor:'#fff',badgeTextColor:'#c00',fontId:'dela',fontWeight:'400',titleSize:110},
+      {bgStyle:'gradient',phoneLayout:'theme-compare',effects:['glow'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#BF5AF2',title:'ライト & ダーク\n自由に切り替え',subtitle:'目に優しいデザイン',titleColor:'#fff',subColor:'#aaa',themeLabel1:'Light',themeLabel2:'Dark',fontId:'noto',fontWeight:'900',titleSize:95},
+      {bgStyle:'gradient',bgAngle:180,phoneLayout:'theme-grid',effects:['glow'],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'10種類以上の\nカラーテーマ',subtitle:'あなた好みにカスタマイズ',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'800',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'text-hero',effects:['glow','badge'],bgColor1:'#FF375F',bgColor2:'#FF2D55',title:'自分だけの\nスタイルを',subtitle:'',titleColor:'#fff',subColor:'#fff',badgeText:'テーマ機能搭載',badgeColor:'#fff',badgeTextColor:'#c00',fontId:'dela',fontWeight:'400',titleSize:110},
     ]
   },
   {
@@ -1932,11 +2432,11 @@ const TEMPLATES=[
     name:'フル機能5枚',
     desc:'アプリ・ウィジェット・テーマを全部紹介',
     slides:[
-      {bgStyle:'grad-diag',phoneLayout:'center-large',effects:['glow'],bgColor1:'#0A84FF',bgColor2:'#5856D6',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:105},
-      {bgStyle:'grad-diag',phoneLayout:'widget-showcase',effects:['glow'],bgColor1:'#30D158',bgColor2:'#34C759',title:'便利なウィジェット',subtitle:'ホーム画面に追加しよう',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
-      {bgStyle:'dark',phoneLayout:'theme-compare',effects:['glow','deco'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#BF5AF2',title:'ライト & ダーク\n両対応',subtitle:'お好みで切り替え',titleColor:'#fff',subColor:'#aaa',themeLabel1:'Light',themeLabel2:'Dark',fontId:'noto',fontWeight:'900',titleSize:95},
-      {bgStyle:'grad-vert',phoneLayout:'feature-list',effects:[],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'できること',subtitle:'',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'700',titleSize:100,featureItems:'📌 機能その1\n🎯 機能その2\n💡 機能その3\n🔔 機能その4\n❤️ 機能その5'},
-      {bgStyle:'grad-diag',phoneLayout:'multi-device',effects:['glow','badge'],bgColor1:'#FF9F0A',bgColor2:'#FF6B00',title:'iPhone・iPad\nウィジェット対応',subtitle:'すべてのデバイスで',titleColor:'#fff',subColor:'#fff',badgeText:'App Storeで配信中',badgeColor:'#fff',badgeTextColor:'#a04000',fontId:'dela',fontWeight:'400',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'center-large',effects:['glow'],bgColor1:'#0A84FF',bgColor2:'#5856D6',title:'アプリ名\nキャッチコピー',subtitle:'サブタイトルを入れてね',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:105},
+      {bgStyle:'gradient',phoneLayout:'widget-showcase',effects:['glow'],bgColor1:'#30D158',bgColor2:'#34C759',title:'便利なウィジェット',subtitle:'ホーム画面に追加しよう',titleColor:'#fff',subColor:'#fff',fontId:'noto',fontWeight:'900',titleSize:100},
+      {bgStyle:'gradient',phoneLayout:'theme-compare',effects:['glow','deco'],bgColor1:'#0a0a1a',bgColor2:'#1a0830',accentColor:'#BF5AF2',title:'ライト & ダーク\n両対応',subtitle:'お好みで切り替え',titleColor:'#fff',subColor:'#aaa',themeLabel1:'Light',themeLabel2:'Dark',fontId:'noto',fontWeight:'900',titleSize:95},
+      {bgStyle:'gradient',bgAngle:180,phoneLayout:'feature-list',effects:[],bgColor1:'#667EEA',bgColor2:'#764BA2',title:'できること',subtitle:'',titleColor:'#fff',subColor:'#ddd',fontId:'mplus',fontWeight:'700',titleSize:100,featureItems:'📌 機能その1\n🎯 機能その2\n💡 機能その3\n🔔 機能その4\n❤️ 機能その5'},
+      {bgStyle:'gradient',phoneLayout:'multi-device',effects:['glow','badge'],bgColor1:'#FF9F0A',bgColor2:'#FF6B00',title:'iPhone・iPad\nウィジェット対応',subtitle:'すべてのデバイスで',titleColor:'#fff',subColor:'#fff',badgeText:'App Storeで配信中',badgeColor:'#fff',badgeTextColor:'#a04000',fontId:'dela',fontWeight:'400',titleSize:100},
     ]
   },
 ];
