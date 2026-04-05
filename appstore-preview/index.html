@@ -6,7 +6,7 @@
 <title>App Store Preview Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700;900&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=Hachi+Maru+Pop&family=DotGothic16&family=Yomogi&family=Rampart+One&family=RocknRoll+One&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=20260405">
 </head>
 <body>
 <header>
@@ -101,48 +101,22 @@
 
     <!-- Step 1 -->
     <div class="ws" id="s1">
-      <!-- Desktop: left sidebar -->
-      <div class="opt-panel">
-        <div class="compose-sec">
-          <div class="compose-head"><div class="compose-num">1</div><div class="compose-title">背景スタイル</div></div>
+      <div class="s1-left">
+        <div class="s1-tab-bar" id="s1-tab-bar">
+          <button class="active" onclick="switchS1Tab('bg',this)">🎨 背景</button>
+          <button onclick="switchS1Tab('layout',this)">📱 配置</button>
+          <button onclick="switchS1Tab('fx',this)">✨ エフェクト</button>
+        </div>
+        <div class="s1-tab-pane active" id="s1-pane-bg">
           <div class="opt-grid" id="bg-grid"></div>
           <div class="bg-adjust" id="bg-adjust"></div>
         </div>
-        <div class="compose-sec">
-          <div class="compose-head"><div class="compose-num">2</div><div class="compose-title">iPhoneの配置</div></div>
+        <div class="s1-tab-pane" id="s1-pane-layout">
           <div class="lo-grid-wrap" id="layout-grid"></div>
           <div class="bg-adjust" id="lo-adjust"></div>
         </div>
-        <div class="compose-sec">
-          <div class="compose-head"><div class="compose-num">3</div><div class="compose-title">エフェクト<span class="multi-tag">複数選択可</span></div></div>
+        <div class="s1-tab-pane" id="s1-pane-fx">
           <div class="fx-list" id="fx-list"></div>
-        </div>
-      </div>
-      <!-- iPad: tab layout -->
-      <div class="s1-tab-bar" id="s1-tab-bar">
-        <button class="active" onclick="switchS1Tab('bg',this)">① 背景</button>
-        <button onclick="switchS1Tab('layout',this)">② 配置</button>
-        <button onclick="switchS1Tab('fx',this)">③ エフェクト</button>
-        <button onclick="goStep(2)" style="background:var(--acc);color:#fff;flex:none;padding:0 14px;border-radius:6px;margin:4px 8px 4px 0;font-size:11px">次へ ›</button>
-      </div>
-      <div class="s1-tab-pane active" id="s1-pane-bg">
-        <div class="compose-sec">
-          <div class="compose-head"><div class="compose-num">1</div><div class="compose-title">背景スタイル</div></div>
-          <div class="opt-grid" id="bg-grid-t"></div>
-          <div class="bg-adjust" id="bg-adjust-t"></div>
-        </div>
-      </div>
-      <div class="s1-tab-pane" id="s1-pane-layout">
-        <div class="compose-sec">
-          <div class="compose-head"><div class="compose-num">2</div><div class="compose-title">iPhoneの配置</div></div>
-          <div class="lo-grid-wrap" id="layout-grid-t"></div>
-          <div class="bg-adjust" id="lo-adjust-t"></div>
-        </div>
-      </div>
-      <div class="s1-tab-pane" id="s1-pane-fx">
-        <div class="compose-sec">
-          <div class="compose-head"><div class="compose-num">3</div><div class="compose-title">エフェクト<span class="multi-tag">複数選択可</span></div></div>
-          <div class="fx-list" id="fx-list-t"></div>
         </div>
       </div>
       <div class="prev-panel">
@@ -154,37 +128,16 @@
 
     <!-- Step 2 -->
     <div class="ws" id="s2">
-      <div class="edit-layout">
-        <div class="edit-left">
-          <!-- Desktop: tags bar -->
-          <div class="edit-top" id="edit-tags"></div>
-          <!-- iPhone: tab bar for edit sections -->
-          <div class="s2-tab-bar" id="s2-tab-bar">
-            <button class="active" onclick="switchEditTab('bg',this)">🎨</button>
-            <button onclick="switchEditTab('text',this)">✍️</button>
-            <button onclick="switchEditTab('font',this)">🔤</button>
-            <button onclick="switchEditTab('fx',this)">✨</button>
-            <button onclick="switchEditTab('device',this)">📱</button>
-          </div>
-          <!-- iPhone: tab panes (each section as a separate pane) -->
-          <div class="s2-pane active" id="s2p-bg"></div>
-          <div class="s2-pane" id="s2p-text"></div>
-          <div class="s2-pane" id="s2p-font"></div>
-          <div class="s2-pane" id="s2p-fx"></div>
-          <div class="s2-pane" id="s2p-device"></div>
-          <!-- Desktop: all fields in one scroll area -->
-          <div class="edit-scroll" id="fields"></div>
+      <div class="s2-left" id="s2-left"></div>
+      <div class="edit-center">
+        <div class="cw"><canvas id="canvas"></canvas><div class="csz" id="csz">1320 × 2868 px</div></div>
+        <div class="zoom-bar" id="zoom-bar">
+          <button class="zoom-btn" onclick="zoomPreview(-1)" title="縮小">−</button>
+          <span class="zoom-level" id="zoom-level">フィット</span>
+          <button class="zoom-btn" onclick="zoomPreview(1)" title="拡大">+</button>
+          <button class="zoom-btn zoom-btn-fit" onclick="zoomPreviewReset()" title="画面にフィット">⤢</button>
         </div>
-        <div class="edit-center">
-          <div class="cw"><canvas id="canvas"></canvas><div class="csz" id="csz">1320 × 2868 px</div></div>
-          <div class="zoom-bar" id="zoom-bar">
-            <button class="zoom-btn" onclick="zoomPreview(-1)" title="縮小">−</button>
-            <span class="zoom-level" id="zoom-level">フィット</span>
-            <button class="zoom-btn" onclick="zoomPreview(1)" title="拡大">+</button>
-            <button class="zoom-btn zoom-btn-fit" onclick="zoomPreviewReset()" title="画面にフィット">⤢</button>
-          </div>
-        </div>
-      </div><!-- end edit-layout -->
+      </div>
     </div><!-- end s2 -->
 
   </div>
@@ -278,6 +231,6 @@
   </div>
 </div>
 
-<script src="script.js?v=6"></script>
+<script src="script.js?v=20260405"></script>
 </body>
 </html>

@@ -51,9 +51,9 @@ header{display:flex;align-items:center;padding:0 18px;height:50px;background:var
 .ws{display:flex;flex:1;overflow:hidden}
 /* Step 1 */
 #s1{display:flex;flex:1;overflow:hidden}
-.opt-panel{width:430px;flex-shrink:0;background:var(--sf);border-right:1px solid var(--b1);overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:20px}
-.opt-panel::-webkit-scrollbar{width:4px}
-.opt-panel::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
+.s1-left{width:430px;flex-shrink:0;display:flex;flex-direction:column;background:var(--sf);border-right:1px solid var(--b1);overflow:hidden}
+.s1-left::-webkit-scrollbar{width:4px}
+.s1-left::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
 .compose-sec{display:flex;flex-direction:column;gap:10px}
 .compose-head{display:flex;align-items:center;gap:8px}
 .compose-num{width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -95,10 +95,8 @@ header{display:flex;align-items:center;padding:0 18px;height:50px;background:var
 .sum-key{color:var(--dm);font-weight:700;width:60px;flex-shrink:0}
 .sum-val{color:var(--tx);font-weight:600}
 /* Step 2 */
-#s2{display:none;flex:1;overflow:hidden}
-.edit-layout{display:flex;height:100%;overflow:hidden;flex:1}
-.edit-left{width:282px;flex-shrink:0;background:var(--sf);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
-.edit-top{padding:9px 13px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap}
+#s2{display:none;flex:1;overflow:hidden;flex-direction:row}
+.s2-left{width:430px;flex-shrink:0;display:flex;flex-direction:column;background:var(--sf);border-right:1px solid var(--b1);overflow:hidden}
 .tag{font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap}
 .tag-bg{background:rgba(10,132,255,.15);color:var(--acc);border:1px solid rgba(10,132,255,.3)}
 .tag-layout{background:rgba(48,209,88,.12);color:var(--suc);border:1px solid rgba(48,209,88,.3)}
@@ -189,8 +187,11 @@ input[type=color]:hover{border-color:var(--acc);transform:scale(1.08)}
 .undo-count{font-size:10px;font-weight:600;color:var(--sub);margin-left:2px}
 
 /* s2 tab bar and panes: hidden on desktop, shown on iPhone via media query */
-.s2-tab-bar{display:none}
-.s2-pane{display:none}
+.s2-tab-bar{display:flex;background:var(--sf);border-bottom:1px solid var(--b1);flex-shrink:0;min-height:38px}
+.s2-tab-bar button{flex:1;padding:10px 4px;border:none;background:transparent;color:var(--dm);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:.14s;-webkit-tap-highlight-color:transparent}
+.s2-tab-bar button.active{color:var(--acc);border-bottom-color:var(--acc)}
+.s2-pane{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;flex-direction:column;gap:10px}
+.s2-pane.active{display:flex}
 .btn-lbl-iph{display:none}
 /* Bottom sheets: hidden globally, shown via JS */
 .iphone-slides-sheet{display:none}
@@ -250,7 +251,7 @@ input[type=color]:hover{border-color:var(--acc);transform:scale(1.08)}
 
 /* ── Touch & iOS improvements ── */
 body{-webkit-text-size-adjust:100%;height:100dvh}
-.sl,.opt-panel,.edit-scroll,.modal-box{-webkit-overflow-scrolling:touch}
+.sl,.s1-left,.edit-scroll,.modal-box{-webkit-overflow-scrolling:touch}
 .opt-card,.fx-chip,.font-chip,.add-btn,.btn,.dev-btn,.fi{-webkit-tap-highlight-color:transparent}
 .slider-row input[type=range]::-webkit-slider-thumb{width:22px;height:22px}/* larger touch target */
 .add-btn{width:26px;height:26px;font-size:20px}
@@ -261,18 +262,19 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   .sth-del,.sth-dup,.sth-conv{display:flex!important}
 }
 
-/* ── Step 1 tab bar (hidden on desktop) ── */
-.s1-tab-bar{display:none;background:var(--sf);border-bottom:1px solid var(--b1);flex-shrink:0}
-.s1-tab-bar button{flex:1;padding:9px 4px;border:none;background:transparent;color:var(--dm);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:.14s;-webkit-tap-highlight-color:transparent}
+/* ── Step 1 tab bar ── */
+.s1-tab-bar{display:flex;background:var(--sf);border-bottom:1px solid var(--b1);flex-shrink:0}
+.s1-tab-bar button{flex:1;padding:10px 4px;border:none;background:transparent;color:var(--dm);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:.14s;-webkit-tap-highlight-color:transparent}
 .s1-tab-bar button.active{color:var(--acc);border-bottom-color:var(--acc)}
 .s1-tab-pane{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;flex-direction:column;gap:16px}
+.s1-tab-pane.active{display:flex}
 /* btn label hidden on tablet */
 .btn-lbl{display:inline}
 
 /* ══ iPad landscape 1024–1279px ══ */
 @media(max-width:1279px){
-  .opt-panel{width:360px}
-  .edit-left{width:248px}
+  .s1-left{width:360px}
+  .s2-left{width:360px}
   .edit-right{width:168px}
   .zoom-bar{right:192px}
   .opt-lbl-desc{display:none}
@@ -288,14 +290,12 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   .hbtn-group{gap:3px}
   .hbtn-sep{height:16px}
   .btn{padding:7px 9px}
-  /* Step 1: switch to tab layout */
-  .opt-panel{display:none}
-  .s1-tab-bar{display:flex}
-  .s1-tab-pane.active{display:flex}
+  /* Step 1 */
+  .s1-left{width:100%;border-right:none;border-bottom:1px solid var(--b1)}
   #s1{flex-direction:column;overflow:hidden}
-  .prev-panel{display:none}/* slides panel on right replaces this */
+  .prev-panel{display:none}
   /* Step 2 narrower panels */
-  .edit-left{width:224px}
+  .s2-left{width:300px}
   .edit-right{width:150px}
   .zoom-bar{right:174px}
   .fi{font-size:14px;padding:9px 10px}
@@ -305,7 +305,7 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
 /* ══ Narrow (< 768px) ══ */
 @media(max-width:767px){
   .dev-group{display:none}
-  .edit-left{width:200px}
+  .s2-left{width:260px}
   .edit-right{width:130px}
   .zoom-bar{right:154px}
   .opt-grid{grid-template-columns:repeat(2,1fr)}
@@ -334,21 +334,17 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   .edit-right{display:none}
   .zoom-bar{right:16px;bottom:70px}
 
-  /* Step 1: tab layout (same as iPad portrait) */
+  /* Step 1 */
   #s1{flex-direction:column;overflow:hidden}
-  .opt-panel{display:none}
-  .s1-tab-bar{display:flex}
+  .s1-left{width:100%;border-right:none;border-bottom:1px solid var(--b1)}
   .s1-tab-bar button{font-size:10px;padding:8px 2px}
   .prev-panel{display:none}
 
-  /* ── Step 2 on iPhone: preview top + tab sections below ── */
-  .edit-layout{
-    flex-direction:column;
-    overflow:hidden;
-    height:100%;
-  }
+  /* ── Step 2 on iPhone ── */
+  #s2{flex-direction:column;overflow:hidden;height:100%}
+  .s2-left{width:100%;flex:1;order:2;border-right:none;border-bottom:none}
+  .s2-tab-bar button{font-size:10px;padding:8px 2px}
 
-  /* Preview fixed at top */
   .edit-center{
     display:flex!important;
     order:-1;
@@ -369,55 +365,10 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   }
   .csz{display:none}
 
-  /* edit-left: fill remaining space */
-  .edit-left{
-    display:flex!important;
-    order:1;
-    width:100%!important;
-    flex:1;
-    overflow:hidden;
-    border-right:none;
-    flex-direction:column;
-  }
-
-  /* Desktop tags bar: hide on iPhone */
-  .edit-left .edit-top{display:none!important}
-
-  /* Desktop fields: hide on iPhone */
-  .edit-left .edit-scroll#fields{display:none!important}
-
-  /* s2-tab-bar: show on iPhone */
-  .s2-tab-bar{
-    display:flex!important;
-    flex-shrink:0;
-    background:var(--sf);
-    border-bottom:1px solid var(--b1);
-  }
-  .s2-tab-bar button{
-    flex:1;padding:10px 4px;border:none;background:transparent;
-    color:var(--dm);font-family:inherit;font-size:18px;
-    cursor:pointer;border-bottom:2px solid transparent;transition:.14s;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .s2-tab-bar button.active{border-bottom-color:var(--acc);background:var(--adim)}
-
-  /* Tab panes: hidden by default, shown when active */
-  .s2-pane{
-    display:none;
-    flex-direction:column;
-    gap:12px;
-    overflow-y:scroll;
-    -webkit-overflow-scrolling:touch;
-    overscroll-behavior-y:contain;
-    padding:12px 12px 80px;
-    flex:1;
-  }
-  .s2-pane.active{display:flex}
-
-  /* ── Step 1 on iPhone: same tab structure ── */
+  /* ── Step 1 on iPhone ── */
   #s1{flex-direction:column;overflow:hidden;height:100%}
-  .opt-panel{display:none}
-  .s1-tab-bar{display:flex;order:1;flex-shrink:0}
+  .s1-left{width:100%;flex:1;order:2;border-right:none;border-bottom:none}
+  .s1-tab-bar{order:1;flex-shrink:0}
   .s1-tab-bar button{font-size:10px;padding:8px 2px}
 
   .prev-panel{
@@ -441,19 +392,6 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
     width:auto!important;
     height:184px!important;
   }
-
-  .s1-tab-pane{
-    order:2;
-    display:none;
-    flex-direction:column;
-    gap:14px;
-    overflow-y:scroll;
-    -webkit-overflow-scrolling:touch;
-    overscroll-behavior-y:contain;
-    padding:12px 12px 80px;
-    flex:1;
-  }
-  .s1-tab-pane.active{display:flex}
 
   /* Opt cards: 3 columns, compact on iPhone */
   .opt-grid{grid-template-columns:repeat(3,1fr);gap:6px}
