@@ -76,6 +76,7 @@ function updateUndoBtn(){
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undo();}
   if((e.ctrlKey||e.metaKey)&&((e.key==='z'&&e.shiftKey)||e.key==='y')){e.preventDefault();redo();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(!inDashboard)saveProjectToStorage();}
 });
 
 /* ═══ FONTS ═══ */
@@ -672,21 +673,29 @@ function openProject(id){
 }
 
 function saveProjectToStorage(){
-  if(!currentProjectId)return;
-  const json=serializeSlides();
-  if(!setProjectData(currentProjectId,json)){
-    showToast('⚠️ 保存に失敗しました（容量超過の可能性があります）');
+  if(!currentProjectId){
+    showToast('⚠️ プロジェクトが選択されていません');
     return;
   }
-  // Update meta
-  const list=getProjectsList();
-  const p=list.find(p=>p.id===currentProjectId);
-  if(p){
-    p.updatedAt=new Date().toISOString();
-    p.slideCount=slides.length;
-    saveProjectsList(list);
+  try{
+    const json=serializeSlides();
+    if(!setProjectData(currentProjectId,json)){
+      showToast('⚠️ 保存に失敗しました（容量超過の可能性があります）');
+      return;
+    }
+    // Update meta
+    const list=getProjectsList();
+    const p=list.find(p=>p.id===currentProjectId);
+    if(p){
+      p.updatedAt=new Date().toISOString();
+      p.slideCount=slides.length;
+      saveProjectsList(list);
+    }
+    showToast('保存しました 💾');
+  }catch(e){
+    console.error('saveProjectToStorage error:',e);
+    showToast('⚠️ 保存中にエラーが発生しました');
   }
-  showToast('保存しました 💾');
 }
 
 // Auto-save on changes (debounced)
@@ -790,15 +799,17 @@ function renameProject(id,ev){
 }
 
 function showDashboard(){
-  // Auto-save current project before leaving
-  if(currentProjectId&&!inDashboard){
-    const json=serializeSlides();
-    if(setProjectData(currentProjectId,json)){
-      const list=getProjectsList();
-      const p=list.find(p=>p.id===currentProjectId);
-      if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
+  // Auto-save current project before leaving (must not block navigation)
+  try{
+    if(currentProjectId&&!inDashboard){
+      const json=serializeSlides();
+      if(setProjectData(currentProjectId,json)){
+        const list=getProjectsList();
+        const p=list.find(p=>p.id===currentProjectId);
+        if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
+      }
     }
-  }
+  }catch(e){console.error('Auto-save on dashboard transition failed:',e);}
   inDashboard=true;
   document.getElementById('dashboard').style.display='flex';
   document.getElementById('editor-wrapper').style.display='none';
