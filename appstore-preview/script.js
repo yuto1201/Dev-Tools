@@ -586,6 +586,103 @@ function deserializeSlides(json){
   render();
 }
 
+/* ═══ IMAGE STORAGE OPTIMIZATION ═══ */
+const STORAGE_IMAGE_FIELDS=[
+  ['screenshotImg','_src'],
+  ['screenshotImg2','_src2'],
+  ['screenshotImg3','_src3'],
+  ['screenshotImg4','_src4'],
+  ['screenshotImgIpad','_srcIpad'],
+  ['widgetSmallImg','_srcWidgetSmall'],
+  ['widgetMediumImg','_srcWidgetMedium'],
+  ['widgetLargeImg','_srcWidgetLarge'],
+];
+const IMAGE_UPLOAD_OPT={targetBytes:260*1024,maxDim:2000,minDim:900,startQuality:0.9,minQuality:0.55,qualityStep:0.08};
+const IMAGE_RECOVERY_STEPS=[
+  {targetBytes:220*1024,maxDim:1800,minDim:900,startQuality:0.86,minQuality:0.5,qualityStep:0.08},
+  {targetBytes:150*1024,maxDim:1500,minDim:760,startQuality:0.82,minQuality:0.45,qualityStep:0.08},
+  {targetBytes:100*1024,maxDim:1200,minDim:640,startQuality:0.78,minQuality:0.4,qualityStep:0.08},
+];
+
+function dataUrlBytes(dataUrl){
+  if(!dataUrl||typeof dataUrl!=='string')return 0;
+  const idx=dataUrl.indexOf(',');
+  if(idx<0)return dataUrl.length;
+  const b64Len=dataUrl.length-idx-1;
+  return Math.floor(b64Len*3/4);
+}
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const rd=new FileReader();
+    rd.onload=ev=>resolve(ev.target.result);
+    rd.onerror=()=>reject(rd.error||new Error('file read failed'));
+    rd.readAsDataURL(file);
+  });
+}
+function loadImageFromSrc(src){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error('image load failed'));
+    img.src=src;
+  });
+}
+function encodeOptimizedImage(img,longSide,quality){
+  const maxSide=Math.max(img.width||1,img.height||1);
+  const scale=Math.min(1,longSide/maxSide);
+  const w=Math.max(1,Math.round((img.width||1)*scale));
+  const h=Math.max(1,Math.round((img.height||1)*scale));
+  const canvas=document.createElement('canvas');
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(img,0,0,w,h);
+  let out=canvas.toDataURL('image/webp',quality);
+  if(!out.startsWith('data:image/webp')) out=canvas.toDataURL('image/jpeg',quality);
+  return out;
+}
+async function optimizeImageDataUrl(src,options={}){
+  if(!src||typeof src!=='string'||!src.startsWith('data:image/'))return src;
+  const opt={targetBytes:260*1024,maxDim:2000,minDim:900,startQuality:0.9,minQuality:0.55,qualityStep:0.08,force:false,...options};
+  const srcBytes=dataUrlBytes(src);
+  if(!opt.force&&srcBytes<=opt.targetBytes)return src;
+  let img;
+  try{img=await loadImageFromSrc(src);}
+  catch{return src;}
+  if(!img.width||!img.height)return src;
+  let best=src,bestBytes=srcBytes;
+  let side=Math.min(opt.maxDim,Math.max(img.width,img.height));
+  while(true){
+    for(let q=opt.startQuality;q>=opt.minQuality-1e-6;q-=opt.qualityStep){
+      const qq=Math.max(opt.minQuality,Math.min(opt.startQuality,q));
+      const out=encodeOptimizedImage(img,side,qq);
+      const b=dataUrlBytes(out);
+      if(b<bestBytes){best=out;bestBytes=b;}
+      if(b<=opt.targetBytes)return out;
+    }
+    if(side<=opt.minDim)break;
+    const next=Math.max(opt.minDim,Math.round(side*0.82));
+    if(next===side)break;
+    side=next;
+  }
+  return best;
+}
+async function compactProjectImages(stepOpt){
+  let changed=false;
+  for(const s of slides){
+    for(const [imgKey,srcKey] of STORAGE_IMAGE_FIELDS){
+      const src=s[srcKey];
+      if(!src)continue;
+      const optimized=await optimizeImageDataUrl(src,stepOpt);
+      if(optimized===src||dataUrlBytes(optimized)>=dataUrlBytes(src))continue;
+      s[srcKey]=optimized;
+      try{s[imgKey]=await loadImageFromSrc(optimized);}
+      catch{}
+      changed=true;
+    }
+  }
+  return changed;
+}
+
 /* ═══ PROJECT SAVE / LOAD (file) ═══ */
 function saveProject(){
   const json=serializeSlides();
@@ -672,16 +769,31 @@ function openProject(id){
   showEditor();
 }
 
-function saveProjectToStorage(){
+async function saveProjectToStorage(options={}){
+  const silent=!!options.silent;
   if(!currentProjectId){
-    showToast('⚠️ プロジェクトが選択されていません');
-    return;
+    if(!silent)showToast('⚠️ プロジェクトが選択されていません');
+    return false;
   }
   try{
-    const json=serializeSlides();
-    if(!setProjectData(currentProjectId,json)){
-      showToast('⚠️ 保存に失敗しました（容量超過の可能性があります）');
-      return;
+    let recoveredByCompression=false;
+    let json=serializeSlides();
+    let saved=setProjectData(currentProjectId,json);
+    if(!saved){
+      for(const stepOpt of IMAGE_RECOVERY_STEPS){
+        const changed=await compactProjectImages(stepOpt);
+        if(!changed)continue;
+        json=serializeSlides();
+        saved=setProjectData(currentProjectId,json);
+        if(saved){
+          recoveredByCompression=true;
+          break;
+        }
+      }
+    }
+    if(!saved){
+      if(!silent)showToast('⚠️ 保存に失敗しました。不要なプロジェクト削除かJSON保存を試してください');
+      return false;
     }
     // Update meta
     const list=getProjectsList();
@@ -691,10 +803,12 @@ function saveProjectToStorage(){
       p.slideCount=slides.length;
       saveProjectsList(list);
     }
-    showToast('保存しました 💾');
+    if(!silent)showToast(recoveredByCompression?'保存しました（画像を圧縮） 💾':'保存しました 💾');
+    return true;
   }catch(e){
     console.error('saveProjectToStorage error:',e);
-    showToast('⚠️ 保存中にエラーが発生しました');
+    if(!silent)showToast('⚠️ 保存中にエラーが発生しました');
+    return false;
   }
 }
 
@@ -703,13 +817,9 @@ let _autoSaveTimer=null;
 function autoSave(){
   if(!currentProjectId||inDashboard)return;
   clearTimeout(_autoSaveTimer);
-  _autoSaveTimer=setTimeout(()=>{
+  _autoSaveTimer=setTimeout(async()=>{
     if(!currentProjectId)return;
-    const json=serializeSlides();
-    if(!setProjectData(currentProjectId,json))return;
-    const list=getProjectsList();
-    const p=list.find(p=>p.id===currentProjectId);
-    if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
+    await saveProjectToStorage({silent:true});
   },2000);
 }
 
@@ -2248,11 +2358,31 @@ function addUploadField(p,label,key,srcKey='_src'){
   if(s[key]){const img=document.createElement('img');img.className='uz-img';img.src=s[srcKey]||'';uz.appendChild(img);const cx=document.createElement('button');cx.className='cx';cx.textContent='✕';cx.onclick=e=>{e.stopPropagation();pushUndo();slides[curSlide][key]=null;slides[curSlide][srcKey]='';buildFields();render();};uz.appendChild(cx);}
   r.appendChild(uz);
 }
-function loadImg(file,key,srcKey='_src'){
+async function loadImg(file,key,srcKey='_src'){
   if(!file||!file.type.startsWith('image/'))return;
-  const rd=new FileReader();rd.onload=ev=>{const img=new Image();img.onload=()=>{pushUndo();slides[curSlide][key]=img;slides[curSlide][srcKey]=ev.target.result;buildFields();render();showToast('画像を読み込みました');};img.src=ev.target.result;};rd.readAsDataURL(file);
+  try{
+    const rawSrc=await fileToDataUrl(file);
+    const optimizedSrc=await optimizeImageDataUrl(rawSrc,IMAGE_UPLOAD_OPT);
+    const img=await loadImageFromSrc(optimizedSrc);
+    pushUndo();
+    slides[curSlide][key]=img;
+    slides[curSlide][srcKey]=optimizedSrc;
+    buildFields();
+    render();
+    const rawBytes=dataUrlBytes(rawSrc);
+    const optimizedBytes=dataUrlBytes(optimizedSrc);
+    if(optimizedBytes<rawBytes){
+      const reduced=Math.round((1-optimizedBytes/rawBytes)*100);
+      showToast(`画像を読み込みました（最適化 -${reduced}%）`);
+    }else{
+      showToast('画像を読み込みました');
+    }
+  }catch(e){
+    console.error('loadImg error:',e);
+    showToast('画像の読み込みに失敗しました');
+  }
 }
-document.addEventListener('paste',e=>{for(const item of e.clipboardData.items){if(item.type.startsWith('image/')){const key=isIpadDev()?'screenshotImgIpad':'screenshotImg';const src=isIpadDev()?'_srcIpad':'_src';loadImg(item.getAsFile(),key,src);showToast('スクショを貼り付けました ✓');break;}}});
+document.addEventListener('paste',e=>{for(const item of e.clipboardData.items){if(item.type.startsWith('image/')){const key=isIpadDev()?'screenshotImgIpad':'screenshotImg';const src=isIpadDev()?'_srcIpad':'_src';loadImg(item.getAsFile(),key,src);break;}}});
 
 /* ═══ CONVERT MODAL ═══ */
 let convTargetIdx=null,convSelBg=null,convSelLo=null;
