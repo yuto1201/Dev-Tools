@@ -632,7 +632,13 @@ function getProjectData(id){
   catch{return null;}
 }
 function setProjectData(id,json){
-  localStorage.setItem(PROJECT_PREFIX+id,json);
+  try{
+    localStorage.setItem(PROJECT_PREFIX+id,json);
+    return true;
+  }catch(e){
+    console.error('localStorage save failed:',e);
+    return false;
+  }
 }
 function removeProjectData(id){
   localStorage.removeItem(PROJECT_PREFIX+id);
@@ -668,7 +674,10 @@ function openProject(id){
 function saveProjectToStorage(){
   if(!currentProjectId)return;
   const json=serializeSlides();
-  setProjectData(currentProjectId,json);
+  if(!setProjectData(currentProjectId,json)){
+    showToast('⚠️ 保存に失敗しました（容量超過の可能性があります）');
+    return;
+  }
   // Update meta
   const list=getProjectsList();
   const p=list.find(p=>p.id===currentProjectId);
@@ -688,7 +697,7 @@ function autoSave(){
   _autoSaveTimer=setTimeout(()=>{
     if(!currentProjectId)return;
     const json=serializeSlides();
-    setProjectData(currentProjectId,json);
+    if(!setProjectData(currentProjectId,json))return;
     const list=getProjectsList();
     const p=list.find(p=>p.id===currentProjectId);
     if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
@@ -784,10 +793,11 @@ function showDashboard(){
   // Auto-save current project before leaving
   if(currentProjectId&&!inDashboard){
     const json=serializeSlides();
-    setProjectData(currentProjectId,json);
-    const list=getProjectsList();
-    const p=list.find(p=>p.id===currentProjectId);
-    if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
+    if(setProjectData(currentProjectId,json)){
+      const list=getProjectsList();
+      const p=list.find(p=>p.id===currentProjectId);
+      if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
+    }
   }
   inDashboard=true;
   document.getElementById('dashboard').style.display='flex';
