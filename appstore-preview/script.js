@@ -32,7 +32,118 @@ function setDevice(d){
   const btn=document.getElementById('dev-'+d);
   if(btn) btn.classList.add('active');
   initAllCanvas();render();
+  if(inStep===3)buildStep3();
 }
+
+const DEVICE_CATALOG={
+  iphone:[
+    {model:'iPhone 16 Pro Max',inch:'6.9"',pixels:'1320×2868',ppi:'460',ratio:'19.5:9',appKey:'6.9'},
+    {model:'iPhone 16 Plus / 15 Plus / 14 Plus',inch:'6.7"',pixels:'1290×2796',ppi:'458',ratio:'19.5:9',appKey:'6.7'},
+    {model:'iPhone 16 Pro',inch:'6.3"',pixels:'1206×2622',ppi:'460',ratio:'19.5:9'},
+    {model:'iPhone 16 / 15 / 14',inch:'6.1"',pixels:'1179×2556',ppi:'460',ratio:'19.5:9'},
+    {model:'iPhone 13 / 13 Pro / 12 / 12 Pro',inch:'6.1"',pixels:'1170×2532',ppi:'460',ratio:'19.5:9'},
+    {model:'iPhone 13 mini / 12 mini',inch:'5.4"',pixels:'1080×2340',ppi:'476',ratio:'19.5:9'},
+    {model:'iPhone 11 Pro Max / XS Max',inch:'6.5"',pixels:'1242×2688',ppi:'458',ratio:'19.5:9',appKey:'6.5'},
+    {model:'iPhone 11 Pro / XS / X',inch:'5.8"',pixels:'1125×2436',ppi:'458',ratio:'19.5:9'},
+    {model:'iPhone 11 / XR',inch:'6.1"',pixels:'828×1792',ppi:'326',ratio:'19.5:9'},
+    {model:'iPhone 8 Plus / 7 Plus / 6s Plus / 6 Plus',inch:'5.5"',pixels:'1242×2208',ppi:'401',ratio:'16:9',appKey:'5.5'},
+    {model:'iPhone SE (第3/2世代) / 8 / 7 / 6s / 6',inch:'4.7"',pixels:'750×1334',ppi:'326',ratio:'16:9'},
+    {model:'iPhone SE (第1世代) / 5s / 5c / 5',inch:'4.0"',pixels:'640×1136',ppi:'326',ratio:'16:9'},
+  ],
+  ipad:[
+    {model:'iPad Pro 13" (M4)',inch:'13"',pixels:'2064×2752',ppi:'264',ratio:'4:3'},
+    {model:'iPad Pro 12.9" (第3〜6世代)',inch:'12.9"',pixels:'2048×2732',ppi:'264',ratio:'4:3',appKey:'ipad13'},
+    {model:'iPad Air 13" (M2)',inch:'13"',pixels:'2048×2732',ppi:'264',ratio:'4:3',appKey:'ipad13'},
+    {model:'iPad Pro 11" (第1〜4世代)',inch:'11"',pixels:'1668×2388',ppi:'264',ratio:'4:3',appKey:'ipad11'},
+    {model:'iPad Air 11" (M2) / Air 10.9" (第4/5世代) / iPad (第10世代)',inch:'10.9"〜11"',pixels:'1640×2360',ppi:'264',ratio:'4:3'},
+    {model:'iPad Pro 10.5"',inch:'10.5"',pixels:'1668×2224',ppi:'264',ratio:'4:3'},
+    {model:'iPad (第9/8/7世代) 10.2"',inch:'10.2"',pixels:'1620×2160',ppi:'264',ratio:'4:3'},
+    {model:'iPad (第6/5世代) / iPad Pro 9.7" / Air 2 / Air',inch:'9.7"',pixels:'1536×2048',ppi:'264',ratio:'4:3',appKey:'ipad97'},
+    {model:'iPad mini (第6世代)',inch:'8.3"',pixels:'1488×2266',ppi:'326',ratio:'3:2'},
+    {model:'iPad mini (第5〜1世代)',inch:'7.9"',pixels:'1536×2048',ppi:'326',ratio:'4:3'},
+  ]
+};
+
+function renderDeviceCatalogTable(tableId,rows){
+  const table=document.getElementById(tableId);
+  if(!table)return;
+  table.innerHTML='';
+
+  const thead=document.createElement('thead');
+  const htr=document.createElement('tr');
+  ['モデル','画面サイズ','解像度(px)','PPI','比率','アプリ対応','操作'].forEach(t=>{
+    const th=document.createElement('th');
+    th.textContent=t;
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr);
+
+  const tbody=document.createElement('tbody');
+  rows.forEach(row=>{
+    const tr=document.createElement('tr');
+    if(row.appKey)tr.className='is-supported';
+
+    const modelTd=document.createElement('td');
+    const strong=document.createElement('span');
+    strong.className='devdb-model';
+    strong.textContent=row.model;
+    modelTd.appendChild(strong);
+    tr.appendChild(modelTd);
+
+    const inchTd=document.createElement('td');inchTd.textContent=row.inch;tr.appendChild(inchTd);
+    const pxTd=document.createElement('td');pxTd.textContent=row.pixels;tr.appendChild(pxTd);
+    const ppiTd=document.createElement('td');ppiTd.textContent=row.ppi;tr.appendChild(ppiTd);
+    const ratioTd=document.createElement('td');ratioTd.textContent=row.ratio;tr.appendChild(ratioTd);
+
+    const supTd=document.createElement('td');
+    if(row.appKey){
+      const chip=document.createElement('span');
+      chip.className='devdb-chip';
+      chip.textContent='対応';
+      supTd.appendChild(chip);
+    }else{
+      supTd.textContent='-';
+    }
+    tr.appendChild(supTd);
+
+    const actionTd=document.createElement('td');
+    if(row.appKey){
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='devdb-use-btn';
+      btn.textContent='このサイズで作業';
+      btn.onclick=()=>{
+        setDevice(row.appKey);
+        hideDeviceCatalog();
+        showToast(`${DEVS[row.appKey].lbl} に切り替えました`);
+      };
+      actionTd.appendChild(btn);
+    }else{
+      actionTd.textContent='-';
+    }
+    tr.appendChild(actionTd);
+
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(thead);
+  table.appendChild(tbody);
+}
+function showDeviceCatalog(){
+  renderDeviceCatalogTable('devdb-iphone',DEVICE_CATALOG.iphone);
+  renderDeviceCatalogTable('devdb-ipad',DEVICE_CATALOG.ipad);
+  const modal=document.getElementById('device-catalog-modal');
+  if(modal)modal.style.display='flex';
+}
+function hideDeviceCatalog(){
+  const modal=document.getElementById('device-catalog-modal');
+  if(modal)modal.style.display='none';
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const modal=document.getElementById('device-catalog-modal');
+  if(modal&&modal.style.display==='flex')hideDeviceCatalog();
+});
 
 /* ═══ UNDO / REDO ═══ */
 let undoStack=[],redoStack=[],MAX_UNDO=40;
@@ -50,6 +161,7 @@ function undo(){
   const snap=undoStack.pop();
   deserializeSlides(snap);
   if(inStep===2)buildFields();
+  if(inStep===3)buildStep3();
   updateUndoBtn();
   showToast('元に戻しました ↩');
 }
@@ -60,6 +172,7 @@ function redo(){
   const snap=redoStack.pop();
   deserializeSlides(snap);
   if(inStep===2)buildFields();
+  if(inStep===3)buildStep3();
   updateUndoBtn();
   showToast('やり直しました ↪');
 }
@@ -946,6 +1059,98 @@ function showEditor(){
   if(nav&&isIphone())nav.style.display='flex';
 }
 
+/* ═══ EDITOR PANE RESIZER ═══ */
+const EDITOR_PANE_WIDTH_KEY='previewgen_editor_pane_width';
+const EDITOR_PANE_DEFAULT_WIDTH=430;
+const EDITOR_PANE_MIN_WIDTH=300;
+const EDITOR_PANE_MIN_PREVIEW_WIDTH=320;
+let editorPaneWidth=EDITOR_PANE_DEFAULT_WIDTH;
+
+function isEditorPaneResizable(){
+  return window.innerWidth>1279;
+}
+function getActiveEditorWorkspace(){
+  const id=inStep===3?'s3':(inStep===2?'s2':'s1');
+  return document.getElementById(id)||document.getElementById('s2')||document.getElementById('s1');
+}
+function applyEditorPaneWidth(width){
+  const ws=getActiveEditorWorkspace();
+  const min=EDITOR_PANE_MIN_WIDTH;
+  let max=min;
+  if(ws){
+    max=Math.max(min,ws.clientWidth-EDITOR_PANE_MIN_PREVIEW_WIDTH);
+  }
+  const next=Math.round(Math.max(min,Math.min(max,+width||EDITOR_PANE_DEFAULT_WIDTH)));
+  editorPaneWidth=next;
+  document.documentElement.style.setProperty('--editor-pane-w',next+'px');
+  return next;
+}
+function syncEditorPaneWidthForViewport(){
+  if(isEditorPaneResizable()){
+    applyEditorPaneWidth(editorPaneWidth);
+  }else{
+    document.documentElement.style.removeProperty('--editor-pane-w');
+  }
+}
+function initEditorPaneResizer(){
+  try{
+    const saved=parseInt(localStorage.getItem(EDITOR_PANE_WIDTH_KEY)||'',10);
+    if(Number.isFinite(saved)&&saved>=EDITOR_PANE_MIN_WIDTH)editorPaneWidth=saved;
+  }catch{}
+
+  document.querySelectorAll('.pane-splitter').forEach(splitter=>{
+    if(splitter._paneBound)return;
+    splitter._paneBound=true;
+
+    splitter.addEventListener('dblclick',()=>{
+      const v=applyEditorPaneWidth(EDITOR_PANE_DEFAULT_WIDTH);
+      try{localStorage.setItem(EDITOR_PANE_WIDTH_KEY,String(v));}catch{}
+      if(inStep===2&&zoomIdx===-1)applyZoom();
+    });
+
+    splitter.addEventListener('pointerdown',ev=>{
+      if(!isEditorPaneResizable())return;
+      const ws=splitter.closest('.ws');
+      if(!ws)return;
+      ev.preventDefault();
+      splitter.classList.add('active');
+      document.body.classList.add('split-resizing');
+
+      let rafId=0;
+      const updateFromClientX=clientX=>{
+        const rect=ws.getBoundingClientRect();
+        const next=clientX-rect.left-splitter.offsetWidth/2;
+        applyEditorPaneWidth(next);
+        if(inStep===2&&zoomIdx===-1)applyZoom();
+      };
+      const onMove=e=>{
+        if(rafId)return;
+        rafId=requestAnimationFrame(()=>{
+          rafId=0;
+          updateFromClientX(e.clientX);
+        });
+      };
+      const stop=()=>{
+        if(rafId){cancelAnimationFrame(rafId);rafId=0;}
+        splitter.classList.remove('active');
+        document.body.classList.remove('split-resizing');
+        document.removeEventListener('pointermove',onMove);
+        document.removeEventListener('pointerup',stop);
+        document.removeEventListener('pointercancel',stop);
+        try{localStorage.setItem(EDITOR_PANE_WIDTH_KEY,String(editorPaneWidth));}catch{}
+      };
+
+      document.addEventListener('pointermove',onMove);
+      document.addEventListener('pointerup',stop);
+      document.addEventListener('pointercancel',stop);
+      updateFromClientX(ev.clientX);
+    });
+  });
+
+  syncEditorPaneWidthForViewport();
+  window.addEventListener('resize',syncEditorPaneWidthForViewport);
+}
+
 function updateProjNameDisplay(){
   const area=document.getElementById('proj-name-area');
   const el=document.getElementById('proj-name-display');
@@ -1590,6 +1795,9 @@ function drawTextBlock(ctx,W,H,z,s){
 /* ═══ CANVAS INIT & ZOOM ═══ */
 const ZOOM_STEPS=[25,50,75,100,125,150,200];
 let zoomIdx=-1; // -1 = auto-fit mode
+const S1_PREVIEW_ZOOM_KEY='previewgen_s1_preview_zoom_idx';
+const S1_PREVIEW_ZOOM_STEPS=[70,85,100,115,130,145];
+let s1PreviewZoomIdx=2;
 function zoomPreview(dir){
   if(zoomIdx===-1){
     // Leaving auto-fit: find nearest step to current fit size
@@ -1603,6 +1811,28 @@ function zoomPreview(dir){
   applyZoom();
 }
 function zoomPreviewReset(){zoomIdx=-1;applyZoom();}
+function applyS1PreviewZoom(){
+  const scale=S1_PREVIEW_ZOOM_STEPS[s1PreviewZoomIdx]/100;
+  document.documentElement.style.setProperty('--s1-preview-zoom',String(scale));
+  const minus=document.getElementById('s1-zoom-minus');
+  const plus=document.getElementById('s1-zoom-plus');
+  if(minus)minus.disabled=s1PreviewZoomIdx===0;
+  if(plus)plus.disabled=s1PreviewZoomIdx===S1_PREVIEW_ZOOM_STEPS.length-1;
+}
+function adjustS1PreviewZoom(dir){
+  const next=Math.max(0,Math.min(S1_PREVIEW_ZOOM_STEPS.length-1,s1PreviewZoomIdx+dir));
+  if(next===s1PreviewZoomIdx)return;
+  s1PreviewZoomIdx=next;
+  applyS1PreviewZoom();
+  try{localStorage.setItem(S1_PREVIEW_ZOOM_KEY,String(s1PreviewZoomIdx));}catch{}
+}
+function initS1PreviewZoom(){
+  try{
+    const saved=parseInt(localStorage.getItem(S1_PREVIEW_ZOOM_KEY)||'',10);
+    if(Number.isFinite(saved)&&saved>=0&&saved<S1_PREVIEW_ZOOM_STEPS.length)s1PreviewZoomIdx=saved;
+  }catch{}
+  applyS1PreviewZoom();
+}
 function calcFitPercent(){
   const center=document.querySelector('.edit-center');
   if(!center||center.clientWidth===0||center.clientHeight===0)return 100;
@@ -1830,11 +2060,97 @@ function goStep(n){
   inStep=n;
   document.getElementById('s1').style.display=n===1?'flex':'none';
   document.getElementById('s2').style.display=n===2?'flex':'none';
+  const s3=document.getElementById('s3');if(s3)s3.style.display=n===3?'flex':'none';
+  const rightPanel=document.querySelector('.edit-right');
+  if(rightPanel) rightPanel.style.display=n===3?'none':'';
   document.getElementById('st1').className='step'+(n===1?' active':' done');
-  document.getElementById('st2').className='step'+(n===2?' active':'');
+  document.getElementById('st2').className='step'+(n===2?' active':n>2?' done':'');
+  const st3=document.getElementById('st3');if(st3)st3.className='step'+(n===3?' active':'');
   if(n===2) buildFields();
+  if(n===3) buildStep3();
   render();
   if(isIphone()) iphoneApplyStep();
+}
+
+/* ═══ STEP 3: 仕上げる（プレビュー＋書き出し） ═══ */
+function buildStep3(){
+  buildS3Left();
+  renderS3Gallery();
+}
+function buildS3Left(){
+  const el=document.getElementById('s3-left');
+  if(!el)return;
+  el.innerHTML='';
+
+  // 📐 デバイスサイズ
+  const devCard=addCard(el,'📐','書き出しサイズ',DEVS[curDev].lbl.split(' ')[0]);
+  const iphoneIds=['6.9','6.7','6.5','5.5'];
+  const ipadIds=['ipad13','ipad11','ipad97'];
+  const makeDevBtn=(id)=>{
+    const dev=DEVS[id];
+    const btn=document.createElement('button');btn.type='button';
+    btn.className='s3-dev-btn'+(curDev===id?' active':'');
+    const inch=id.startsWith('ipad')?id.replace('ipad','')+'"':id+'"';
+    btn.innerHTML=`<div>${inch}</div><div class="s3-dev-sub">${dev.w}×${dev.h}</div>`;
+    btn.onclick=()=>{setDevice(id);buildStep3();};
+    return btn;
+  };
+  const iphCat=document.createElement('div');iphCat.className='s3-dev-cat';iphCat.textContent='iPhone';
+  devCard.appendChild(iphCat);
+  const iphGrid=document.createElement('div');iphGrid.className='s3-dev-grid';
+  iphoneIds.forEach(id=>iphGrid.appendChild(makeDevBtn(id)));
+  devCard.appendChild(iphGrid);
+  const ipadCat=document.createElement('div');ipadCat.className='s3-dev-cat';ipadCat.textContent='iPad';
+  devCard.appendChild(ipadCat);
+  const ipadGrid=document.createElement('div');ipadGrid.className='s3-dev-grid';
+  ipadIds.forEach(id=>ipadGrid.appendChild(makeDevBtn(id)));
+  devCard.appendChild(ipadGrid);
+
+  // 📦 書き出し
+  const expCard=addCard(el,'📦','書き出し');
+  const makeExpBtn=(icon,name,desc,onClick)=>{
+    const btn=document.createElement('button');btn.type='button';
+    btn.className='s3-export-btn';
+    btn.innerHTML=`<div class="s3-export-icon">${icon}</div><div class="s3-export-text"><div class="s3-export-name">${name}</div><div class="s3-export-desc">${desc}</div></div>`;
+    btn.onclick=onClick;
+    return btn;
+  };
+  expCard.appendChild(makeExpBtn('🗜','現在のサイズで全スライド ZIP',`${DEVS[curDev].lbl.split(' ')[1]||''} を ${slides.length}枚`,()=>exportZip()));
+  expCard.appendChild(makeExpBtn('🌐','全サイズで全スライド ZIP','iPhone+iPad の全7サイズ',()=>exportAllSizesZip()));
+  expCard.appendChild(makeExpBtn('🖼','選択中のスライドだけ PNG',`スライド ${curSlide+1} を1枚だけ`,()=>exportCurrent()));
+
+  // 📋 サマリー
+  const sumCard=addCard(el,'📋','サマリー');
+  const stats=document.createElement('div');stats.className='s3-stats';
+  const dev=DEVS[curDev];
+  const mkStat=(lbl,val)=>{const d=document.createElement('div');d.className='s3-stat';d.innerHTML=`<div class="s3-stat-lbl">${lbl}</div><div class="s3-stat-val">${val}</div>`;return d;};
+  stats.appendChild(mkStat('スライド数',slides.length+'枚'));
+  stats.appendChild(mkStat('解像度',dev.w+'×'+dev.h));
+  sumCard.appendChild(stats);
+}
+function renderS3Gallery(){
+  const gallery=document.getElementById('s3-gallery');
+  if(!gallery)return;
+  gallery.innerHTML='';
+  const dev=DEVS[curDev];
+  // ヘッダーの情報を更新
+  const info=document.getElementById('s3-dev-info');
+  if(info)info.textContent=`${dev.lbl} ・ ${slides.length}枚`;
+  slides.forEach((s,i)=>{
+    const tile=document.createElement('div');tile.className='s3-tile';
+    const tw=240;
+    const tc=document.createElement('canvas');
+    tc.width=tw;tc.height=Math.round(tw*dev.h/dev.w);
+    renderSlide(tc.getContext('2d'),tc.width,tc.height,s);
+    tc.style.cssText='width:100%;height:auto;display:block';
+    const foot=document.createElement('div');foot.className='s3-tile-foot';
+    const num=document.createElement('div');num.className='s3-tile-n';num.textContent='#'+(i+1);
+    const dl=document.createElement('button');dl.type='button';dl.className='s3-tile-dl';dl.textContent='↓ PNG';
+    dl.onclick=()=>exportSlide(i);
+    foot.appendChild(num);foot.appendChild(dl);
+    tile.appendChild(tc);tile.appendChild(foot);
+    gallery.appendChild(tile);
+  });
 }
 
 /* ═══ STEP 1 TAB SWITCH (iPad) ═══ */
@@ -1857,16 +2173,86 @@ function buildBgGrid(el){
     card.querySelector('.opt-prev').appendChild(mc);el.appendChild(card);
   });
 }
+// 配色プリセット（各色にダーク／ライト両モードを定義）
+// グラデーションがはっきり見えるよう、bgColor1 → bgColor2 で
+// 明度・彩度・色相のいずれかに大きな差をつけてある
 const COLOR_PRESETS=[
-  {name:'オーシャン',icon:'🌊',bgColor1:'#0057FF',bgColor2:'#00D4AA',meshColor3:'#00B4D8',meshColor4:'#7DF9FF'},
-  {name:'サンセット',icon:'🌅',bgColor1:'#FF4500',bgColor2:'#FFD700',meshColor3:'#FF6347',meshColor4:'#FFA500'},
-  {name:'フォレスト',icon:'🌿',bgColor1:'#0B6623',bgColor2:'#ADFF2F',meshColor3:'#228B22',meshColor4:'#7CFC00'},
-  {name:'ダーク',icon:'🌑',bgColor1:'#0a0a1a',bgColor2:'#1a0830',meshColor3:'#7B5FF2',meshColor4:'#3a1a6e'},
-  {name:'ホワイト',icon:'⬜',bgColor1:'#FFFFFF',bgColor2:'#C7D2FE',meshColor3:'#A5B4FC',meshColor4:'#DDD6FE',titleColor:'#1a1a1a',subColor:'#555555'},
-  {name:'パステル',icon:'🍬',bgColor1:'#f093fb',bgColor2:'#f5576c',meshColor3:'#c471f5',meshColor4:'#fa709a'},
-  {name:'ネオン',icon:'💜',bgColor1:'#0d0221',bgColor2:'#150734',meshColor3:'#BF5AF2',meshColor4:'#FF375F'},
-  {name:'モノクロ',icon:'◻️',bgColor1:'#2c2c2e',bgColor2:'#636366',meshColor3:'#48484a',meshColor4:'#8e8e93'},
+  {name:'オーシャン',icon:'🌊',
+   dark:{bgColor1:'#001A66',bgColor2:'#00E5FF',meshColor3:'#0057FF',meshColor4:'#00C2D8',titleColor:'#FFFFFF',subColor:'#C8E8FF'},
+   light:{bgColor1:'#E8F8FF',bgColor2:'#5DC8F0',meshColor3:'#A8DCF0',meshColor4:'#3AA8DC',titleColor:'#001A66',subColor:'#0057B3'}},
+  {name:'サンセット',icon:'🌅',
+   dark:{bgColor1:'#5C0033',bgColor2:'#FFB800',meshColor3:'#E63950',meshColor4:'#FF7A00',titleColor:'#FFFFFF',subColor:'#FFE8C0'},
+   light:{bgColor1:'#FFF0E0',bgColor2:'#FF9560',meshColor3:'#FFC8A0',meshColor4:'#FF7530',titleColor:'#5C0033',subColor:'#C45200'}},
+  {name:'フォレスト',icon:'🌿',
+   dark:{bgColor1:'#06330F',bgColor2:'#9CFF38',meshColor3:'#1F7A2E',meshColor4:'#5DD63A',titleColor:'#FFFFFF',subColor:'#D8F5C0'},
+   light:{bgColor1:'#EBFCE0',bgColor2:'#7DC850',meshColor3:'#B8E090',meshColor4:'#5BAA32',titleColor:'#06330F',subColor:'#1F7A2E'}},
+  {name:'ミッドナイト',icon:'🌑',
+   dark:{bgColor1:'#000018',bgColor2:'#9D4EDD',meshColor3:'#3a1a6e',meshColor4:'#7B5FF2',titleColor:'#FFFFFF',subColor:'#D0C8FF'},
+   light:{bgColor1:'#EDEDFA',bgColor2:'#8E7AD8',meshColor3:'#D0C8F5',meshColor4:'#6A52C0',titleColor:'#1A0040',subColor:'#3a1a6e'}},
+  {name:'クリーン',icon:'⬜',
+   dark:{bgColor1:'#000000',bgColor2:'#5A5A60',meshColor3:'#1C1C1E',meshColor4:'#48484A',titleColor:'#FFFFFF',subColor:'#C0C0C8'},
+   light:{bgColor1:'#FFFFFF',bgColor2:'#C0C0CC',meshColor3:'#F0F0F5',meshColor4:'#9898A0',titleColor:'#000000',subColor:'#48484A'}},
+  {name:'パステル',icon:'🍬',
+   dark:{bgColor1:'#5C0A4A',bgColor2:'#FF6FB5',meshColor3:'#9C2470',meshColor4:'#FFA0CC',titleColor:'#FFFFFF',subColor:'#FFD8E8'},
+   light:{bgColor1:'#FFEEF6',bgColor2:'#FF9CCB',meshColor3:'#FFD0E8',meshColor4:'#FF6FB0',titleColor:'#5C0A4A',subColor:'#9C2470'}},
+  {name:'ネオン',icon:'💜',
+   dark:{bgColor1:'#0D0221',bgColor2:'#FF1493',meshColor3:'#BF5AF2',meshColor4:'#00E5FF',titleColor:'#FFFFFF',subColor:'#FFB8E8'},
+   light:{bgColor1:'#FBE8FF',bgColor2:'#FF6FA8',meshColor3:'#E0B8FF',meshColor4:'#FF3D85',titleColor:'#3D0066',subColor:'#9C0050'}},
+  {name:'モノクロ',icon:'◻️',
+   dark:{bgColor1:'#0a0a0c',bgColor2:'#8E8E94',meshColor3:'#2C2C2E',meshColor4:'#48484A',titleColor:'#FFFFFF',subColor:'#C7C7CC'},
+   light:{bgColor1:'#FFFFFF',bgColor2:'#8E8E94',meshColor3:'#E5E5EA',meshColor4:'#5C5C62',titleColor:'#0a0a0c',subColor:'#48484A'}},
+  {name:'チェリー',icon:'🍒',
+   dark:{bgColor1:'#2A0008',bgColor2:'#FF1744',meshColor3:'#7A0020',meshColor4:'#FF6B85',titleColor:'#FFFFFF',subColor:'#FFD0D8'},
+   light:{bgColor1:'#FFEDF0',bgColor2:'#FF5577',meshColor3:'#FFC0CB',meshColor4:'#E63950',titleColor:'#2A0008',subColor:'#A30F2B'}},
+  {name:'ライム',icon:'🍋',
+   dark:{bgColor1:'#1A2D00',bgColor2:'#D4FF00',meshColor3:'#5C8500',meshColor4:'#A8FF38',titleColor:'#FFFFFF',subColor:'#E8FFC0'},
+   light:{bgColor1:'#F8FFE0',bgColor2:'#A8E63D',meshColor3:'#DDFF9C',meshColor4:'#7AB800',titleColor:'#1A2D00',subColor:'#5C8500'}},
+  {name:'ラベンダー',icon:'💐',
+   dark:{bgColor1:'#1A0040',bgColor2:'#C77FFF',meshColor3:'#5C148C',meshColor4:'#9D4EDD',titleColor:'#FFFFFF',subColor:'#E8D0FF'},
+   light:{bgColor1:'#F4E8FF',bgColor2:'#9D7AD8',meshColor3:'#D6C0F5',meshColor4:'#7048B8',titleColor:'#1A0040',subColor:'#5C148C'}},
+  {name:'ゴールド',icon:'✨',
+   dark:{bgColor1:'#1F1400',bgColor2:'#FFC107',meshColor3:'#7A5500',meshColor4:'#FFD54F',titleColor:'#FFD700',subColor:'#FFE8A0'},
+   light:{bgColor1:'#FFF8DC',bgColor2:'#FFB300',meshColor3:'#FFEDB0',meshColor4:'#E69500',titleColor:'#3D2A00',subColor:'#7A5500'}},
+  {name:'ミント',icon:'🌱',
+   dark:{bgColor1:'#002A22',bgColor2:'#5DECC8',meshColor3:'#00897B',meshColor4:'#26D7B0',titleColor:'#FFFFFF',subColor:'#B2DFDB'},
+   light:{bgColor1:'#E0F8F0',bgColor2:'#4DD0AC',meshColor3:'#B0E5D8',meshColor4:'#1FA886',titleColor:'#002A22',subColor:'#00695C'}},
+  {name:'コーラル',icon:'🪸',
+   dark:{bgColor1:'#3D0020',bgColor2:'#FF8C7A',meshColor3:'#C04060',meshColor4:'#FFA88C',titleColor:'#FFFFFF',subColor:'#FFD8D0'},
+   light:{bgColor1:'#FFF0EC',bgColor2:'#FF8870',meshColor3:'#FFC8B8',meshColor4:'#E0604A',titleColor:'#3D0020',subColor:'#C04060'}},
+  {name:'アクア',icon:'💧',
+   dark:{bgColor1:'#001F4D',bgColor2:'#00E0FF',meshColor3:'#003366',meshColor4:'#5DECDC',titleColor:'#FFFFFF',subColor:'#C8E8FF'},
+   light:{bgColor1:'#E8F8FF',bgColor2:'#5DBFE8',meshColor3:'#B0E5FF',meshColor4:'#0099D8',titleColor:'#001F4D',subColor:'#0066CC'}},
+  {name:'プラム',icon:'🍇',
+   dark:{bgColor1:'#180029',bgColor2:'#C233E0',meshColor3:'#4A0E6E',meshColor4:'#9C42B0',titleColor:'#FFFFFF',subColor:'#E8C0FF'},
+   light:{bgColor1:'#F2E0FA',bgColor2:'#9C42B0',meshColor3:'#DDB8E5',meshColor4:'#6A1B9A',titleColor:'#180029',subColor:'#4A0E6E'}},
+  {name:'スカイ',icon:'☁️',
+   dark:{bgColor1:'#0A1F3D',bgColor2:'#7DC8FF',meshColor3:'#1a3a5c',meshColor4:'#5DADE2',titleColor:'#FFFFFF',subColor:'#D8ECFF'},
+   light:{bgColor1:'#EBF5FF',bgColor2:'#5BA4D8',meshColor3:'#B8DCFF',meshColor4:'#3A7AB8',titleColor:'#0A1F3D',subColor:'#2d5a8c'}},
+  {name:'ローズ',icon:'🌹',
+   dark:{bgColor1:'#2A0010',bgColor2:'#FF4081',meshColor3:'#AD1457',meshColor4:'#FF85AC',titleColor:'#FFFFFF',subColor:'#FFC8D8'},
+   light:{bgColor1:'#FFEBF1',bgColor2:'#FF6B9C',meshColor3:'#FFB8C8',meshColor4:'#E91E63',titleColor:'#2A0010',subColor:'#C2185B'}},
+  {name:'チャコール',icon:'⚫',
+   dark:{bgColor1:'#000000',bgColor2:'#5C5C62',meshColor3:'#1C1C1C',meshColor4:'#3A3A3A',titleColor:'#FFFFFF',subColor:'#B0B0B8'},
+   light:{bgColor1:'#FAFAFC',bgColor2:'#A0A0A8',meshColor3:'#E5E5E5',meshColor4:'#7A7A82',titleColor:'#000000',subColor:'#3A3A3A'}},
+  {name:'バブルガム',icon:'🩷',
+   dark:{bgColor1:'#3D0020',bgColor2:'#FF45A8',meshColor3:'#9C1F5F',meshColor4:'#FF85C0',titleColor:'#FFFFFF',subColor:'#FFD0E5'},
+   light:{bgColor1:'#FFEBF4',bgColor2:'#FF5BA8',meshColor3:'#FFC0DC',meshColor4:'#D8358A',titleColor:'#3D0020',subColor:'#9C1F5F'}},
+  {name:'スモーク',icon:'🌫️',
+   dark:{bgColor1:'#0B1220',bgColor2:'#9CA3AF',meshColor3:'#374151',meshColor4:'#7E8DA8',titleColor:'#FFFFFF',subColor:'#E0E5EE'},
+   light:{bgColor1:'#FAFBFC',bgColor2:'#7E8DA8',meshColor3:'#D1D5DB',meshColor4:'#4B5563',titleColor:'#0B1220',subColor:'#4b5563'}},
+  {name:'バニラ',icon:'🍦',
+   dark:{bgColor1:'#2A1A00',bgColor2:'#FFD180',meshColor3:'#8C7340',meshColor4:'#FFE082',titleColor:'#FFF8DC',subColor:'#FFE8B0'},
+   light:{bgColor1:'#FFFAF0',bgColor2:'#FFC957',meshColor3:'#FFEFC8',meshColor4:'#E0A030',titleColor:'#2A1A00',subColor:'#8C7340'}},
+  {name:'ピーチ',icon:'🍑',
+   dark:{bgColor1:'#3D0033',bgColor2:'#FFB088',meshColor3:'#D85C8E',meshColor4:'#FFCDD2',titleColor:'#FFFFFF',subColor:'#FFE0D8'},
+   light:{bgColor1:'#FFF2EC',bgColor2:'#FF8870',meshColor3:'#FFD0C0',meshColor4:'#E04A38',titleColor:'#3D0033',subColor:'#D85C8E'}},
+  {name:'エメラルド',icon:'💎',
+   dark:{bgColor1:'#002A20',bgColor2:'#1DE9B6',meshColor3:'#00754D',meshColor4:'#69F0AE',titleColor:'#FFFFFF',subColor:'#B0F0DC'},
+   light:{bgColor1:'#E6FAEF',bgColor2:'#1DE9B6',meshColor3:'#B0E8D0',meshColor4:'#00A86B',titleColor:'#002A20',subColor:'#00754D'}},
 ];
+
+// プリセットの現在のモード（buildAllBgAdjust の再描画で参照）
+let presetColorMode='dark';
 
 function buildBgAdjust(el){
   if(!el)return;el.innerHTML='';
@@ -1878,49 +2264,76 @@ function buildBgAdjust(el){
   const isRadial=resolved==='radial';
   const isMesh=resolved==='mesh';
   const isPattern=resolved==='pattern';
-  // 配色プリセット
+  // 背景スタイルごとのアイコン・名前
+  const bgInfo={
+    solid:{icon:'⬛',name:'単色'},
+    gradient:{icon:'🌈',name:'グラデーション'},
+    split:{icon:'⚡',name:'スプリット'},
+    radial:{icon:'☀️',name:'ラジアル'},
+    mesh:{icon:'🌌',name:'メッシュ'},
+    pattern:{icon:'🎭',name:'パターン'},
+  };
+  const info=bgInfo[resolved]||{icon:'🎨',name:'背景'};
+  // ── 配色プリセットカード（ダーク／ライト切り替え対応） ──
+  const presetCard=addCard(el,'🎨','配色プリセット',presetColorMode==='dark'?'DARK':'LIGHT');
+  // ダーク／ライト モードトグル
+  const modeToggle=document.createElement('div');modeToggle.className='preset-mode-toggle';
+  [['dark','🌙 ダーク'],['light','☀️ ライト']].forEach(([m,lbl])=>{
+    const mBtn=document.createElement('button');mBtn.type='button';mBtn.textContent=lbl;
+    if(presetColorMode===m)mBtn.classList.add('active');
+    mBtn.onclick=()=>{presetColorMode=m;buildAllBgAdjust();};
+    modeToggle.appendChild(mBtn);
+  });
+  presetCard.appendChild(modeToggle);
+  // プリセットボタン群（グラデ背景＋アイコン＋名前）
   const presetRow=document.createElement('div');presetRow.className='color-preset-row';
   COLOR_PRESETS.forEach(p=>{
-    const btn=document.createElement('button');btn.className='color-preset-btn';
-    btn.innerHTML=`<span class="cp-swatch" style="background:${p.bgColor1}"></span><span class="cp-swatch" style="background:${p.bgColor2}"></span><span class="cp-name">${p.name}</span>`;
+    const variant=p[presetColorMode]||p.dark;
+    const btn=document.createElement('button');btn.type='button';btn.className='color-preset-btn';
+    btn.style.background=`linear-gradient(135deg, ${variant.bgColor1}, ${variant.bgColor2})`;
+    btn.style.color=variant.titleColor||(presetColorMode==='dark'?'#FFFFFF':'#1a1a1a');
+    if(presetColorMode==='light')btn.classList.add('cp-light');
+    btn.innerHTML=`<span class="cp-icon">${p.icon}</span><span class="cp-name">${p.name}</span>`;
     btn.onclick=()=>{
       pushUndo();
-      s.bgColor1=p.bgColor1;s.bgColor2=p.bgColor2;
-      if(p.meshColor3)s.meshColor3=p.meshColor3;
-      if(p.meshColor4)s.meshColor4=p.meshColor4;
-      if(p.titleColor)s.titleColor=p.titleColor;
-      if(p.subColor)s.subColor=p.subColor;
+      s.bgColor1=variant.bgColor1;s.bgColor2=variant.bgColor2;
+      if(variant.meshColor3)s.meshColor3=variant.meshColor3;
+      if(variant.meshColor4)s.meshColor4=variant.meshColor4;
+      if(variant.titleColor)s.titleColor=variant.titleColor;
+      if(variant.subColor)s.subColor=variant.subColor;
       buildAllBgAdjust();render();
     };
     presetRow.appendChild(btn);
   });
-  el.appendChild(presetRow);
+  presetCard.appendChild(presetRow);
+  // ── 背景カスタマイズカード（選択スタイルごと） ──
+  const card=addCard(el,info.icon,info.name+'の詳細',resolved.toUpperCase());
   // メインカラー（全スタイル共通）
-  addColorField(el,'メインカラー','bgColor1');
+  addColorField(card,'メインカラー','bgColor1');
   // サブカラー（単色以外）
-  if(!isSolid)addColorField(el,'サブカラー','bgColor2');
+  if(!isSolid)addColorField(card,'サブカラー','bgColor2');
   // グラデーション
-  if(isGrad)addSliderField(el,'グラデ角度','bgAngle',0,360,s.bgAngle!=null?s.bgAngle:135,'°');
+  if(isGrad)addSliderField(card,'グラデ角度','bgAngle',0,360,s.bgAngle!=null?s.bgAngle:135,'°');
   // スプリット
-  if(isSplit)addSliderField(el,'カーブの強さ','splitCurve',-50,50,s.splitCurve!=null?s.splitCurve:30,'');
+  if(isSplit)addSliderField(card,'カーブの強さ','splitCurve',-50,50,s.splitCurve!=null?s.splitCurve:30,'');
   // ラジアル
   if(isRadial){
-    addSliderField(el,'中心位置（上下）','radialY',0,100,s.radialY!=null?s.radialY:40,'%');
-    addSliderField(el,'広がり','radialSize',30,150,s.radialSize!=null?s.radialSize:80,'%');
+    addSliderField(card,'中心位置（上下）','radialY',0,100,s.radialY!=null?s.radialY:40,'%');
+    addSliderField(card,'広がり','radialSize',30,150,s.radialSize!=null?s.radialSize:80,'%');
   }
   // メッシュ
   if(isMesh){
-    addColorField(el,'アクセント 1','meshColor3');
-    addColorField(el,'アクセント 2','meshColor4');
+    addColorField(card,'アクセント 1','meshColor3');
+    addColorField(card,'アクセント 2','meshColor4');
   }
   // パターン
   if(isPattern){
-    addSelectField(el,'パターン種類','patternType',[['dots','ドット'],['stripes','ストライプ'],['grid','グリッド'],['diamonds','ダイヤ']]);
+    addSelectField(card,'パターン種類','patternType',[['dots','ドット'],['stripes','ストライプ'],['grid','グリッド'],['diamonds','ダイヤ']]);
     // パターン種類変更時にUIを再構築（ストライプ角度の出し分け）
-    const sel=el.querySelector('select');if(sel){const orig=sel.onchange;sel.onchange=()=>{orig();buildAllBgAdjust();};}
-    addSliderField(el,'模様の大きさ','patternScale',10,100,s.patternScale!=null?s.patternScale:50,'');
-    addSliderField(el,'模様の濃さ','patternOpacity',3,40,s.patternOpacity!=null?s.patternOpacity:12,'%');
-    if((s.patternType||'dots')==='stripes')addSliderField(el,'ストライプ角度','bgAngle',0,180,s.bgAngle!=null?s.bgAngle:45,'°');
+    const sel=card.querySelector('select');if(sel){const orig=sel.onchange;sel.onchange=()=>{orig();buildAllBgAdjust();};}
+    addSliderField(card,'模様の大きさ','patternScale',10,100,s.patternScale!=null?s.patternScale:50,'');
+    addSliderField(card,'模様の濃さ','patternOpacity',3,40,s.patternOpacity!=null?s.patternOpacity:12,'%');
+    if((s.patternType||'dots')==='stripes')addSliderField(card,'ストライプ角度','bgAngle',0,180,s.bgAngle!=null?s.bgAngle:45,'°');
   }
 }
 function buildAllBgAdjust(){
@@ -1952,34 +2365,37 @@ function buildLoAdjust(el){
   const lo=s.phoneLayout;
   // 傾き
   if(lo==='tilted'){
-    addSliderField(el,'傾き角度','phoneTilt',-30,30,s.phoneTilt||10,'°');
+    const card=addCard(el,'📐','傾き設定');
+    addSliderField(card,'傾き角度','phoneTilt',-30,30,s.phoneTilt||10,'°');
   }
   // ウィジェット+iPhone
   if(lo==='widget-phone'){
-    addSliderField(el,'ウィジェット サイズ','wpWidgetSize',20,100,s.wpWidgetSize||70,'%');
-    addSliderField(el,'iPhone サイズ','wpPhoneSize',15,80,s.wpPhoneSize||42,'%');
+    const card=addCard(el,'🧩','ウィジェット + iPhone');
+    addSliderField(card,'ウィジェット サイズ','wpWidgetSize',20,100,s.wpWidgetSize||70,'%');
+    addSliderField(card,'iPhone サイズ','wpPhoneSize',15,80,s.wpPhoneSize||42,'%');
     // 中央揃えボタン
-    const centerRow=document.createElement('div');centerRow.style.cssText='display:flex;gap:6px;margin-top:4px';
+    const centerRow=document.createElement('div');centerRow.style.cssText='display:flex;gap:6px;margin-top:2px';
     [['wpWidgetX','ウィジェットを中央'],['wpPhoneX','iPhoneを中央']].forEach(([key,label])=>{
       const btn=document.createElement('button');btn.className='btn btn-g';btn.style.cssText='font-size:10px;padding:4px 10px';
       btn.textContent=label;
       btn.onclick=()=>{pushUndo();s[key]=50;render();};
       centerRow.appendChild(btn);
     });
-    el.appendChild(centerRow);
+    card.appendChild(centerRow);
   }
   // ウィジェットグリッド
   if(lo==='widget-grid'){
-    addSliderField(el,'横幅（カラム数）','wgCols',2,4,s.wgCols||4,'列');
+    const card=addCard(el,'🧩','ウィジェットグリッド');
+    addSliderField(card,'横幅（カラム数）','wgCols',2,4,s.wgCols||4,'列');
     const items=(s.wgItems||'xl,l,m,s').split(',').map(v=>v.trim()).filter(Boolean);
     const nameMap={s:'小',m:'中',l:'大',xl:'特大'};
     const colorMap={s:'#30D158',m:'#0A84FF',l:'#BF5AF2',xl:'#FF9F0A'};
     // ヘッダー（個数表示）
-    const hdr=document.createElement('div');hdr.style.cssText='font-size:11px;color:var(--dm);margin-bottom:6px;display:flex;align-items:center;gap:8px';
+    const hdr=document.createElement('div');hdr.style.cssText='font-size:11px;color:var(--dm);display:flex;align-items:center;gap:8px;margin-top:2px';
     hdr.innerHTML=`<span>ウィジェット構成</span><span style="background:var(--b1);padding:1px 7px;border-radius:9px;font-size:10px;font-weight:700">${items.length}個</span>`;
-    el.appendChild(hdr);
+    card.appendChild(hdr);
     // チップリスト（個別削除・並べ替え可能）
-    const chipList=document.createElement('div');chipList.style.cssText='display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px';
+    const chipList=document.createElement('div');chipList.style.cssText='display:flex;gap:4px;flex-wrap:wrap';
     items.forEach((id,i)=>{
       const chip=document.createElement('div');
       const c=colorMap[id]||'var(--dm)';
@@ -2014,58 +2430,67 @@ function buildLoAdjust(el){
       }
       chipList.appendChild(chip);
     });
-    el.appendChild(chipList);
+    card.appendChild(chipList);
     // 追加ボタン群
-    const addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:4px;flex-wrap:wrap;align-items:center';
+    const addBtnRow=document.createElement('div');addBtnRow.style.cssText='display:flex;gap:4px;flex-wrap:wrap;align-items:center';
     [['s','+ 小'],['m','+ 中'],['l','+ 大'],['xl','+ 特大']].forEach(([id,label])=>{
       const btn=document.createElement('button');btn.className='btn btn-g';btn.style.cssText='font-size:10px;padding:4px 8px';
       btn.textContent=label;
       btn.onclick=()=>{pushUndo();const cur=(s.wgItems||'xl,l,m,s');s.wgItems=cur+','+id;buildAllLoAdjust();render();};
-      addRow.appendChild(btn);
+      addBtnRow.appendChild(btn);
     });
     // リセット
     const sep=document.createElement('span');sep.style.cssText='width:1px;height:16px;background:var(--b2);margin:0 2px';
-    addRow.appendChild(sep);
+    addBtnRow.appendChild(sep);
     const resetBtn=document.createElement('button');resetBtn.className='btn btn-g';resetBtn.style.cssText='font-size:10px;padding:4px 8px';
     resetBtn.textContent='リセット';
     resetBtn.onclick=()=>{pushUndo();s.wgItems='xl,l,m,s';buildAllLoAdjust();render();};
-    addRow.appendChild(resetBtn);
-    el.appendChild(addRow);
+    addBtnRow.appendChild(resetBtn);
+    card.appendChild(addBtnRow);
   }
   // マルチiPhone
   if(lo==='multi-phone'){
-    addSliderField(el,'台数','mpCount',1,5,s.mpCount||3,'台');
+    const card=addCard(el,'📱','マルチ iPhone');
+    addSliderField(card,'台数','mpCount',1,5,s.mpCount||3,'台');
     // 台数変更時にUIを再構築
-    const countSlider=el.querySelector('input[type=range]');
+    const countSlider=card.querySelector('input[type=range]');
     if(countSlider){const orig=countSlider.oninput;countSlider.oninput=()=>{orig();buildAllLoAdjust();};}
-    addSliderField(el,'サイズ（共通）','mpSize',15,70,s.mpSize||40,'%');
-    addSliderField(el,'角度（共通）','mpRot',-30,30,s.mpRot||0,'°');
+    addSliderField(card,'サイズ（共通）','mpSize',15,70,s.mpSize||40,'%');
+    addSliderField(card,'角度（共通）','mpRot',-30,30,s.mpRot||0,'°');
   }
-  // フリー配置
+  // フリー配置（デバイスごとに個別カード）
   if(lo==='free-device'){
-    addToggleField_s1(el,'💻 MacBook 表示','fdMacOn',true);
+    // MacBook
+    const macCard=addCard(el,'💻','MacBook','フリー配置');
+    addToggleField_s1(macCard,'表示','fdMacOn',true);
     if(s.fdMacOn!==false){
-      addSliderField(el,'💻 サイズ','fdMacSize',20,90,s.fdMacSize||60,'%');
-      addSliderField(el,'💻 回転','fdMacRot',-30,30,s.fdMacRot||0,'°');
-      addSliderField(el,'💻 重なり順','fdMacZ',0,3,s.fdMacZ!=null?s.fdMacZ:0,'');
+      addSliderField(macCard,'サイズ','fdMacSize',20,90,s.fdMacSize||60,'%');
+      addSliderField(macCard,'回転','fdMacRot',-30,30,s.fdMacRot||0,'°');
+      addSliderField(macCard,'重なり順','fdMacZ',0,3,s.fdMacZ!=null?s.fdMacZ:0,'');
     }
-    addToggleField_s1(el,'📱 iPhone 表示','fdIphoneOn',true);
+    // iPhone
+    const iphCard=addCard(el,'📱','iPhone','フリー配置');
+    addToggleField_s1(iphCard,'表示','fdIphoneOn',true);
     if(s.fdIphoneOn!==false){
-      addSliderField(el,'📱 サイズ','fdIphoneSize',15,80,s.fdIphoneSize||50,'%');
-      addSliderField(el,'📱 回転','fdIphoneRot',-30,30,s.fdIphoneRot||0,'°');
-      addSliderField(el,'📱 重なり順','fdIphoneZ',0,3,s.fdIphoneZ!=null?s.fdIphoneZ:2,'');
+      addSliderField(iphCard,'サイズ','fdIphoneSize',15,80,s.fdIphoneSize||50,'%');
+      addSliderField(iphCard,'回転','fdIphoneRot',-30,30,s.fdIphoneRot||0,'°');
+      addSliderField(iphCard,'重なり順','fdIphoneZ',0,3,s.fdIphoneZ!=null?s.fdIphoneZ:2,'');
     }
-    addToggleField_s1(el,'📱 iPad 表示','fdIpadOn',true);
+    // iPad
+    const ipdCard=addCard(el,'🖥️','iPad','フリー配置');
+    addToggleField_s1(ipdCard,'表示','fdIpadOn',true);
     if(s.fdIpadOn!==false){
-      addSliderField(el,'📱 iPad サイズ','fdIpadSize',15,80,s.fdIpadSize||45,'%');
-      addSliderField(el,'📱 iPad 回転','fdIpadRot',-30,30,s.fdIpadRot||0,'°');
-      addSliderField(el,'📱 iPad 重なり順','fdIpadZ',0,3,s.fdIpadZ!=null?s.fdIpadZ:1,'');
+      addSliderField(ipdCard,'サイズ','fdIpadSize',15,80,s.fdIpadSize||45,'%');
+      addSliderField(ipdCard,'回転','fdIpadRot',-30,30,s.fdIpadRot||0,'°');
+      addSliderField(ipdCard,'重なり順','fdIpadZ',0,3,s.fdIpadZ!=null?s.fdIpadZ:1,'');
     }
-    addToggleField_s1(el,'⌚ Watch 表示','fdWatchOn',true);
+    // Apple Watch
+    const wchCard=addCard(el,'⌚','Apple Watch','フリー配置');
+    addToggleField_s1(wchCard,'表示','fdWatchOn',true);
     if(s.fdWatchOn!==false){
-      addSliderField(el,'⌚ サイズ','fdWatchSize',10,60,s.fdWatchSize||22,'%');
-      addSliderField(el,'⌚ 回転','fdWatchRot',-30,30,s.fdWatchRot||0,'°');
-      addSliderField(el,'⌚ 重なり順','fdWatchZ',0,3,s.fdWatchZ!=null?s.fdWatchZ:3,'');
+      addSliderField(wchCard,'サイズ','fdWatchSize',10,60,s.fdWatchSize||22,'%');
+      addSliderField(wchCard,'回転','fdWatchRot',-30,30,s.fdWatchRot||0,'°');
+      addSliderField(wchCard,'重なり順','fdWatchZ',0,3,s.fdWatchZ!=null?s.fdWatchZ:3,'');
     }
   }
 }
@@ -2150,24 +2575,32 @@ function buildFields(){
 
   // Helper: build a section's content into a container el
   function buildTextSection(el){
-    addTextareaField(el,'タイトル（改行可）','title','キャッチコピーを入力');
-    addColorField(el,'タイトル文字色','titleColor');
-    addTextField(el,'サブタイトル','subtitle','サブコピーを入力');
-    addColorField(el,'サブタイトル文字色','subColor');
-    addSec(el,'iPhone 文字調整');
-    addSliderField(el,'上下位置（iPhone）','textOffsetY',-50,50,s.textOffsetY||0,'px');
-    addSec(el,'iPad 文字調整');
-    addSliderField(el,'上下位置（iPad）','textOffsetYIpad',-50,50,s.textOffsetYIpad||0,'px');
+    // タイトル（テキスト＋色を1枚のカードにまとめる）
+    const titleCard=addCard(el,'✏️','タイトル');
+    addTextareaField(titleCard,null,'title','キャッチコピーを入力');
+    addInlineColorField(titleCard,'文字色','titleColor');
+    // サブタイトル
+    const subCard=addCard(el,'💬','サブタイトル');
+    addTextField(subCard,null,'subtitle','サブコピーを入力');
+    addInlineColorField(subCard,'文字色','subColor');
+    // iPhone 文字調整
+    const iphCard=addCard(el,'📱','iPhone 文字調整','iPhone');
+    addSliderField(iphCard,'上下位置','textOffsetY',-50,50,s.textOffsetY||0,'px');
+    addSliderField(iphCard,'文字サイズ','titleSize',60,160,s.titleSize||100,'%');
+    // iPad 文字調整
+    const ipdCard=addCard(el,'🖥️','iPad 文字調整','iPad');
+    addSliderField(ipdCard,'上下位置','textOffsetYIpad',-50,50,s.textOffsetYIpad||0,'px');
+    addSliderField(ipdCard,'文字サイズ','titleSizeIpad',60,160,s.titleSizeIpad||100,'%');
+    // 機能リスト（feature-listレイアウトのみ）
     if(s.phoneLayout==='feature-list'){
-      addSec(el,'機能リスト');
-      addTextareaField(el,'項目（1行1項目、先頭に絵文字可）','featureItems','✓ 機能その1\n✓ 機能その2');
+      const flCard=addCard(el,'📋','機能リスト');
+      addTextareaField(flCard,'項目（1行1項目、先頭に絵文字可）','featureItems','✓ 機能その1\n✓ 機能その2');
     }
   }
   function buildFontSection(el){
-    addFontPicker(el);
-    addFontWeightPicker(el);
-    addSliderField(el,'文字サイズ（iPhone）','titleSize',60,160,s.titleSize||100,'%');
-    addSliderField(el,'文字サイズ（iPad）','titleSizeIpad',60,160,s.titleSizeIpad||100,'%');
+    const fontCard=addCard(el,'🔤','フォント');
+    addFontPicker(fontCard);
+    addFontWeightPicker(fontCard);
   }
   function addToggleField(p,label,key,defVal){
     const r=addRow(p,label);
@@ -2180,75 +2613,92 @@ function buildFields(){
   }
   function buildDeviceSection(el){
     const isFree=s.phoneLayout==='free-device';
-    const isWidgetLayout=['widget-grid','widget-phone','free-device'].includes(s.phoneLayout);
+
+    // ── フリー配置は専用フロー ──
+    if(isFree){
+      // 📸 スクリーンショット（4デバイス分まとめて）
+      const ssCard=addCard(el,'📸','スクリーンショット','フリー配置');
+      if(s.fdIphoneOn!==false) addUploadField(ssCard,'iPhone用','screenshotImg','_src');
+      if(s.fdIpadOn!==false) addUploadField(ssCard,'iPad用','screenshotImg2','_src2');
+      if(s.fdMacOn!==false) addUploadField(ssCard,'MacBook用','screenshotImg3','_src3');
+      if(s.fdWatchOn!==false) addUploadField(ssCard,'Apple Watch用','widgetMediumImg','_srcWidgetMedium');
+      // iPhoneフレーム調整（フリー配置のiPhoneにも適用される）
+      const adjCard=addCard(el,'🎚','iPhone スクショ調整');
+      addSliderField(adjCard,'ズーム','screenshotScale',100,200,s.screenshotScale||100,'%');
+      addSliderField(adjCard,'横位置','screenshotOffsetX',-50,50,s.screenshotOffsetX||0,'%');
+      addSliderField(adjCard,'縦位置','screenshotOffsetY',-50,50,s.screenshotOffsetY||0,'%');
+      addSelectField(adjCard,'iPhoneフレーム色','frameColor',[['black','ブラック'],['silver','シルバー'],['gold','ゴールド'],['none','フレームなし']]);
+      // 💻 MacBook
+      const macCard=addCard(el,'💻','MacBook','フリー配置');
+      addToggleField(macCard,'表示','fdMacOn',true);
+      if(s.fdMacOn!==false){
+        addSliderField(macCard,'サイズ','fdMacSize',20,90,s.fdMacSize||60,'%');
+        addSliderField(macCard,'回転','fdMacRot',-30,30,s.fdMacRot||0,'°');
+        addSliderField(macCard,'重なり順','fdMacZ',0,3,s.fdMacZ!=null?s.fdMacZ:0,'');
+      }
+      // 📱 iPhone
+      const fdIphCard=addCard(el,'📱','iPhone','フリー配置');
+      addToggleField(fdIphCard,'表示','fdIphoneOn',true);
+      if(s.fdIphoneOn!==false){
+        addSliderField(fdIphCard,'サイズ','fdIphoneSize',15,80,s.fdIphoneSize||50,'%');
+        addSliderField(fdIphCard,'回転','fdIphoneRot',-30,30,s.fdIphoneRot||0,'°');
+        addSliderField(fdIphCard,'重なり順','fdIphoneZ',0,3,s.fdIphoneZ!=null?s.fdIphoneZ:2,'');
+      }
+      // 🖥️ iPad
+      const fdIpdCard=addCard(el,'🖥️','iPad','フリー配置');
+      addToggleField(fdIpdCard,'表示','fdIpadOn',true);
+      if(s.fdIpadOn!==false){
+        addSliderField(fdIpdCard,'サイズ','fdIpadSize',15,80,s.fdIpadSize||45,'%');
+        addSliderField(fdIpdCard,'回転','fdIpadRot',-30,30,s.fdIpadRot||0,'°');
+        addSliderField(fdIpdCard,'重なり順','fdIpadZ',0,3,s.fdIpadZ!=null?s.fdIpadZ:1,'');
+      }
+      // ⌚ Apple Watch
+      const fdWchCard=addCard(el,'⌚','Apple Watch','フリー配置');
+      addToggleField(fdWchCard,'表示','fdWatchOn',true);
+      if(s.fdWatchOn!==false){
+        addSliderField(fdWchCard,'サイズ','fdWatchSize',10,60,s.fdWatchSize||22,'%');
+        addSliderField(fdWchCard,'回転','fdWatchRot',-30,30,s.fdWatchRot||0,'°');
+        addSliderField(fdWchCard,'重なり順','fdWatchZ',0,3,s.fdWatchZ!=null?s.fdWatchZ:3,'');
+      }
+      return;
+    }
+
+    // ── 通常レイアウト ──
+    const isWidgetLayout=['widget-grid','widget-phone'].includes(s.phoneLayout);
     const needsPhone=!['widget-grid'].includes(s.phoneLayout);
 
     if(s.phoneLayout==='multi-phone'){
       const count=Math.max(1,Math.min(5,s.mpCount||3));
-      addSec(el,'iPhone スクショ（'+count+'台分）');
+      const mpCard=addCard(el,'📱','iPhone スクショ',count+'台分');
       const imgKeys=[['screenshotImg','_src'],['screenshotImg2','_src2'],['screenshotImg3','_src3'],['screenshotImg4','_src4'],['screenshotImgIpad','_srcIpad']];
       for(let i=0;i<count;i++){
-        addUploadField(el,'iPhone '+(i+1),imgKeys[i][0],imgKeys[i][1]);
+        addUploadField(mpCard,'iPhone '+(i+1),imgKeys[i][0],imgKeys[i][1]);
       }
     } else if(needsPhone){
-      addSec(el,'iPhone用スクショ');
-      addUploadField(el,'スクリーンショット（iPhone）','screenshotImg','_src');
-      addSec(el,'iPad用スクショ');
-      addUploadField(el,'スクリーンショット（iPad）','screenshotImgIpad','_srcIpad');
-    }
-    if(s.phoneLayout==='before-after'||s.phoneLayout==='free-device') addUploadField(el,'スクリーンショット 2'+(s.phoneLayout==='free-device'?'（iPad用）':'（下段）'),'screenshotImg2','_src2');
-    if(s.phoneLayout==='free-device'&&s.fdMacOn!==false){
-      addSec(el,'MacBook用スクショ');
-      addUploadField(el,'スクリーンショット（MacBook）','screenshotImg3','_src3');
+      const ssCard=addCard(el,'📸','スクリーンショット','iPhone & iPad');
+      addUploadField(ssCard,'iPhone用','screenshotImg','_src');
+      addUploadField(ssCard,'iPad用','screenshotImgIpad','_srcIpad');
+      if(s.phoneLayout==='before-after') addUploadField(ssCard,'下段','screenshotImg2','_src2');
     }
     if(isWidgetLayout){
-      addSec(el,'ウィジェット画像');
+      const wgCard=addCard(el,'🧩','ウィジェット画像');
       if(s.phoneLayout==='widget-grid'){
-        addUploadField(el,'大 / 特大 ウィジェット','widgetLargeImg','_srcWidgetLarge');
-        addUploadField(el,'中ウィジェット','widgetMediumImg','_srcWidgetMedium');
-        addUploadField(el,'小ウィジェット','widgetSmallImg','_srcWidgetSmall');
-      } else if(s.phoneLayout==='widget-phone'){
-        addUploadField(el,'ウィジェット画像','widgetLargeImg','_srcWidgetLarge');
-      } else {
-        addUploadField(el,'中ウィジェット','widgetMediumImg','_srcWidgetMedium');
-        addUploadField(el,'小ウィジェット','widgetSmallImg','_srcWidgetSmall');
+        addUploadField(wgCard,'大 / 特大 ウィジェット','widgetLargeImg','_srcWidgetLarge');
+        addUploadField(wgCard,'中ウィジェット','widgetMediumImg','_srcWidgetMedium');
+        addUploadField(wgCard,'小ウィジェット','widgetSmallImg','_srcWidgetSmall');
+      } else { // widget-phone
+        addUploadField(wgCard,'ウィジェット画像','widgetLargeImg','_srcWidgetLarge');
       }
     }
     if(needsPhone||s.phoneLayout==='screen-fill'||s.phoneLayout==='screen-fill-top'){
-      addSec(el,'スクショ表示調整');
-      addSliderField(el,'ズーム','screenshotScale',100,200,s.screenshotScale||100,'%');
-      addSliderField(el,'横位置','screenshotOffsetX',-50,50,s.screenshotOffsetX||0,'%');
-      addSliderField(el,'縦位置','screenshotOffsetY',-50,50,s.screenshotOffsetY||0,'%');
-    }
-    if(needsPhone){
-      addSelectField(el,'フレームカラー','frameColor',[['black','ブラック'],['silver','シルバー'],['gold','ゴールド'],['none','フレームなし']]);
-    }
-    if(s.phoneLayout==='tilted')addSliderField(el,'傾き角度','phoneTilt',-30,30,s.phoneTilt||10,'°');
-    if(isFree){
-      // iPhone
-      addSec(el,'📱 iPhone');
-      addToggleField(el,'表示','fdIphoneOn',true);
-      if(s.fdIphoneOn!==false){
-        addSliderField(el,'サイズ','fdIphoneSize',15,80,s.fdIphoneSize||50,'%');
-        addSliderField(el,'回転','fdIphoneRot',-30,30,s.fdIphoneRot||0,'°');
-        addSliderField(el,'重なり順','fdIphoneZ',0,2,s.fdIphoneZ!=null?s.fdIphoneZ:1,'');
+      const adjCard=addCard(el,'🎚','スクショ表示調整');
+      addSliderField(adjCard,'ズーム','screenshotScale',100,200,s.screenshotScale||100,'%');
+      addSliderField(adjCard,'横位置','screenshotOffsetX',-50,50,s.screenshotOffsetX||0,'%');
+      addSliderField(adjCard,'縦位置','screenshotOffsetY',-50,50,s.screenshotOffsetY||0,'%');
+      if(needsPhone){
+        addSelectField(adjCard,'フレームカラー','frameColor',[['black','ブラック'],['silver','シルバー'],['gold','ゴールド'],['none','フレームなし']]);
       }
-      // iPad
-      addSec(el,'📱 iPad');
-      addToggleField(el,'表示','fdIpadOn',true);
-      if(s.fdIpadOn!==false){
-        addSliderField(el,'サイズ','fdIpadSize',15,80,s.fdIpadSize||45,'%');
-        addSliderField(el,'回転','fdIpadRot',-30,30,s.fdIpadRot||0,'°');
-        addSliderField(el,'重なり順','fdIpadZ',0,2,s.fdIpadZ!=null?s.fdIpadZ:0,'');
-      }
-      // Watch
-      addSec(el,'⌚ Apple Watch');
-      addToggleField(el,'表示','fdWatchOn',true);
-      if(s.fdWatchOn!==false){
-        addSliderField(el,'サイズ','fdWatchSize',10,60,s.fdWatchSize||22,'%');
-        addSliderField(el,'回転','fdWatchRot',-30,30,s.fdWatchRot||0,'°');
-        addSliderField(el,'重なり順','fdWatchZ',0,2,s.fdWatchZ!=null?s.fdWatchZ:2,'');
-      }
+      if(s.phoneLayout==='tilted')addSliderField(adjCard,'傾き角度','phoneTilt',-30,30,s.phoneTilt||10,'°');
     }
   }
 
@@ -2317,13 +2767,40 @@ function addSliderField(p,label,key,min,max,val,unit=''){
   const r=addRow(p,label);const row2=document.createElement('div');row2.className='slider-row';
   const inp=document.createElement('input');inp.type='range';inp.min=min;inp.max=max;inp.value=val;
   const display=document.createElement('span');display.className='slider-val';display.textContent=val+(unit||'');
-  inp.oninput=()=>{slides[curSlide][key]=+inp.value;display.textContent=inp.value+(unit||'');render();};
-  inp.onchange=()=>pushUndo();
+  const applyValue=()=>{slides[curSlide][key]=+inp.value;display.textContent=inp.value+(unit||'');render();};
+  inp.oninput=applyValue;
+  inp.onchange=()=>{applyValue();pushUndo();};
   row2.appendChild(inp);row2.appendChild(display);r.appendChild(row2);
 }
 function addSec(p,t){const d=document.createElement('div');d.className='sec-lbl';d.textContent=t;p.appendChild(d);}
 function addDivider(p){const d=document.createElement('div');d.className='divider';p.appendChild(d);}
 function addRow(p,label){const r=document.createElement('div');r.className='frow';if(label){const l=document.createElement('div');l.className='flbl';l.textContent=label;r.appendChild(l);}p.appendChild(r);return r;}
+// グループ化されたカードセクションを追加し、内部のbody要素を返す
+function addCard(p,icon,title,sub){
+  const card=document.createElement('div');card.className='field-card';
+  const head=document.createElement('div');head.className='field-card-head';
+  const ic=document.createElement('div');ic.className='field-card-icon';ic.textContent=icon||'';
+  const tt=document.createElement('div');tt.className='field-card-title';tt.textContent=title||'';
+  head.appendChild(ic);head.appendChild(tt);
+  if(sub){const sb=document.createElement('div');sb.className='field-card-sub';sb.textContent=sub;head.appendChild(sb);}
+  const body=document.createElement('div');body.className='field-card-body';
+  card.appendChild(head);card.appendChild(body);p.appendChild(card);
+  return body;
+}
+// カード内に「色: [picker] #hex」のような横並び行を追加する
+function addInlineColorField(p,label,key){
+  const row=document.createElement('div');row.className='field-color-row';
+  const lbl=document.createElement('div');lbl.className='fcr-lbl';lbl.textContent=label;
+  const crow=document.createElement('div');crow.className='crow';const s=slides[curSlide];
+  const cp=document.createElement('input');cp.type='color';cp.value=s[key]||'#FFFFFF';
+  const hx=document.createElement('input');hx.className='chex';hx.value=s[key]||'#FFFFFF';hx.maxLength=7;
+  cp.oninput=()=>{slides[curSlide][key]=cp.value;hx.value=cp.value;render();};
+  cp.onchange=()=>pushUndo();
+  hx.oninput=()=>{if(/^#[0-9a-fA-F]{6}$/.test(hx.value)){slides[curSlide][key]=hx.value;cp.value=hx.value;render();}};
+  hx.onchange=()=>pushUndo();
+  crow.appendChild(cp);crow.appendChild(hx);
+  row.appendChild(lbl);row.appendChild(crow);p.appendChild(row);
+}
 function addTextField(p,label,key,ph=''){
   const r=addRow(p,label);const inp=document.createElement('input');inp.type='text';inp.className='fi';inp.placeholder=ph;inp.value=slides[curSlide][key]||'';
   inp.onchange=()=>pushUndo();
@@ -2430,10 +2907,9 @@ function copyImgFields(ns,src){
   ['_src','_src2','_src3','_src4','_srcIpad','_srcWidgetSmall','_srcWidgetMedium','_srcWidgetLarge'].forEach(k=>{ns[k]=src[k];});
 }
 function addSlide(){
+  // 「+」はデフォルトの新規スライドを追加する。複製したい場合は ⧉ ボタンを使う
   pushUndo();
-  const ns=JSON.parse(JSON.stringify(slides[curSlide]));
-  copyImgFields(ns,slides[curSlide]);
-  slides.push(ns);
+  slides.push(defSlide());
   renderThumbs();
   selectSlide(slides.length-1);
   showToast(`スライド${slides.length}枚目を追加しました！`);
@@ -2452,6 +2928,7 @@ function selectSlide(i){
     updateSummary();
   }
   if(inStep===2) buildFields();
+  if(inStep===3) buildStep3();
   render();
 }
 
@@ -2469,7 +2946,7 @@ function renderThumbs(){
       e.preventDefault();div.classList.remove('drag-over');if(dragSrc===null||dragSrc===i){dragSrc=null;return;}
       pushUndo();const moved=slides.splice(dragSrc,1)[0];const newIdx=dragSrc<i?i-1:i;slides.splice(newIdx,0,moved);
       let newCur=curSlide;if(curSlide===dragSrc)newCur=newIdx;else if(curSlide>Math.min(dragSrc,newIdx)&&curSlide<=Math.max(dragSrc,newIdx))newCur=dragSrc<newIdx?curSlide-1:curSlide+1;
-      curSlide=newCur;dragSrc=null;renderThumbs();if(inStep===2)buildFields();render();showToast('スライドを移動しました');
+      curSlide=newCur;dragSrc=null;renderThumbs();if(inStep===2)buildFields();if(inStep===3)buildStep3();render();showToast('スライドを移動しました');
     });
     div.onclick=e=>{if(!e.target.classList.contains('sth-del')&&!e.target.classList.contains('sth-dup')&&!e.target.classList.contains('sth-conv'))selectSlide(i);};
     const tw=160;const tc=document.createElement('canvas');tc.width=tw;tc.height=Math.round(tw*dev.h/dev.w);
@@ -2727,6 +3204,8 @@ async function exportAllSizesZip(){
 }
 window.onload=async()=>{
   await document.fonts.ready;
+  initS1PreviewZoom();
+  initEditorPaneResizer();
   initAllCanvas();
   buildStep1();
   updateUndoBtn();

@@ -6,7 +6,7 @@
 <title>App Store Preview Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700;900&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=Hachi+Maru+Pop&family=DotGothic16&family=Yomogi&family=Rampart+One&family=RocknRoll+One&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20260405">
+<link rel="stylesheet" href="style.css?v=20260408c">
 </head>
 <body>
 <header>
@@ -78,7 +78,9 @@
 <div class="stepbar">
   <div class="step active" id="st1" onclick="goStep(1)"><div class="step-n">1</div><div class="step-l">パーツを選ぶ</div></div>
   <div class="step-arr">›</div>
-  <div class="step" id="st2"><div class="step-n">2</div><div class="step-l">内容を入力する</div></div>
+  <div class="step" id="st2" onclick="goStep(2)"><div class="step-n">2</div><div class="step-l">内容を入力する</div></div>
+  <div class="step-arr">›</div>
+  <div class="step" id="st3" onclick="goStep(3)"><div class="step-n">3</div><div class="step-l">仕上げる</div></div>
   <div class="stepbar-spacer"></div>
   <div class="dev-group" id="editor-header-controls">
     <span class="dev-label">iPhone</span>
@@ -90,6 +92,7 @@
     <button class="dev-btn"        onclick="setDevice('ipad13')" id="dev-ipad13">12.9"</button>
     <button class="dev-btn"        onclick="setDevice('ipad11')" id="dev-ipad11">11"</button>
     <button class="dev-btn"        onclick="setDevice('ipad97')" id="dev-ipad97">9.7"</button>
+    <button class="dev-btn dev-ref-btn" onclick="showDeviceCatalog()" title="歴代iPhone / iPad サイズ一覧">📚 一覧</button>
   </div>
 </div>
 
@@ -119,16 +122,22 @@
           <div class="fx-list" id="fx-list"></div>
         </div>
       </div>
+      <div class="pane-splitter" aria-hidden="true"></div>
       <div class="prev-panel">
         <div class="cw"><canvas id="s1-canvas"></canvas></div>
         <div class="prev-summary" id="prev-summary"></div>
         <button class="btn btn-p" onclick="goStep(2)" style="padding:10px 24px;font-size:13px">内容を入力する ›</button>
+        <div class="s1-zoom" id="s1-zoom">
+          <button class="s1-zoom-btn" id="s1-zoom-minus" onclick="adjustS1PreviewZoom(-1)" title="プレビューを縮小">−</button>
+          <button class="s1-zoom-btn" id="s1-zoom-plus" onclick="adjustS1PreviewZoom(1)" title="プレビューを拡大">+</button>
+        </div>
       </div>
     </div>
 
     <!-- Step 2 -->
     <div class="ws" id="s2">
       <div class="s2-left" id="s2-left"></div>
+      <div class="pane-splitter" aria-hidden="true"></div>
       <div class="edit-center">
         <div class="cw"><canvas id="canvas"></canvas><div class="csz" id="csz">1320 × 2868 px</div></div>
         <div class="zoom-bar" id="zoom-bar">
@@ -139,6 +148,19 @@
         </div>
       </div>
     </div><!-- end s2 -->
+
+    <!-- Step 3: 仕上げる（確認 + 書き出し） -->
+    <div class="ws" id="s3" style="display:none">
+      <div class="s3-left" id="s3-left"></div>
+      <div class="pane-splitter" aria-hidden="true"></div>
+      <div class="s3-main">
+        <div class="s3-main-head">
+          <div class="s3-main-title">📸 全スライド プレビュー</div>
+          <div class="s3-main-sub" id="s3-dev-info"></div>
+        </div>
+        <div class="s3-gallery" id="s3-gallery"></div>
+      </div>
+    </div><!-- end s3 -->
 
   </div>
 
@@ -170,6 +192,31 @@
     <div class="modal-foot">
       <button class="btn btn-g" onclick="hideConvModal()">キャンセル</button>
       <button class="btn btn-p" onclick="applyConv()">テキスト・画像を引き継いで適用</button>
+    </div>
+  </div>
+</div>
+
+<!-- Device Catalog Modal -->
+<div class="modal-overlay" id="device-catalog-modal" style="display:none" onclick="if(event.target===this)hideDeviceCatalog()">
+  <div class="modal-box devdb-box">
+    <div class="devdb-head">
+      <div class="modal-title">📚 歴代 iPhone / iPad サイズ一覧</div>
+      <button class="btn btn-g" onclick="hideDeviceCatalog()">閉じる</button>
+    </div>
+    <div class="devdb-note">画面サイズ、解像度、PPI の代表値です。右端の「このサイズで作業」で現在のプレビューサイズに切り替えできます。</div>
+
+    <div class="devdb-sec">
+      <div class="devdb-sec-title">iPhone</div>
+      <div class="devdb-table-wrap">
+        <table class="devdb-table" id="devdb-iphone"></table>
+      </div>
+    </div>
+
+    <div class="devdb-sec">
+      <div class="devdb-sec-title">iPad</div>
+      <div class="devdb-table-wrap">
+        <table class="devdb-table" id="devdb-ipad"></table>
+      </div>
     </div>
   </div>
 </div>
@@ -231,6 +278,6 @@
   </div>
 </div>
 
-<script src="script.js?v=20260405"></script>
+<script src="script.js?v=20260408c"></script>
 </body>
 </html>
