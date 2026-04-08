@@ -163,6 +163,11 @@
     try {
       localStorage.setItem(STORAGE_KEY_APPS, appsJson);
       localStorage.setItem(STORAGE_KEY_IDEAS, ideasJson);
+      // Drive 同期: ログイン中なら fire-and-forget でアップロード
+      if (window.driveSync) {
+        window.driveSync.markDirty(STORAGE_KEY_APPS);
+        window.driveSync.markDirty(STORAGE_KEY_IDEAS);
+      }
       return true;
     } catch (err) {
       console.error('localStorage の書き込みに失敗:', err);
@@ -941,9 +946,31 @@
   // 起動
   // ============================================================
 
+  // ============================================================
+  // Drive 同期 (drive-sync.js が読み込まれていれば有効)
+  // ============================================================
+  const initDriveSync = () => {
+    if (!window.driveSync) return;
+    window.driveSync.register({
+      toolId: 'designpocket',
+      keys: [STORAGE_KEY_APPS, STORAGE_KEY_IDEAS],
+      keyPatterns: [],
+      // Drive 側からデータが降ってきたら state を再ロード→再描画
+      onSyncedFromRemote: () => {
+        loadState();
+        render();
+        toast('別の端末から更新を取り込みました', 'success');
+      },
+    });
+    const mount = document.getElementById('sync-mount');
+    if (mount) window.driveSync.mountUI(mount);
+    window.driveSync.init();
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     loadState();
     bindEvents();
     render();
+    initDriveSync();
   });
 })();

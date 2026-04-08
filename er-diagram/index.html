@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ER Diagram Generator</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="../drive-sync.css?v=20260409d">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +16,8 @@
       <div class="pss-logo"><div class="logo-icon" style="width:36px;height:36px;font-size:18px;">⬡</div><span>ER Diagram Generator</span></div>
       <p class="pss-sub">プロジェクトを選択して開始</p>
     </div>
-    <div class="pss-actions">
+    <div class="pss-actions" style="gap:12px;">
+      <div id="pss-sync-mount"></div>
       <button class="btn success" onclick="pssCreateNew()" style="padding:8px 18px;">＋ 新規プロジェクト</button>
     </div>
     <div class="pss-list" id="pssProjectList"></div>
@@ -76,6 +79,9 @@
     <button class="btn" onclick="showHistory()" title="変更履歴" style="padding:6px 9px;">📋</button>
     <button class="btn" onclick="showShortcuts()" title="キーボードショートカット (?)" style="padding:6px 9px;">⌨</button>
     <button class="btn" onclick="resetAll()" title="リセット" style="padding:6px 9px;color:var(--red);">🗑</button>
+
+    <!-- Drive 同期 UI -->
+    <div id="sync-mount"></div>
   </div>
 </header>
 <main>
@@ -322,6 +328,7 @@
 
 </div><!-- /editorWrapper -->
 <div id="toast"></div>
+<script src="../drive-sync.js?v=20260409d"></script>
 <script src="script.js"></script>
 </body>
 </html>

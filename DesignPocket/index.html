@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DesignPocket — デザインぽけっと</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="../drive-sync.css?v=20260409d">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -26,6 +28,7 @@
       <button type="button" class="tab" data-view="apps" role="tab" aria-controls="view-apps" aria-selected="false">アプリ別</button>
     </nav>
     <button type="button" class="tab tab-add" id="openAddBtn" aria-label="新しいアイデアを追加">＋ 追加</button>
+    <div id="sync-mount"></div>
   </div>
 </header>
 
@@ -170,6 +173,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="../drive-sync.js?v=20260409d"></script>
 <script src="app.js"></script>
 </body>
 </html>

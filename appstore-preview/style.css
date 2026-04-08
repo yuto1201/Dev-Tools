@@ -656,13 +656,13 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
 
   /* Bottom Nav */
   .iphone-nav{
-    display:flex;
     background:var(--sf);
     border-top:1px solid var(--b1);
     flex-shrink:0;
     height:54px;
     padding-bottom:env(safe-area-inset-bottom);
   }
+  body[data-view="editor"] .iphone-nav{display:flex}
   .iphone-nav button{
     flex:1;display:flex;flex-direction:column;align-items:center;
     justify-content:center;gap:2px;border:none;background:transparent;
@@ -809,3 +809,18 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
 @media(pointer:coarse){
   .dash-card-actions{opacity:1}
 }
+
+/* ═══ VIEW TOGGLING — driven by body[data-view="dashboard"|"editor"] ═══
+   ダッシュボードとエディタの表示切替を一元化。
+   JS は document.body.dataset.view を更新するだけで、要素ごとの個別操作は不要。
+   ここでは「デフォルト = 非表示」にして、エディタ／プロジェクト所有のときだけ見せる。 */
+#editor-wrapper{display:none;flex-direction:column;flex:1;overflow:hidden}
+.iphone-nav{display:none}
+.hbtns{display:none}
+.proj-name-area{display:none}
+
+body[data-view="dashboard"] #dashboard{display:flex}
+body[data-view="editor"] #dashboard{display:none}
+body[data-view="editor"] #editor-wrapper{display:flex}
+body[data-view="editor"] .hbtns{display:flex}
+body[data-view="editor"][data-has-project] .proj-name-area{display:flex}

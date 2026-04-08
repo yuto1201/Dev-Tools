@@ -917,6 +917,11 @@ async function saveProjectToStorage(options={}){
       saveProjectsList(list);
     }
     if(!silent)showToast(recoveredByCompression?'保存しました（画像を圧縮） 💾':'保存しました 💾');
+    // Drive 同期: ログイン中なら fire-and-forget でアップロード（保存自体はブロックしない）
+    if(window.driveSync){
+      window.driveSync.markDirty(PROJECT_PREFIX+currentProjectId);
+      window.driveSync.markDirty(PROJECTS_KEY);
+    }
     return true;
   }catch(e){
     console.error('saveProjectToStorage error:',e);
@@ -946,6 +951,11 @@ function deleteProject(id,ev){
   if(currentProjectId===id){currentProjectId=null;}
   renderDashboard();
   showToast('プロジェクトを削除しました');
+  // Drive 側からも削除（リスト更新も同期）
+  if(window.driveSync){
+    window.driveSync.markDeleted(PROJECT_PREFIX+id);
+    window.driveSync.markDirty(PROJECTS_KEY);
+  }
 }
 
 function duplicateProject(id,ev){
@@ -955,12 +965,17 @@ function duplicateProject(id,ev){
   if(!meta||!data)return;
   const newId=generateId();
   const now=new Date().toISOString();
+  const newMeta={id:newId,name:meta.name+' (コピー)',createdAt:now,updatedAt:now,slideCount:meta.slideCount||1};
   const list=getProjectsList();
-  list.unshift({id:newId,name:meta.name+' (コピー)',createdAt:now,updatedAt:now,slideCount:meta.slideCount||1});
+  list.unshift(newMeta);
   saveProjectsList(list);
   setProjectData(newId,data);
   renderDashboard();
   showToast('プロジェクトを複製しました');
+  if(window.driveSync){
+    window.driveSync.markDirty(PROJECT_PREFIX+newId);
+    window.driveSync.markDirty(PROJECTS_KEY);
+  }
 }
 
 function exportProjectJson(id,ev){
@@ -986,12 +1001,17 @@ function importProjectFromFile(e){
       const id=generateId();
       const now=new Date().toISOString();
       const name=file.name.replace(/\.json$/i,'').replace(/-\d{4}-\d{2}-\d{2}$/,'');
+      const newMeta={id,name,createdAt:now,updatedAt:now,slideCount:arr.length};
       const list=getProjectsList();
-      list.unshift({id,name,createdAt:now,updatedAt:now,slideCount:arr.length});
+      list.unshift(newMeta);
       saveProjectsList(list);
       setProjectData(id,ev.target.result);
       renderDashboard();
       showToast('プロジェクトを読み込みました 📂');
+      if(window.driveSync){
+        window.driveSync.markDirty(PROJECT_PREFIX+id);
+        window.driveSync.markDirty(PROJECTS_KEY);
+      }
     }catch(err){showToast('読み込みに失敗しました');}
   };
   reader.readAsText(file);
@@ -1012,7 +1032,12 @@ function renameProject(id,ev){
     const newName=input.value.trim()||meta.name;
     const list=getProjectsList();
     const p=list.find(p=>p.id===id);
-    if(p){p.name=newName;saveProjectsList(list);}
+    if(p && p.name!==newName){
+      p.name=newName;
+      p.updatedAt=new Date().toISOString();
+      saveProjectsList(list);
+      if(window.driveSync) window.driveSync.markDirty(PROJECTS_KEY);
+    }
     renderDashboard();
   };
   input.onblur=finish;
@@ -1021,7 +1046,47 @@ function renameProject(id,ev){
   input.focus();input.select();
 }
 
-function showDashboard(){
+/* ═══ URL HASH ROUTING ═══
+   #             → ダッシュボード
+   #p/<id>       → 指定IDのプロジェクトをエディタで開く
+   ブラウザの戻る/進むで行き来できる。リロード・ブックマークでも復元される。 */
+function syncUrlForView(){
+  const desired=inDashboard
+    ? location.pathname+location.search
+    : (currentProjectId?location.pathname+location.search+'#p/'+currentProjectId:location.pathname+location.search);
+  // 現在のURLと差分があるときだけ pushState する
+  const current=location.pathname+location.search+location.hash;
+  if(current!==desired){
+    try{history.pushState(null,'',desired);}catch(e){/* about:blank 等で失敗しても致命ではない */}
+  }
+}
+
+function applyHashRoute(){
+  const m=location.hash.match(/^#p\/(.+)$/);
+  if(m){
+    const id=decodeURIComponent(m[1]);
+    if(!inDashboard&&currentProjectId===id) return; // 既に開いている
+    const data=getProjectData(id);
+    if(data){
+      currentProjectId=id;
+      undoStack=[];updateUndoBtn();
+      deserializeSlides(data);
+      inStep=1;
+      showEditor({skipUrlSync:true});
+      return;
+    }
+    // ID が見つからなければダッシュボードへフォールバック + URL も補正
+    currentProjectId=null;
+    try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+  }
+  showDashboard({skipUrlSync:true});
+}
+
+/* ═══ VIEW SWITCHING ═══
+   表示切替は body[data-view] を更新するだけ。要素ごとの display 操作は CSS が引き受ける。
+   opts.skipUrlSync を渡すと URL 履歴を更新しない（popstate / 初期ロード時に使用）。 */
+function showDashboard(opts){
+  opts=opts||{};
   // Auto-save current project before leaving (must not block navigation)
   try{
     if(currentProjectId&&!inDashboard){
@@ -1029,34 +1094,34 @@ function showDashboard(){
       if(setProjectData(currentProjectId,json)){
         const list=getProjectsList();
         const p=list.find(p=>p.id===currentProjectId);
-        if(p){p.updatedAt=new Date().toISOString();p.slideCount=slides.length;saveProjectsList(list);}
+        if(p){
+          p.updatedAt=new Date().toISOString();
+          p.slideCount=slides.length;
+          saveProjectsList(list);
+          if(window.driveSync){
+            window.driveSync.markDirty(PROJECT_PREFIX+currentProjectId);
+            window.driveSync.markDirty(PROJECTS_KEY);
+          }
+        }
       }
     }
   }catch(e){console.error('Auto-save on dashboard transition failed:',e);}
   inDashboard=true;
-  document.getElementById('dashboard').style.display='flex';
-  document.getElementById('editor-wrapper').style.display='none';
-  document.getElementById('editor-header-controls').style.display='none';
-  document.getElementById('editor-header-btns').style.display='none';
-  const pna=document.getElementById('proj-name-area');if(pna)pna.style.display='none';
-  const nav=document.getElementById('iphone-nav');
-  if(nav)nav.style.display='none';
+  document.body.dataset.view='dashboard';
+  delete document.body.dataset.hasProject;
   renderDashboard();
+  if(!opts.skipUrlSync) syncUrlForView();
 }
 
-function showEditor(){
+function showEditor(opts){
+  opts=opts||{};
   inDashboard=false;
-  document.getElementById('dashboard').style.display='none';
-  document.getElementById('editor-wrapper').style.display='flex';
-  document.getElementById('editor-header-controls').style.display='';
-  document.getElementById('editor-header-btns').style.display='';
+  document.body.dataset.view='editor';
   updateProjNameDisplay();
   initAllCanvas();
   goStep(1);
   render();
-  // Re-apply iPhone layout
-  const nav=document.getElementById('iphone-nav');
-  if(nav&&isIphone())nav.style.display='flex';
+  if(!opts.skipUrlSync) syncUrlForView();
 }
 
 /* ═══ EDITOR PANE RESIZER ═══ */
@@ -1152,13 +1217,13 @@ function initEditorPaneResizer(){
 }
 
 function updateProjNameDisplay(){
-  const area=document.getElementById('proj-name-area');
   const el=document.getElementById('proj-name-display');
-  if(!area||!el)return;
-  if(!currentProjectId){area.style.display='none';return;}
+  if(!el)return;
+  if(!currentProjectId){delete document.body.dataset.hasProject;return;}
   const meta=getProjectMeta(currentProjectId);
-  if(!meta){area.style.display='none';return;}
-  area.style.display='flex';
+  if(!meta){delete document.body.dataset.hasProject;return;}
+  // 表示は CSS（body[data-view="editor"][data-has-project] .proj-name-area）が制御
+  document.body.dataset.hasProject='1';
   el.textContent=meta.name||'無題';
   el.ondblclick=startEditProjName;
   el.onclick=startEditProjName;
@@ -1176,7 +1241,12 @@ function startEditProjName(){
     const newName=input.value.trim()||meta.name;
     const list=getProjectsList();
     const p=list.find(p=>p.id===currentProjectId);
-    if(p){p.name=newName;saveProjectsList(list);}
+    if(p && p.name!==newName){
+      p.name=newName;
+      p.updatedAt=new Date().toISOString();
+      saveProjectsList(list);
+      if(window.driveSync) window.driveSync.markDirty(PROJECTS_KEY);
+    }
     const span=document.createElement('span');
     span.className='proj-name';
     span.id='proj-name-display';
@@ -3210,9 +3280,36 @@ window.onload=async()=>{
   buildStep1();
   updateUndoBtn();
   iphoneSetup();
-  // Start with dashboard
-  showDashboard();
+  initDriveSync();
+  // ブラウザの戻る/進むで状態復元
+  window.addEventListener('popstate',applyHashRoute);
+  // 初期ルート: URL の #p/<id> を解釈し、なければダッシュボード
+  applyHashRoute();
 };
+
+/* ═══ DRIVE SYNC INTEGRATION ═══
+   /drive-sync.js（リポジトリ共通の汎用エンジン）に登録するだけ。
+   保存系はすでに各所で markDirty / markDeleted を呼ぶようフックされている。
+   未ログイン時はアプリは普通にローカルだけで動く。 */
+function initDriveSync(){
+  if(!window.driveSync) return;
+  window.driveSync.register({
+    toolId: 'appstore-preview',
+    keys: [PROJECTS_KEY],
+    keyPatterns: [new RegExp('^'+PROJECT_PREFIX.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))],
+    // リモートから新しいデータが降ってきたらダッシュボードを再描画
+    onSyncedFromRemote: ()=>{
+      if(inDashboard) renderDashboard();
+      // 編集中のプロジェクトが更新されたら警告だけ出す（強制リロードはしない）
+      if(!inDashboard && currentProjectId){
+        showToast('別の端末から更新がありました。再読み込みすると反映されます');
+      }
+    },
+  });
+  const mount=document.getElementById('sync-mount');
+  if(mount) window.driveSync.mountUI(mount);
+  window.driveSync.init();
+}
 
 /* ═══ IPHONE SUPPORT ═══ */
 function isIphone(){return window.innerWidth<=479;}
@@ -3221,15 +3318,15 @@ function isIpadDev(){return curDev.startsWith('ipad');}
 function getScreenshot(s){return isIpadDev()?(s.screenshotImgIpad||null):s.screenshotImg;}
 
 function iphoneSetup(){
-  const nav=document.getElementById('iphone-nav');
-  const s2tab=document.getElementById('s2-tab-bar');
-  if(!nav||!s2tab)return;
-
+  // iphone-nav の表示は CSS の body[data-view="editor"] + @media で制御済み。
+  // ここでは inStep に依存する s2-tab-bar の出し分けだけを面倒みる。
   const apply=()=>{
-    const iph=isIphone();
-    nav.style.display=(iph&&!inDashboard)?'flex':'none';
-    s2tab.style.display=(iph&&!inDashboard&&inStep===2)?'flex':'none';
-    if(iph&&!inDashboard) iphoneApplyStep();
+    const s2tab=document.getElementById('s2-tab-bar');
+    if(s2tab){
+      const iph=isIphone();
+      s2tab.style.display=(iph&&!inDashboard&&inStep===2)?'flex':'none';
+    }
+    if(isIphone()&&!inDashboard) iphoneApplyStep();
   };
   apply();
   window.addEventListener('resize',apply);

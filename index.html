@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>yuto's dev tools</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="drive-sync.css?v=20260409d">
+<style>
+  /* sync UI を右上に固定配置（カードレイアウトの邪魔にならないように） */
+  #sync-mount{
+    position:fixed;
+    top:20px;
+    right:24px;
+    z-index:20;
+  }
+</style>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -400,6 +411,9 @@
 <div class="orb orb1"></div>
 <div class="orb orb2"></div>
 
+<!-- Drive 同期 UI -->
+<div id="sync-mount"></div>
+
 <div class="wrapper">
 
   <header class="header">
@@ -545,5 +559,16 @@
   </footer>
 
 </div>
+
+<script src="drive-sync.js?v=20260409d"></script>
+<script>
+// ルートには同期対象のデータはないが、ログイン状態だけ表示する
+(function(){
+  if(!window.driveSync) return;
+  var mount = document.getElementById('sync-mount');
+  if(mount) window.driveSync.mountUI(mount);
+  window.driveSync.init();
+})();
+</script>
 </body>
 </html>

@@ -6,18 +6,23 @@
 <title>App Store Preview Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700;900&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=Hachi+Maru+Pop&family=DotGothic16&family=Yomogi&family=Rampart+One&family=RocknRoll+One&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20260408c">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="../drive-sync.css?v=20260409d">
+<link rel="stylesheet" href="style.css?v=20260409d">
 </head>
 <body>
+<script>document.body.dataset.view='dashboard';</script>
 <header>
   <div class="logo" style="cursor:pointer" onclick="showDashboard()">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="5" fill="#0A84FF"/><path d="M5 15V8l5-3 5 3v7l-5 2.5L5 15z" fill="white" opacity=".9"/><rect x="8" y="10" width="4" height="5" rx="2" fill="#0A84FF"/></svg>
     Preview<em>Gen</em>
   </div>
-  <div class="proj-name-area" id="proj-name-area" style="display:none">
+  <div class="proj-name-area" id="proj-name-area">
     <span class="proj-name" id="proj-name-display" title="ダブルクリックで名前を変更"></span>
   </div>
   <div class="header-spacer"></div>
+  <!-- Google Drive 同期 UI（drive-sync.js が中身を生成） -->
+  <div id="sync-mount"></div>
   <div class="hbtns" id="editor-header-btns">
     <div class="hbtn-group">
       <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
@@ -73,8 +78,8 @@
   </div>
 </div>
 
-<!-- ═══ EDITOR (hidden initially) ═══ -->
-<div id="editor-wrapper" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+<!-- ═══ EDITOR (visibility driven by body[data-view="editor"]) ═══ -->
+<div id="editor-wrapper">
 <div class="stepbar">
   <div class="step active" id="st1" onclick="goStep(1)"><div class="step-n">1</div><div class="step-l">パーツを選ぶ</div></div>
   <div class="step-arr">›</div>
@@ -235,7 +240,7 @@
 </div>
 
 <!-- iPhone Bottom Nav -->
-<nav class="iphone-nav" id="iphone-nav" style="display:none">
+<nav class="iphone-nav" id="iphone-nav">
   <button id="inav-parts" onclick="iphoneNavParts()" class="iph-hidden">
     <span class="nav-icon">←</span>パーツ
   </button>
@@ -278,6 +283,7 @@
   </div>
 </div>
 
-<script src="script.js?v=20260408c"></script>
+<script src="../drive-sync.js?v=20260409d"></script>
+<script src="script.js?v=20260409d"></script>
 </body>
 </html>
