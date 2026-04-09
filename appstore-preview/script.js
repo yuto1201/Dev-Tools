@@ -797,11 +797,12 @@ async function compactProjectImages(stepOpt){
 }
 
 /* ═══ PROJECT SAVE / LOAD (file) ═══ */
-function saveProject(){
+async function saveProject(){
   const json=serializeSlides();
   const blob=new Blob([json],{type:'application/json'});
   const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;
-  const name=currentProjectId?getProjectMeta(currentProjectId).name:'preview-project';
+  const meta=currentProjectId?await getProjectMeta(currentProjectId):null;
+  const name=meta?meta.name:'preview-project';
   a.download=`${name}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -822,58 +823,79 @@ function loadProject(e){
   e.target.value='';
 }
 
-/* ═══ PROJECT MANAGEMENT (localStorage) ═══ */
+/* ═══ PROJECT MANAGEMENT ═══
+   ログイン時: Google Drive が一次ストレージ（localStorage はキャッシュ）
+   未ログイン時: localStorage が一次ストレージ */
 const PROJECTS_KEY='previewgen_projects';
 const PROJECT_PREFIX='previewgen_proj_';
 let currentProjectId=null;
 let inDashboard=true;
 
-function getProjectsList(){
-  try{return JSON.parse(localStorage.getItem(PROJECTS_KEY)||'[]');}
-  catch{return [];}
-}
-function saveProjectsList(list){
-  localStorage.setItem(PROJECTS_KEY,JSON.stringify(list));
-}
-function getProjectMeta(id){
-  return getProjectsList().find(p=>p.id===id)||null;
-}
-function getProjectData(id){
-  try{return localStorage.getItem(PROJECT_PREFIX+id)||null;}
-  catch{return null;}
-}
-function setProjectData(id,json){
+async function getProjectsList(){
   try{
-    localStorage.setItem(PROJECT_PREFIX+id,json);
+    const raw = window.driveSync
+      ? await window.driveSync.loadItem(PROJECTS_KEY)
+      : localStorage.getItem(PROJECTS_KEY);
+    return JSON.parse(raw||'[]');
+  }catch{return [];}
+}
+async function saveProjectsList(list){
+  const json=JSON.stringify(list);
+  if(window.driveSync){
+    await window.driveSync.saveItem(PROJECTS_KEY,json);
+  }else{
+    localStorage.setItem(PROJECTS_KEY,json);
+  }
+}
+async function getProjectMeta(id){
+  return (await getProjectsList()).find(p=>p.id===id)||null;
+}
+async function getProjectData(id){
+  try{
+    if(window.driveSync) return await window.driveSync.loadItem(PROJECT_PREFIX+id);
+    return localStorage.getItem(PROJECT_PREFIX+id)||null;
+  }catch{return null;}
+}
+async function setProjectData(id,json){
+  try{
+    if(window.driveSync){
+      await window.driveSync.saveItem(PROJECT_PREFIX+id,json);
+    }else{
+      localStorage.setItem(PROJECT_PREFIX+id,json);
+    }
     return true;
   }catch(e){
-    console.error('localStorage save failed:',e);
+    console.error('Storage save failed:',e);
     return false;
   }
 }
-function removeProjectData(id){
-  localStorage.removeItem(PROJECT_PREFIX+id);
+async function removeProjectData(id){
+  if(window.driveSync){
+    await window.driveSync.removeItem(PROJECT_PREFIX+id);
+  }else{
+    localStorage.removeItem(PROJECT_PREFIX+id);
+  }
 }
 
 function generateId(){
   return Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
 }
 
-function createNewProject(name){
+async function createNewProject(name){
   const id=generateId();
   const now=new Date().toISOString();
   const pName=name||'新しいプロジェクト';
-  const list=getProjectsList();
+  const list=await getProjectsList();
   list.unshift({id,name:pName,createdAt:now,updatedAt:now,slideCount:1});
-  saveProjectsList(list);
+  await saveProjectsList(list);
   // Initialize with default slide
   slides=[defSlide()];curSlide=0;inStep=1;undoStack=[];
-  setProjectData(id,serializeSlides());
-  openProject(id);
+  await setProjectData(id,serializeSlides());
+  await openProject(id);
 }
 
-function openProject(id){
-  const data=getProjectData(id);
+async function openProject(id){
+  const data=await getProjectData(id);
   if(!data){showToast('プロジェクトデータが見つかりません');return;}
   currentProjectId=id;
   undoStack=[];updateUndoBtn();
@@ -891,13 +913,14 @@ async function saveProjectToStorage(options={}){
   try{
     let recoveredByCompression=false;
     let json=serializeSlides();
-    let saved=setProjectData(currentProjectId,json);
+    let saved=await setProjectData(currentProjectId,json);
     if(!saved){
+      // localStorage 容量超過時のみ画像圧縮リカバリ（Drive 使用時は不要）
       for(const stepOpt of IMAGE_RECOVERY_STEPS){
         const changed=await compactProjectImages(stepOpt);
         if(!changed)continue;
         json=serializeSlides();
-        saved=setProjectData(currentProjectId,json);
+        saved=await setProjectData(currentProjectId,json);
         if(saved){
           recoveredByCompression=true;
           break;
@@ -908,20 +931,15 @@ async function saveProjectToStorage(options={}){
       if(!silent)showToast('⚠️ 保存に失敗しました。不要なプロジェクト削除かJSON保存を試してください');
       return false;
     }
-    // Update meta
-    const list=getProjectsList();
+    // メタ情報更新
+    const list=await getProjectsList();
     const p=list.find(p=>p.id===currentProjectId);
     if(p){
       p.updatedAt=new Date().toISOString();
       p.slideCount=slides.length;
-      saveProjectsList(list);
+      await saveProjectsList(list);
     }
     if(!silent)showToast(recoveredByCompression?'保存しました（画像を圧縮） 💾':'保存しました 💾');
-    // Drive 同期: ログイン中なら fire-and-forget でアップロード（保存自体はブロックしない）
-    if(window.driveSync){
-      window.driveSync.markDirty(PROJECT_PREFIX+currentProjectId);
-      window.driveSync.markDirty(PROJECTS_KEY);
-    }
     return true;
   }catch(e){
     console.error('saveProjectToStorage error:',e);
@@ -941,47 +959,38 @@ function autoSave(){
   },2000);
 }
 
-function deleteProject(id,ev){
+async function deleteProject(id,ev){
   if(ev){ev.stopPropagation();}
   if(!confirm('このプロジェクトを削除しますか？'))return;
-  let list=getProjectsList();
+  let list=await getProjectsList();
   list=list.filter(p=>p.id!==id);
-  saveProjectsList(list);
-  removeProjectData(id);
+  await saveProjectsList(list);
+  await removeProjectData(id);
   if(currentProjectId===id){currentProjectId=null;}
-  renderDashboard();
+  await renderDashboard();
   showToast('プロジェクトを削除しました');
-  // Drive 側からも削除（リスト更新も同期）
-  if(window.driveSync){
-    window.driveSync.markDeleted(PROJECT_PREFIX+id);
-    window.driveSync.markDirty(PROJECTS_KEY);
-  }
 }
 
-function duplicateProject(id,ev){
+async function duplicateProject(id,ev){
   if(ev){ev.stopPropagation();}
-  const meta=getProjectMeta(id);
-  const data=getProjectData(id);
+  const meta=await getProjectMeta(id);
+  const data=await getProjectData(id);
   if(!meta||!data)return;
   const newId=generateId();
   const now=new Date().toISOString();
   const newMeta={id:newId,name:meta.name+' (コピー)',createdAt:now,updatedAt:now,slideCount:meta.slideCount||1};
-  const list=getProjectsList();
+  const list=await getProjectsList();
   list.unshift(newMeta);
-  saveProjectsList(list);
-  setProjectData(newId,data);
-  renderDashboard();
+  await saveProjectsList(list);
+  await setProjectData(newId,data);
+  await renderDashboard();
   showToast('プロジェクトを複製しました');
-  if(window.driveSync){
-    window.driveSync.markDirty(PROJECT_PREFIX+newId);
-    window.driveSync.markDirty(PROJECTS_KEY);
-  }
 }
 
-function exportProjectJson(id,ev){
+async function exportProjectJson(id,ev){
   if(ev){ev.stopPropagation();}
-  const meta=getProjectMeta(id);
-  const data=getProjectData(id);
+  const meta=await getProjectMeta(id);
+  const data=await getProjectData(id);
   if(!data)return;
   const blob=new Blob([data],{type:'application/json'});
   const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;
@@ -994,7 +1003,7 @@ function exportProjectJson(id,ev){
 function importProjectFromFile(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=ev=>{
+  reader.onload=async(ev)=>{
     try{
       const arr=JSON.parse(ev.target.result);
       if(!Array.isArray(arr)){showToast('無効なファイル形式です');return;}
@@ -1002,43 +1011,38 @@ function importProjectFromFile(e){
       const now=new Date().toISOString();
       const name=file.name.replace(/\.json$/i,'').replace(/-\d{4}-\d{2}-\d{2}$/,'');
       const newMeta={id,name,createdAt:now,updatedAt:now,slideCount:arr.length};
-      const list=getProjectsList();
+      const list=await getProjectsList();
       list.unshift(newMeta);
-      saveProjectsList(list);
-      setProjectData(id,ev.target.result);
-      renderDashboard();
+      await saveProjectsList(list);
+      await setProjectData(id,ev.target.result);
+      await renderDashboard();
       showToast('プロジェクトを読み込みました 📂');
-      if(window.driveSync){
-        window.driveSync.markDirty(PROJECT_PREFIX+id);
-        window.driveSync.markDirty(PROJECTS_KEY);
-      }
     }catch(err){showToast('読み込みに失敗しました');}
   };
   reader.readAsText(file);
   e.target.value='';
 }
 
-function renameProject(id,ev){
+async function renameProject(id,ev){
   if(ev){ev.stopPropagation();}
   const nameEl=document.querySelector(`.app-card[data-id="${id}"] .app-card-name`);
   if(!nameEl)return;
-  const meta=getProjectMeta(id);
+  const meta=await getProjectMeta(id);
   if(!meta)return;
   const input=document.createElement('input');
   input.className='ap-name-input';
   input.value=meta.name;
   input.onclick=e=>e.stopPropagation();
-  const finish=()=>{
+  const finish=async()=>{
     const newName=input.value.trim()||meta.name;
-    const list=getProjectsList();
+    const list=await getProjectsList();
     const p=list.find(p=>p.id===id);
     if(p && p.name!==newName){
       p.name=newName;
       p.updatedAt=new Date().toISOString();
-      saveProjectsList(list);
-      if(window.driveSync) window.driveSync.markDirty(PROJECTS_KEY);
+      await saveProjectsList(list);
     }
-    renderDashboard();
+    await renderDashboard();
   };
   input.onblur=finish;
   input.onkeydown=e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape'){input.value=meta.name;input.blur();}};
@@ -1061,12 +1065,12 @@ function syncUrlForView(){
   }
 }
 
-function applyHashRoute(){
+async function applyHashRoute(){
   const m=location.hash.match(/^#p\/(.+)$/);
   if(m){
     const id=decodeURIComponent(m[1]);
     if(!inDashboard&&currentProjectId===id) return; // 既に開いている
-    const data=getProjectData(id);
+    const data=await getProjectData(id);
     if(data){
       currentProjectId=id;
       undoStack=[];updateUndoBtn();
@@ -1079,29 +1083,25 @@ function applyHashRoute(){
     currentProjectId=null;
     try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
   }
-  showDashboard({skipUrlSync:true});
+  await showDashboard({skipUrlSync:true});
 }
 
 /* ═══ VIEW SWITCHING ═══
    表示切替は body[data-view] を更新するだけ。要素ごとの display 操作は CSS が引き受ける。
    opts.skipUrlSync を渡すと URL 履歴を更新しない（popstate / 初期ロード時に使用）。 */
-function showDashboard(opts){
+async function showDashboard(opts){
   opts=opts||{};
-  // Auto-save current project before leaving (must not block navigation)
+  // Auto-save current project before leaving
   try{
     if(currentProjectId&&!inDashboard){
       const json=serializeSlides();
-      if(setProjectData(currentProjectId,json)){
-        const list=getProjectsList();
+      if(await setProjectData(currentProjectId,json)){
+        const list=await getProjectsList();
         const p=list.find(p=>p.id===currentProjectId);
         if(p){
           p.updatedAt=new Date().toISOString();
           p.slideCount=slides.length;
-          saveProjectsList(list);
-          if(window.driveSync){
-            window.driveSync.markDirty(PROJECT_PREFIX+currentProjectId);
-            window.driveSync.markDirty(PROJECTS_KEY);
-          }
+          await saveProjectsList(list);
         }
       }
     }
@@ -1109,7 +1109,7 @@ function showDashboard(opts){
   inDashboard=true;
   document.body.dataset.view='dashboard';
   delete document.body.dataset.hasProject;
-  renderDashboard();
+  await renderDashboard();
   if(!opts.skipUrlSync) syncUrlForView();
 }
 
@@ -1216,11 +1216,11 @@ function initEditorPaneResizer(){
   window.addEventListener('resize',syncEditorPaneWidthForViewport);
 }
 
-function updateProjNameDisplay(){
+async function updateProjNameDisplay(){
   const el=document.getElementById('proj-name-display');
   if(!el)return;
   if(!currentProjectId){delete document.body.dataset.hasProject;return;}
-  const meta=getProjectMeta(currentProjectId);
+  const meta=await getProjectMeta(currentProjectId);
   if(!meta){delete document.body.dataset.hasProject;return;}
   // 表示は CSS（body[data-view="editor"][data-has-project] .proj-name-area）が制御
   document.body.dataset.hasProject='1';
@@ -1229,23 +1229,22 @@ function updateProjNameDisplay(){
   el.onclick=startEditProjName;
 }
 
-function startEditProjName(){
+async function startEditProjName(){
   const el=document.getElementById('proj-name-display');
   if(!el||!currentProjectId)return;
-  const meta=getProjectMeta(currentProjectId);
+  const meta=await getProjectMeta(currentProjectId);
   if(!meta)return;
   const input=document.createElement('input');
   input.className='proj-name-input';
   input.value=meta.name;
-  const finish=()=>{
+  const finish=async()=>{
     const newName=input.value.trim()||meta.name;
-    const list=getProjectsList();
+    const list=await getProjectsList();
     const p=list.find(p=>p.id===currentProjectId);
     if(p && p.name!==newName){
       p.name=newName;
       p.updatedAt=new Date().toISOString();
-      saveProjectsList(list);
-      if(window.driveSync) window.driveSync.markDirty(PROJECTS_KEY);
+      await saveProjectsList(list);
     }
     const span=document.createElement('span');
     span.className='proj-name';
@@ -1260,8 +1259,8 @@ function startEditProjName(){
   input.focus();input.select();
 }
 
-function renderDashboard(){
-  const list=getProjectsList();
+async function renderDashboard(){
+  const list=await getProjectsList();
   const grid=document.getElementById('dash-grid');
   const empty=document.getElementById('dash-empty');
   if(!list.length){
@@ -1273,7 +1272,7 @@ function renderDashboard(){
   empty.style.display='none';
   grid.innerHTML='';
 
-  list.forEach(meta=>{
+  for(const meta of list){
     const card=document.createElement('div');
     card.className='app-card';
     card.dataset.id=meta.id;
@@ -1283,7 +1282,7 @@ function renderDashboard(){
     const thumbs=document.createElement('div');
     thumbs.className='app-card-thumb';
     // Try rendering thumbnails from stored data
-    const data=getProjectData(meta.id);
+    const data=await getProjectData(meta.id);
     if(data){
       try{
         const arr=JSON.parse(data);
@@ -1328,7 +1327,7 @@ function renderDashboard(){
     card.appendChild(actions);
     card.appendChild(info);
     grid.appendChild(card);
-  });
+  }
 }
 
 function formatDate(iso){
@@ -3287,7 +3286,7 @@ window.onload=async()=>{
   // ブラウザの戻る/進むで状態復元
   window.addEventListener('popstate',applyHashRoute);
   // 初期ルート: URL の #p/<id> を解釈し、なければダッシュボード
-  applyHashRoute();
+  await applyHashRoute();
 };
 
 /* ═══ THEME ═══ */
@@ -3300,9 +3299,8 @@ function initTheme(){
 }
 
 /* ═══ DRIVE SYNC INTEGRATION ═══
-   /drive-sync.js（リポジトリ共通の汎用エンジン）に登録するだけ。
-   保存系はすでに各所で markDirty / markDeleted を呼ぶようフックされている。
-   未ログイン時はアプリは普通にローカルだけで動く。 */
+   ログイン時: driveSync.saveItem/loadItem/removeItem で Drive に直接保存。
+   未ログイン時: localStorage をフォールバックとして使用。 */
 function initDriveSync(){
   if(!window.driveSync) return;
   window.driveSync.register({
@@ -3310,8 +3308,8 @@ function initDriveSync(){
     keys: [PROJECTS_KEY],
     keyPatterns: [new RegExp('^'+PROJECT_PREFIX.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))],
     // リモートから新しいデータが降ってきたらダッシュボードを再描画
-    onSyncedFromRemote: ()=>{
-      if(inDashboard) renderDashboard();
+    onSyncedFromRemote: async()=>{
+      if(inDashboard) await renderDashboard();
       // 編集中のプロジェクトが更新されたら警告だけ出す（強制リロードはしない）
       if(!inDashboard && currentProjectId){
         showToast('別の端末から更新がありました。再読み込みすると反映されます');
