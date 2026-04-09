@@ -19,7 +19,7 @@
 <div id="drive-progress" class="drive-progress" hidden></div>
 <header class="editor-header">
   <!-- 左: 戻る + アイコン + プロジェクト名 -->
-  <a href="#" class="app-back-btn" onclick="showDashboard();return false" title="一覧に戻る">← 一覧</a>
+  <a href="#" class="app-back-btn" onclick="event.preventDefault();showDashboard()" title="一覧に戻る">← 一覧</a>
   <div class="proj-name-area" id="proj-name-area">
     <span class="proj-name" id="proj-name-display" title="ダブルクリックで名前を変更"></span>
   </div>
