@@ -2848,15 +2848,15 @@ function buildFields(){
   if(!s2left)return;
   s2left.innerHTML='';
 
-  // タブバー
+  // タブバー（標準 .tab-bar .tab を使用）
   const tabBar=document.createElement('div');
-  tabBar.className='s2-tab-bar';tabBar.id='s2-tab-bar';
+  tabBar.className='tab-bar s2-tab-bar';tabBar.id='s2-tab-bar';
   const tabs=[['text','✍️ テキスト'],['font','🔤 フォント'],['device','📱 デバイス']];
   const curTab=s2left.dataset.tab||'text';
   tabs.forEach(([id,label])=>{
     const btn=document.createElement('button');
+    btn.className='tab'+(id===curTab?' active':'');
     btn.textContent=label;
-    if(id===curTab)btn.classList.add('active');
     btn.onclick=()=>{s2left.dataset.tab=id;buildFields();};
     tabBar.appendChild(btn);
   });

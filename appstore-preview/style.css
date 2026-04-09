@@ -318,9 +318,9 @@ select.fi{cursor:pointer;-webkit-appearance:none;appearance:none;background-imag
 .undo-count{font-size:10px;font-weight:600;color:var(--muted);margin-left:2px}
 
 /* s2 tab bar and panes: hidden on desktop, shown on iPhone via media query */
-.s2-tab-bar{display:flex;background:var(--bg);border-bottom:1px solid var(--border-strong);flex-shrink:0;min-height:38px}
-.s2-tab-bar button{flex:1;padding:10px 4px;border:none;background:transparent;color:var(--text-dim);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:.14s;-webkit-tap-highlight-color:transparent}
-.s2-tab-bar button.active{color:var(--accent);border-bottom-color:var(--accent)}
+/* s2-tab-bar: Step2 パネル上部タブ（s1-tab-bar と同じパターン） */
+.s2-tab-bar{width:100%;border-radius:0;margin:0;display:flex;box-shadow:none;background:var(--bg);border-bottom:1px solid var(--border-strong);padding:var(--space-1) var(--space-3);gap:var(--space-1);flex-shrink:0}
+.s2-tab-bar .tab{flex:1;justify-content:center}
 .s2-pane{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;flex-direction:column;gap:10px}
 .s2-pane.active{display:flex}
 .btn-lbl-iph{display:none}
@@ -581,7 +581,7 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
   /* ── Step 2 on iPhone ── */
   #s2{flex-direction:column;overflow:hidden;height:100%}
   .s2-left{width:100%;flex:1;order:2;border-right:none;border-bottom:none}
-  .s2-tab-bar button{font-size:10px;padding:8px 2px}
+  .s2-tab-bar .tab{font-size:10px;padding:6px 2px}
 
   .edit-center{
     display:flex!important;
