@@ -823,6 +823,48 @@ function loadProject(e){
   e.target.value='';
 }
 
+/* ═══ DRIVE PROGRESS INDICATOR ═══ */
+let _driveProgressCount=0;
+function driveProgressStart(){
+  _driveProgressCount++;
+  const el=document.getElementById('drive-progress');
+  if(el) el.hidden=false;
+}
+function driveProgressEnd(){
+  _driveProgressCount=Math.max(0,_driveProgressCount-1);
+  if(_driveProgressCount===0){
+    const el=document.getElementById('drive-progress');
+    if(el) el.hidden=true;
+  }
+}
+let _saveStatusTimer=null;
+function showSaveStatus(text,type){
+  const el=document.getElementById('save-status');
+  if(!el)return;
+  clearTimeout(_saveStatusTimer);
+  el.hidden=false;
+  el.className='save-status'+(type?' is-'+type:'');
+  el.innerHTML=(type?'':'<span class="spinner-sm"></span>')+text;
+  if(type){
+    _saveStatusTimer=setTimeout(()=>{el.hidden=true;},2500);
+  }
+}
+function hideSaveStatus(){
+  const el=document.getElementById('save-status');
+  if(el) el.hidden=true;
+}
+function showDashLoading(show){
+  const el=document.getElementById('dash-loading');
+  const grid=document.getElementById('dash-grid');
+  const empty=document.getElementById('dash-empty');
+  if(!el)return;
+  el.classList.toggle('is-active',show);
+  if(show){
+    if(grid) grid.style.display='none';
+    if(empty) empty.style.display='none';
+  }
+}
+
 /* ═══ PROJECT MANAGEMENT ═══
    ログイン時: Google Drive が一次ストレージ（localStorage はキャッシュ）
    未ログイン時: localStorage が一次ストレージ */
@@ -895,13 +937,19 @@ async function createNewProject(name){
 }
 
 async function openProject(id){
-  const data=await getProjectData(id);
-  if(!data){showToast('プロジェクトデータが見つかりません');return;}
-  currentProjectId=id;
-  undoStack=[];updateUndoBtn();
-  deserializeSlides(data);
-  inStep=1;
-  showEditor();
+  const useDrive=!!(window.driveSync&&window.driveSync.isSignedIn());
+  if(useDrive) driveProgressStart();
+  try{
+    const data=await getProjectData(id);
+    if(!data){showToast('プロジェクトデータが見つかりません');return;}
+    currentProjectId=id;
+    undoStack=[];updateUndoBtn();
+    deserializeSlides(data);
+    inStep=1;
+    showEditor();
+  }finally{
+    if(useDrive) driveProgressEnd();
+  }
 }
 
 async function saveProjectToStorage(options={}){
@@ -909,6 +957,11 @@ async function saveProjectToStorage(options={}){
   if(!currentProjectId){
     if(!silent)showToast('⚠️ プロジェクトが選択されていません');
     return false;
+  }
+  const useDrive=!!(window.driveSync&&window.driveSync.isSignedIn());
+  if(useDrive){
+    driveProgressStart();
+    if(!silent) showSaveStatus('Drive に保存中...');
   }
   try{
     let recoveredByCompression=false;
@@ -929,6 +982,7 @@ async function saveProjectToStorage(options={}){
     }
     if(!saved){
       if(!silent)showToast('⚠️ 保存に失敗しました。不要なプロジェクト削除かJSON保存を試してください');
+      if(useDrive) showSaveStatus('保存失敗','error');
       return false;
     }
     // メタ情報更新
@@ -939,12 +993,23 @@ async function saveProjectToStorage(options={}){
       p.slideCount=slides.length;
       await saveProjectsList(list);
     }
-    if(!silent)showToast(recoveredByCompression?'保存しました（画像を圧縮） 💾':'保存しました 💾');
+    if(!silent){
+      if(useDrive){
+        showSaveStatus('✓ 保存完了','success');
+      }else{
+        showToast(recoveredByCompression?'保存しました（画像を圧縮） 💾':'保存しました 💾');
+      }
+    }else if(useDrive){
+      showSaveStatus('✓ 保存完了','success');
+    }
     return true;
   }catch(e){
     console.error('saveProjectToStorage error:',e);
     if(!silent)showToast('⚠️ 保存中にエラーが発生しました');
+    if(useDrive) showSaveStatus('保存エラー','error');
     return false;
+  }finally{
+    if(useDrive) driveProgressEnd();
   }
 }
 
@@ -1260,7 +1325,11 @@ async function startEditProjName(){
 }
 
 async function renderDashboard(){
+  const useDrive=!!(window.driveSync&&window.driveSync.isSignedIn());
+  if(useDrive){driveProgressStart();showDashLoading(true);}
+  try{
   const list=await getProjectsList();
+  if(useDrive) showDashLoading(false);
   const grid=document.getElementById('dash-grid');
   const empty=document.getElementById('dash-empty');
   if(!list.length){
@@ -1327,6 +1396,9 @@ async function renderDashboard(){
     card.appendChild(actions);
     card.appendChild(info);
     grid.appendChild(card);
+  }
+  }finally{
+    if(useDrive) driveProgressEnd();
   }
 }
 

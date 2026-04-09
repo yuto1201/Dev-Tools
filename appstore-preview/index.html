@@ -15,6 +15,8 @@
 </head>
 <body>
 <script>document.body.dataset.view='dashboard';</script>
+<!-- Drive 保存・読み込みインジケーター -->
+<div id="drive-progress" class="drive-progress" hidden></div>
 <header class="editor-header">
   <!-- 左: 戻る + アイコン + プロジェクト名 -->
   <a href="#" class="app-back-btn" onclick="showDashboard();return false" title="一覧に戻る">← 一覧</a>
@@ -30,6 +32,7 @@
     <button class="btn btn-ghost" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
     <div class="hbtn-sep"></div>
     <button class="btn btn-ghost" onclick="saveProjectToStorage()" title="保存">💾 <span class="btn-lbl">保存</span></button>
+    <span id="save-status" class="save-status" hidden></span>
     <button class="btn btn-ghost" onclick="document.getElementById('load-input').click()" title="JSON読込">📂 <span class="btn-lbl">読込</span></button>
     <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
     <div class="hdr-dropdown">
@@ -69,6 +72,10 @@
       </div>
     </div>
     <div class="app-grid" id="dash-grid"></div>
+    <div class="dash-loading" id="dash-loading">
+      <div class="spinner"></div>
+      <div class="dash-loading-text">Google Drive から読み込み中...</div>
+    </div>
     <div class="app-empty" id="dash-empty" style="display:none">
       <div class="app-empty-icon">📱</div>
       <div class="app-empty-text">プロジェクトがありません</div>
