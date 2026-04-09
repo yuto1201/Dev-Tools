@@ -1,151 +1,65 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Text Counter</title>
-  <style>
-    :root {
-      --bg: #0b1020;
-      --panel: #121a2f;
-      --panel-2: #1a2440;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #63b3ed;
-      --border: rgba(99, 179, 237, 0.25);
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Counter — yuto's dev tools</title>
 
-    * { box-sizing: border-box; }
+<!-- ===== 共通テーマ ===== -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<script src="../lib/theme.js"></script>
 
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(160deg, #0b1020 0%, #111827 100%);
-      color: var(--text);
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 20px;
-    }
+<!-- ===== Drive sync ===== -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="../lib/drive-sync.css">
 
-    .container {
-      width: min(860px, 100%);
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-    }
-
-    .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(22px, 4vw, 30px);
-    }
-
-    .back {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 260px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--panel-2);
-      color: var(--text);
-      font-size: 16px;
-      line-height: 1.6;
-      padding: 14px;
-      resize: vertical;
-      outline: none;
-    }
-
-    .stats {
-      margin-top: 16px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px;
-    }
-
-    .stat {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .label {
-      color: var(--muted);
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-
-    .value {
-      font-size: 22px;
-      font-weight: 700;
-    }
-  </style>
+<!-- ===== ツール固有 ===== -->
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <div class="top">
-      <h1>Text Counter</h1>
-      <a class="back" href="../index.html">← ホームへ戻る</a>
+
+<div class="app-inner">
+  <header class="app-header">
+    <div class="app-header-left">
+      <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
+      <span class="app-title-icon">📝</span>
+      <h1 class="app-title">Text Counter</h1>
     </div>
+    <div class="app-header-right">
+      <div id="theme-mount"></div>
+      <div id="sync-mount"></div>
+    </div>
+  </header>
 
-    <textarea id="input" placeholder="ここにテキストを入力してください"></textarea>
+  <main class="app-main">
+    <textarea class="form-input tc-textarea" id="input" placeholder="ここにテキストを入力してください"></textarea>
 
-    <section class="stats">
-      <div class="stat">
-        <div class="label">文字数（空白込み）</div>
-        <div class="value" id="countChars">0</div>
+    <div class="tc-stats">
+      <div class="tc-stat">
+        <div class="tc-stat-label">文字数（空白込み）</div>
+        <div class="tc-stat-value" id="countChars">0</div>
       </div>
-      <div class="stat">
-        <div class="label">文字数（空白なし）</div>
-        <div class="value" id="countNoSpaces">0</div>
+      <div class="tc-stat">
+        <div class="tc-stat-label">文字数（空白なし）</div>
+        <div class="tc-stat-value" id="countNoSpaces">0</div>
       </div>
-      <div class="stat">
-        <div class="label">単語数</div>
-        <div class="value" id="countWords">0</div>
+      <div class="tc-stat">
+        <div class="tc-stat-label">単語数</div>
+        <div class="tc-stat-value" id="countWords">0</div>
       </div>
-      <div class="stat">
-        <div class="label">行数</div>
-        <div class="value" id="countLines">0</div>
+      <div class="tc-stat">
+        <div class="tc-stat-label">行数</div>
+        <div class="tc-stat-value" id="countLines">0</div>
       </div>
-    </section>
+    </div>
   </main>
+</div>
 
-  <script>
-    const input = document.getElementById('input');
-    const countChars = document.getElementById('countChars');
-    const countNoSpaces = document.getElementById('countNoSpaces');
-    const countWords = document.getElementById('countWords');
-    const countLines = document.getElementById('countLines');
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    function updateCounts() {
-      const text = input.value;
-      const noSpaces = text.replace(/\s/g, '');
-      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-      const lines = text === '' ? 0 : text.split(/\n/).length;
-
-      countChars.textContent = text.length;
-      countNoSpaces.textContent = noSpaces.length;
-      countWords.textContent = words;
-      countLines.textContent = lines;
-    }
-
-    input.addEventListener('input', updateCounts);
-    updateCounts();
-  </script>
+<script src="../lib/drive-sync.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

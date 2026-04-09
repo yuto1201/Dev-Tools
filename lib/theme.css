@@ -1,0 +1,189 @@
+/* ============================================================
+   lib/theme.css — yuto's dev tools 共通テーマトークン
+
+   全ツールから <link rel="stylesheet" href="../lib/theme.css"> で
+   読み込むこと。各ツールの style.css ではここで定義した CSS 変数を
+   使うだけにし、色や shadow を直接ハードコードしない。
+
+   テーマ切替は data-theme 属性で行う：
+     - 既定: light（ニューモフィズム）
+     - data-theme="dark" を <html> に付けると dark に切り替わる
+
+   切替ロジックは lib/theme.js を参照。
+   ============================================================ */
+
+/* ============================================================
+   LIGHT THEME（既定 / ニューモフィズム）
+   ベース #E9EDF0、二重 shadow による柔らかい立体感
+   ============================================================ */
+:root {
+  /* ----- Surface ----- */
+  --bg:           #E9EDF0;   /* ページ背景。card と同色で shadow が立体感を作る */
+  --bg-elevated:  #E9EDF0;   /* card / modal の背景 */
+  --bg-inset:     #E9EDF0;   /* input など窪んで見せる要素 */
+
+  /* ----- Text ----- */
+  --text:         #343434;
+  --text-dim:     #6B7280;
+  --muted:        #A1AEBF;
+
+  /* ----- Semantic colors（用途ベース） ----- */
+  --accent:       #489CC1;   /* テーマカラー（プライマリ） */
+  --accent-hover: #3A8DB5;
+  --success:      #21A87D;   /* 成功・OK・完了 */
+  --danger:       #FF7272;   /* エラー・削除・破壊操作 */
+  --warning:      #FFBB0D;   /* 警告・注意・保留 */
+  --info:         #5B9BD5;   /* 情報・通知・ヒント */
+
+  /* ----- Utility palette（タグ・装飾・差別化用） ----- */
+  --purple:       #8B5CF6;
+  --pink:         #EC4899;
+  --orange:       #F97316;
+  --teal:         #14B8A6;
+  --indigo:       #6366F1;
+
+  /* ----- Neumorphism shadow（核） -----
+     light = 左上のハイライト、dark = 右下の影 */
+  --shadow-light: #FFFFFF;
+  --shadow-dark:  rgba(163, 177, 198, 0.5);
+
+  /* ----- Composite shadows ----- */
+  /* 通常カード（標準サイズ） */
+  --shadow-out:    -8px -8px 16px var(--shadow-light),
+                    8px  8px 16px var(--shadow-dark);
+  /* 小さい要素（ボタン等） */
+  --shadow-out-sm: -3px -3px 6px var(--shadow-light),
+                    3px  3px 6px var(--shadow-dark);
+  /* 大きい要素（モーダル等） */
+  --shadow-out-lg: -16px -16px 32px var(--shadow-light),
+                    16px  16px 32px var(--shadow-dark);
+  /* 押し込まれた input / 内側 */
+  --shadow-in:     inset 4px 4px 8px var(--shadow-dark),
+                   inset -4px -4px 8px var(--shadow-light);
+  /* 微かなホバー時の押し込み */
+  --shadow-in-sm:  inset 2px 2px 4px var(--shadow-dark),
+                   inset -2px -2px 4px var(--shadow-light);
+
+  /* ----- Border（基本は使わない、アクセシビリティ補強用） ----- */
+  --border:       rgba(163, 177, 198, 0.18);
+  --border-strong:rgba(163, 177, 198, 0.32);
+
+  /* ----- Radius ----- */
+  --radius-sm:    10px;
+  --radius:       16px;
+  --radius-lg:    24px;
+  --radius-full:  999px;
+
+  /* ----- Spacing scale ----- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* ----- Font ----- */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ----- Z-index scale ----- */
+  --z-base:     1;
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-modal:    1000;
+  --z-toast:    2000;
+
+  /* ----- Transition ----- */
+  --transition-fast:   .15s ease;
+  --transition-normal: .25s ease;
+  --transition-slow:   .35s ease;
+}
+
+/* ============================================================
+   DARK THEME（ニューモフィズム維持、bg は中間トーン）
+   ============================================================ */
+[data-theme="dark"] {
+  /* ----- Surface ----- */
+  --bg:           #2A2D3E;
+  --bg-elevated:  #2A2D3E;
+  --bg-inset:     #2A2D3E;
+
+  /* ----- Text ----- */
+  --text:         #E2E8F0;
+  --text-dim:     #94A3B8;
+  --muted:        #64748B;
+
+  /* ----- Semantic colors（dark 用に少し明るめ） ----- */
+  --accent:       #6B92E5;
+  --accent-hover: #82A4EA;
+  --success:      #34C28D;
+  --danger:       #FF8585;
+  --warning:      #FFC633;
+  --info:         #7AB3E8;
+
+  /* ----- Utility palette（dark 用に少し明るめ） ----- */
+  --purple:       #A78BFA;
+  --pink:         #F472B6;
+  --orange:       #FB923C;
+  --teal:         #2DD4BF;
+  --indigo:       #818CF8;
+
+  /* ----- Neumorphism shadow ----- */
+  --shadow-light: #383B52;   /* bg より明るい */
+  --shadow-dark:  #1C1E2C;   /* bg より暗い */
+
+  --shadow-out:    -8px -8px 16px var(--shadow-light),
+                    8px  8px 16px var(--shadow-dark);
+  --shadow-out-sm: -3px -3px 6px var(--shadow-light),
+                    3px  3px 6px var(--shadow-dark);
+  --shadow-out-lg: -16px -16px 32px var(--shadow-light),
+                    16px  16px 32px var(--shadow-dark);
+  --shadow-in:     inset 4px 4px 8px var(--shadow-dark),
+                   inset -4px -4px 8px var(--shadow-light);
+  --shadow-in-sm:  inset 2px 2px 4px var(--shadow-dark),
+                   inset -2px -2px 4px var(--shadow-light);
+
+  /* ----- Border ----- */
+  --border:       rgba(255, 255, 255, 0.05);
+  --border-strong:rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================================
+   テーマ切替ボタン（lib/theme.js が mountUI で生成）
+   ============================================================ */
+.theme-toggle-mount {
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-toggle-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-out-sm);
+  transition: box-shadow .15s, color .15s, transform .1s;
+  font-family: inherit;
+  line-height: 1;
+}
+.theme-toggle-btn:hover {
+  color: var(--accent);
+}
+.theme-toggle-btn:active {
+  box-shadow: var(--shadow-in-sm);
+  transform: scale(.98);
+}
+
+/* テーマ切替時のアニメーション（任意） */
+html {
+  transition: background-color .25s ease, color .25s ease;
+}

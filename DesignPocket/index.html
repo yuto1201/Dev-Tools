@@ -3,83 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DesignPocket — デザインぽけっと</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<title>DesignPocket — yuto's dev tools</title>
+
+<!-- ===== 共通テーマ ===== -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<script src="../lib/theme.js"></script>
+
+<!-- ===== Drive sync ===== -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="../drive-sync.css?v=20260409d">
+<link rel="stylesheet" href="../lib/drive-sync.css">
+
+<!-- ===== ツール固有 ===== -->
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="scanline"></div>
-<div class="orb orb1"></div>
-<div class="orb orb2"></div>
+<div class="app-inner">
 
-<header class="site-header">
-  <a href="../index.html" class="back-link">← Back to Toolbox</a>
-  <div class="brand">
-    <div class="brand-eyebrow">design pocket</div>
-    <h1 class="brand-title">DesignPocket</h1>
-    <p class="brand-sub">// UIインスピレーション・コレクター</p>
-  </div>
-  <div class="tabs">
-    <nav class="tab-list" aria-label="メインナビゲーション" role="tablist">
+  <!-- ===== Standard header ===== -->
+  <header class="app-header">
+    <div class="app-header-left">
+      <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
+      <span class="app-title-icon">🎨</span>
+      <h1 class="app-title">DesignPocket</h1>
+    </div>
+    <div class="app-header-right">
+      <div id="theme-mount"></div>
+      <div id="sync-mount"></div>
+    </div>
+  </header>
+
+  <!-- ===== Navigation tabs + action ===== -->
+  <div class="app-toolbar">
+    <nav class="tab-bar" aria-label="メインナビゲーション" role="tablist">
       <button type="button" class="tab" data-view="gallery" role="tab" aria-controls="view-gallery" aria-selected="false">ギャラリー</button>
       <button type="button" class="tab" data-view="apps" role="tab" aria-controls="view-apps" aria-selected="false">アプリ別</button>
     </nav>
-    <button type="button" class="tab tab-add" id="openAddBtn" aria-label="新しいアイデアを追加">＋ 追加</button>
-    <div id="sync-mount"></div>
+    <button type="button" class="btn btn-primary" id="openAddBtn" aria-label="新しいアイデアを追加">＋ 追加</button>
   </div>
-</header>
 
-<main class="main">
+  <main class="dp-main">
 
-  <!-- ===== Gallery view ===== -->
-  <section class="view view-gallery" id="view-gallery" aria-label="ギャラリー">
-    <div class="filter-bar">
-      <div class="filter-group">
-        <label class="filter-label" for="filter-app">アプリ</label>
-        <select id="filter-app" class="select">
-          <option value="">すべて</option>
-        </select>
+    <!-- ===== Gallery view ===== -->
+    <section class="view view-gallery" id="view-gallery" aria-label="ギャラリー">
+      <div class="dp-filter-bar">
+        <div class="dp-filter-group">
+          <label class="form-label" for="filter-app">アプリ</label>
+          <select id="filter-app" class="select">
+            <option value="">すべて</option>
+          </select>
+        </div>
+        <div class="dp-filter-group">
+          <label class="form-label" for="filter-tag">タグ</label>
+          <select id="filter-tag" class="select">
+            <option value="">すべて</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-ghost" id="clear-filters">クリア</button>
+        <span class="badge badge-primary dp-count-badge" id="gallery-count">0 件</span>
       </div>
-      <div class="filter-group">
-        <label class="filter-label" for="filter-tag">タグ</label>
-        <select id="filter-tag" class="select">
-          <option value="">すべて</option>
-        </select>
+
+      <div class="dp-masonry" id="gallery-grid"></div>
+      <div class="app-empty" id="gallery-empty" hidden>
+        <div class="app-empty-icon">✦</div>
+        <div class="app-empty-text">まだアイデアがありません</div>
+        <div class="app-empty-sub">右上の「＋ 追加」から最初のインスピレーションを登録しよう</div>
       </div>
-      <button type="button" class="btn-ghost" id="clear-filters">クリア</button>
-      <span class="count-badge" id="gallery-count">0 件</span>
-    </div>
+    </section>
 
-    <div class="masonry" id="gallery-grid"></div>
-    <div class="empty-state" id="gallery-empty" hidden>
-      <div class="empty-icon">✦</div>
-      <div class="empty-title">まだアイデアがありません</div>
-      <div class="empty-sub">右上の「＋ 追加」から最初のインスピレーションを登録しよう</div>
-    </div>
-  </section>
+    <!-- ===== Apps view ===== -->
+    <section class="view view-apps" id="view-apps" aria-label="アプリ別" hidden>
+      <div class="dp-apps-toolbar">
+        <h2 class="app-section-title"></h2>
+        <button type="button" class="btn btn-primary" id="openAddAppBtn">＋ 新しいアプリ</button>
+      </div>
+      <div class="dp-apps-grid" id="apps-grid"></div>
+      <div class="app-empty" id="apps-empty" hidden>
+        <div class="app-empty-icon">◬</div>
+        <div class="app-empty-text">アプリ未登録</div>
+        <div class="app-empty-sub">アプリを作成すると、アイデアをプロジェクト単位で整理できます</div>
+      </div>
+    </section>
 
-  <!-- ===== Apps view ===== -->
-  <section class="view view-apps" id="view-apps" aria-label="アプリ別" hidden>
-    <div class="apps-toolbar">
-      <h2 class="section-title">登録アプリ</h2>
-      <button type="button" class="btn-primary" id="openAddAppBtn">＋ 新しいアプリ</button>
-    </div>
-    <div class="apps-grid" id="apps-grid"></div>
-    <div class="empty-state" id="apps-empty" hidden>
-      <div class="empty-icon">◬</div>
-      <div class="empty-title">アプリ未登録</div>
-      <div class="empty-sub">アプリを作成すると、アイデアをプロジェクト単位で整理できます</div>
-    </div>
-  </section>
-
-</main>
+  </main>
+</div>
 
 <!-- ===== Add Idea Modal ===== -->
-<div class="overlay" id="addIdeaOverlay" role="dialog" aria-modal="true" aria-labelledby="addIdeaTitle" hidden>
-  <div class="modal">
+<div class="modal-overlay" id="addIdeaOverlay" role="dialog" aria-modal="true" aria-labelledby="addIdeaTitle" hidden>
+  <div class="modal dp-modal-wide">
     <div class="modal-header">
       <h3 class="modal-title" id="addIdeaTitle">アイデアを追加</h3>
       <button type="button" class="modal-close" data-close-modal="addIdeaOverlay" aria-label="閉じる">×</button>
@@ -92,11 +105,11 @@
 
       <div class="form-row">
         <label class="form-label" for="idea-image">画像</label>
-        <div class="upload-zone" id="upload-zone">
-          <input class="upload-input" id="idea-image" name="image" type="file" accept="image/*">
-          <div class="upload-hint" id="upload-hint">クリックして画像を選択 / ドラッグ＆ドロップ</div>
-          <img class="upload-preview" id="upload-preview" alt="プレビュー" hidden>
-          <button type="button" class="upload-clear" id="upload-clear" hidden>画像を削除</button>
+        <div class="dp-upload-zone" id="upload-zone">
+          <input class="dp-upload-input" id="idea-image" name="image" type="file" accept="image/*">
+          <div class="dp-upload-hint" id="upload-hint">クリックして画像を選択 / ドラッグ＆ドロップ</div>
+          <img class="dp-upload-preview" id="upload-preview" alt="プレビュー" hidden>
+          <button type="button" class="dp-upload-clear" id="upload-clear" hidden>画像を削除</button>
         </div>
       </div>
 
@@ -105,10 +118,10 @@
         <input class="form-input" id="idea-url" name="url" type="url" placeholder="https://...">
       </div>
 
-      <div class="form-row form-row-2col">
+      <div class="form-row dp-form-2col">
         <div>
           <label class="form-label" for="idea-app">紐づけるアプリ</label>
-          <select class="form-input" id="idea-app" name="appId">
+          <select class="select" id="idea-app" name="appId">
             <option value="">（未設定）</option>
           </select>
         </div>
@@ -119,7 +132,7 @@
       </div>
 
       <div class="form-row">
-        <label class="form-label" for="idea-tags">タグ <span class="hint">(カンマ区切り)</span></label>
+        <label class="form-label" for="idea-tags">タグ <span class="dp-hint">(カンマ区切り)</span></label>
         <input class="form-input" id="idea-tags" name="tags" type="text" placeholder="例：dark, gradient, glass">
       </div>
 
@@ -128,17 +141,17 @@
         <textarea class="form-input" id="idea-note" name="note" rows="3" maxlength="1000" placeholder="ポイント・参考にしたい部分など"></textarea>
       </div>
 
-      <div class="form-actions">
-        <button type="button" class="btn-ghost" data-close-modal="addIdeaOverlay">キャンセル</button>
-        <button type="submit" class="btn-primary">保存する</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="addIdeaOverlay">キャンセル</button>
+        <button type="submit" class="btn btn-primary">保存する</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- ===== Add App Modal ===== -->
-<div class="overlay" id="addAppOverlay" role="dialog" aria-modal="true" aria-labelledby="addAppTitle" hidden>
-  <div class="modal modal-sm">
+<div class="modal-overlay" id="addAppOverlay" role="dialog" aria-modal="true" aria-labelledby="addAppTitle" hidden>
+  <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title" id="addAppTitle">アプリを追加</h3>
       <button type="button" class="modal-close" data-close-modal="addAppOverlay" aria-label="閉じる">×</button>
@@ -152,17 +165,17 @@
         <label class="form-label" for="app-emoji">絵文字アイコン</label>
         <input class="form-input" id="app-emoji" name="emoji" type="text" maxlength="4" placeholder="🚀">
       </div>
-      <div class="form-actions">
-        <button type="button" class="btn-ghost" data-close-modal="addAppOverlay">キャンセル</button>
-        <button type="submit" class="btn-primary">追加する</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="addAppOverlay">キャンセル</button>
+        <button type="submit" class="btn btn-primary">追加する</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- ===== Idea Detail Modal ===== -->
-<div class="overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
-  <div class="modal modal-lg">
+<div class="modal-overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
+  <div class="modal dp-modal-lg">
     <div class="modal-header">
       <h3 class="modal-title" id="detailTitle">アイデア詳細</h3>
       <button type="button" class="modal-close" data-close-modal="detailOverlay" aria-label="閉じる">×</button>
@@ -173,7 +186,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="../drive-sync.js?v=20260409d"></script>
+<script src="../lib/drive-sync.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

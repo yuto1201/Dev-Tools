@@ -1709,35 +1709,98 @@ function showEditor(){
   document.getElementById('editorWrapper').style.display='flex';
 }
 
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+function renderProjectThumbnail(projectId){
+  try{
+    var raw=localStorage.getItem(LS_PROJECT_PREFIX+projectId);
+    if(!raw)return '<div class="erd-thumb-empty">⬡</div>';
+    var state=JSON.parse(raw);
+    var tbls=state.tables||{};
+    var pos=state.nodePos||{};
+    var col=state.nodeCol||{};
+    var ids=Object.keys(tbls);
+    if(ids.length===0)return '<div class="erd-thumb-empty">⬡</div>';
+    // 各テーブルの近似サイズ（実エディタの値に近い概算）
+    var TW=200,TH=80;
+    // バウンディングボックス
+    var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    ids.forEach(function(id){
+      var p=pos[id]||{x:0,y:0};
+      if(p.x<minX)minX=p.x;
+      if(p.y<minY)minY=p.y;
+      if(p.x+TW>maxX)maxX=p.x+TW;
+      if(p.y+TH>maxY)maxY=p.y+TH;
+    });
+    var pad=40;
+    minX-=pad;minY-=pad;maxX+=pad;maxY+=pad;
+    var w=maxX-minX,h=maxY-minY;
+    if(w<=0||h<=0)return '<div class="erd-thumb-empty">⬡</div>';
+    // FK 関係を抽出（tables[id] はカラム配列そのもの）
+    var lines=[];
+    ids.forEach(function(id){
+      var cols=tbls[id];
+      if(!Array.isArray(cols))return;
+      cols.forEach(function(c){
+        if(c && c.fk && c.fk.table && pos[id] && pos[c.fk.table]){
+          var p1=pos[id],p2=pos[c.fk.table];
+          lines.push([p1.x+TW/2,p1.y+TH/2,p2.x+TW/2,p2.y+TH/2]);
+        }
+      });
+    });
+    var svg='<svg viewBox="'+minX+' '+minY+' '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">';
+    // 関係線
+    lines.forEach(function(l){
+      svg+='<line x1="'+l[0]+'" y1="'+l[1]+'" x2="'+l[2]+'" y2="'+l[3]+'" stroke="rgba(167,139,250,.55)" stroke-width="3"/>';
+    });
+    // テーブル矩形
+    ids.forEach(function(id){
+      var p=pos[id]||{x:0,y:0};
+      var c=col[id]||'#3b82f6';
+      svg+='<rect x="'+p.x+'" y="'+p.y+'" width="'+TW+'" height="'+TH+'" rx="10" fill="'+c+'" opacity="0.88"/>';
+      svg+='<rect x="'+p.x+'" y="'+p.y+'" width="'+TW+'" height="20" rx="10" fill="rgba(255,255,255,.18)"/>';
+    });
+    svg+='</svg>';
+    return svg;
+  }catch(e){return '<div class="erd-thumb-empty">⬡</div>';}
+}
+
 function renderPSSList(){
   var list=document.getElementById('pssProjectList');
   if(!list)return;
   list.innerHTML='';
   var sorted=Object.entries(projectList).sort(function(a,b){return(b[1].updatedAt||'').localeCompare(a[1].updatedAt||'');});
   if(!sorted.length){
-    list.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:32px 0;">プロジェクトがありません。<br>「＋ 新規プロジェクト」から作成してください。</div>';
+    list.innerHTML='<div class="app-empty">'
+      +'<div class="app-empty-icon">⬡</div>'
+      +'<div class="app-empty-text">プロジェクトがありません</div>'
+      +'<div class="app-empty-sub">「＋ 新規プロジェクト」から作成してください</div>'
+      +'</div>';
     return;
   }
   sorted.forEach(function(e){
     var id=e[0],proj=e[1];
     var card=document.createElement('div');
-    card.className='pss-card';
+    card.className='app-card';
     var d=proj.updatedAt?new Date(proj.updatedAt):new Date();
-    var dateStr=d.toLocaleDateString('ja-JP')+' '+d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
-    card.innerHTML='<div class="pss-card-icon">📄</div>'
-      +'<div class="pss-card-body">'
-      +'<div class="pss-card-name">'+proj.name+'</div>'
-      +'<div class="pss-card-meta">'+(proj.tableCount||0)+' tables / '+dateStr+'</div>'
+    var dateStr=d.toLocaleDateString('ja-JP');
+    card.innerHTML='<div class="app-card-thumb">'+renderProjectThumbnail(id)+'</div>'
+      +'<div class="app-card-info">'
+      +'<div class="app-card-name">'+escapeHtml(proj.name)+'</div>'
+      +'<div class="app-card-meta"><span>'+(proj.tableCount||0)+' tables</span><span>'+dateStr+'</span></div>'
       +'</div>'
-      +'<div class="pss-card-actions">'
-      +'<button class="pss-card-btn rename-btn">✏ 名前変更</button>'
-      +'<button class="pss-card-btn del del-btn">🗑</button>'
-      +'</div>'
-      +'<div class="pss-card-arrow">→</div>';
+      +'<div class="app-card-actions">'
+      +'<button class="app-card-btn rename-btn" title="名前変更">✏</button>'
+      +'<button class="app-card-btn danger del-btn" title="削除">🗑</button>'
+      +'</div>';
     // クリックでプロジェクトを開く（ボタン以外）
     (function(pid){
       card.addEventListener('click',function(ev){
-        if(ev.target.closest('.pss-card-actions'))return;
+        if(ev.target.closest('.app-card-actions'))return;
         pssOpenProject(pid);
       });
       card.querySelector('.rename-btn').addEventListener('click',function(ev){
@@ -1859,5 +1922,14 @@ function initDriveSync(){
   window.driveSync.init();
 }
 
+function initTheme(){
+  if(!window.theme) return;
+  ['theme-mount','pss-theme-mount'].forEach(function(id){
+    var m=document.getElementById(id);
+    if(m) window.theme.mountUI(m);
+  });
+}
+
 initProjects();
+initTheme();
 initDriveSync();

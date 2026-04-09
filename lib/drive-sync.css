@@ -1,0 +1,165 @@
+/* ============================================================
+   lib/drive-sync.css — Drive 同期 UI 共通スタイル
+
+   driveSync.mountUI() が生成する DOM 用。
+   テーマトークンは lib/theme.css から取得。
+   theme.css を読み込んでいないツールでも fallback で動く。
+
+   状態属性：
+     data-signed-in="0" → サインインボタン表示
+     data-signed-in="1" → アカウント情報 + 状態ドット表示
+     data-status="synced" / "syncing" / "error" / "offline"
+   ============================================================ */
+
+.ds-sync-mount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-family: var(--font-sans, inherit);
+  font-size: 12px;
+}
+
+/* ============================================================
+   サインインボタン（未ログイン時）
+   neumorphism: 二重 shadow の pill ボタン
+   ============================================================ */
+.ds-sync-signin {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-full, 999px);
+  border: none;
+  background: var(--bg, #1a1f2e);
+  color: var(--text, #e2e8f0);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--shadow-out-sm,
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 2px 6px rgba(0, 0, 0, 0.2));
+  transition: box-shadow .15s, color .15s, background .15s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ds-sync-signin:hover {
+  color: var(--accent, #76e4f7);
+}
+.ds-sync-signin:active {
+  box-shadow: var(--shadow-in-sm,
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15));
+  transform: scale(.98);
+}
+.ds-sync-mount[data-signed-in="0"] .ds-sync-signin { display: inline-flex; }
+
+/* Google G アイコン */
+.ds-sync-g-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  color: #4285F4;
+  font-weight: 900;
+  font-size: 11px;
+  font-family: 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================================
+   サインイン後のアカウント表示
+   neumorphism: pill コンテナに email + status dot + signout
+   ============================================================ */
+.ds-sync-info {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-full, 999px);
+  background: var(--bg, #1a1f2e);
+  box-shadow: var(--shadow-out-sm,
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.18));
+}
+.ds-sync-mount[data-signed-in="1"] .ds-sync-info { display: inline-flex; }
+
+/* ステータスドット */
+.ds-sync-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted, #94a3b8);
+  transition: background .2s, box-shadow .2s;
+}
+.ds-sync-mount[data-status="synced"] .ds-sync-status-dot {
+  background: var(--success, #22c55e);
+  box-shadow: 0 0 6px rgba(33, 168, 125, 0.55);
+}
+.ds-sync-mount[data-status="syncing"] .ds-sync-status-dot {
+  background: var(--accent, #3b82f6);
+  animation: ds-sync-pulse 1.2s ease-in-out infinite;
+}
+.ds-sync-mount[data-status="error"] .ds-sync-status-dot {
+  background: var(--danger, #ef4444);
+  box-shadow: 0 0 6px rgba(255, 114, 114, 0.55);
+}
+.ds-sync-mount[data-status="offline"] .ds-sync-status-dot {
+  background: var(--muted, #94a3b8);
+}
+@keyframes ds-sync-pulse {
+  0%, 100% { opacity: .4; transform: scale(.85); }
+  50%      { opacity: 1;  transform: scale(1.1); }
+}
+
+/* メールアドレス */
+.ds-sync-email {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim, #cbd5e1);
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* サインアウトボタン */
+.ds-sync-signout {
+  background: transparent;
+  border: none;
+  color: var(--muted, #94a3b8);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm, 6px);
+  font-family: inherit;
+  transition: color .14s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ds-sync-signout:hover {
+  color: var(--danger, #ef4444);
+}
+
+/* ============================================================
+   スマホ: ラベルとメールを非表示にして省スペース化
+   ============================================================ */
+@media (max-width: 640px) {
+  .ds-sync-label { display: none; }
+  .ds-sync-email { display: none; }
+  .ds-sync-info {
+    height: 36px;
+    padding: 0 12px;
+    gap: 6px;
+  }
+  .ds-sync-signin {
+    height: 36px;
+    padding: 0 12px;
+  }
+}

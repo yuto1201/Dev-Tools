@@ -3,31 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ER Diagram Generator</title>
+<title>ER Diagram Generator — yuto's dev tools</title>
+
+<!-- ===== 共通テーマ ===== -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<script src="../lib/theme.js"></script>
+
+<!-- ===== Drive sync ===== -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="../drive-sync.css?v=20260409d">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../lib/drive-sync.css">
+
+<!-- ===== ツール固有 ===== -->
+<link rel="stylesheet" href="style.css?v=20260409h">
 </head>
 <body>
 <!-- ===== PROJECT SELECT SCREEN ===== -->
 <div id="projectSelectScreen" class="pss">
-  <div class="pss-inner">
-    <div class="pss-header">
-      <div class="pss-logo"><div class="logo-icon" style="width:36px;height:36px;font-size:18px;">⬡</div><span>ER Diagram Generator</span></div>
-      <p class="pss-sub">プロジェクトを選択して開始</p>
+  <div class="app-inner">
+    <header class="app-header">
+      <div class="app-header-left">
+        <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
+        <span class="app-title-icon">⬡</span>
+        <h1 class="app-title">ER Diagram</h1>
+      </div>
+      <div class="app-header-right">
+        <div id="pss-theme-mount"></div>
+        <div id="pss-sync-mount"></div>
+      </div>
+    </header>
+    <div class="app-toolbar">
+      <h2 class="app-section-title"></h2>
+      <button class="btn btn-primary" onclick="pssCreateNew()">＋ 新規プロジェクト</button>
     </div>
-    <div class="pss-actions" style="gap:12px;">
-      <div id="pss-sync-mount"></div>
-      <button class="btn success" onclick="pssCreateNew()" style="padding:8px 18px;">＋ 新規プロジェクト</button>
-    </div>
-    <div class="pss-list" id="pssProjectList"></div>
+    <div class="app-grid" id="pssProjectList"></div>
   </div>
 </div>
 
 <!-- ===== EDITOR (initially hidden) ===== -->
 <div id="editorWrapper" style="display:none;flex-direction:column;height:100vh;">
 <header>
-  <div class="logo"><div class="logo-icon">⬡</div>ER Diagram Generator</div>
+  <div class="logo" style="cursor:pointer;" onclick="showProjectSelectScreen()" title="プロジェクト一覧へ戻る"><div class="logo-icon">⬡</div>ER Diagram Generator</div>
   <div class="header-right">
     <span class="badge">OFFLINE</span>
 
@@ -80,7 +97,8 @@
     <button class="btn" onclick="showShortcuts()" title="キーボードショートカット (?)" style="padding:6px 9px;">⌨</button>
     <button class="btn" onclick="resetAll()" title="リセット" style="padding:6px 9px;color:var(--red);">🗑</button>
 
-    <!-- Drive 同期 UI -->
+    <!-- テーマ切替 + Drive 同期 UI -->
+    <div id="theme-mount"></div>
     <div id="sync-mount"></div>
   </div>
 </header>
@@ -328,7 +346,7 @@
 
 </div><!-- /editorWrapper -->
 <div id="toast"></div>
-<script src="../drive-sync.js?v=20260409d"></script>
-<script src="script.js"></script>
+<script src="../lib/drive-sync.js?v=20260409d"></script>
+<script src="script.js?v=20260409e"></script>
 </body>
 </html>

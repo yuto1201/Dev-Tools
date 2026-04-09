@@ -448,7 +448,7 @@
       };
       // <button>ネスト回避のため article + role=button にする
       const card = el('article', {
-        class: 'app-card',
+        class: 'dp-app-card',
         attrs: {
           role: 'button',
           tabindex: '0',
@@ -457,11 +457,11 @@
         on: {
           click: (ev) => {
             // 削除ボタン上のクリックは無視
-            if (ev.target.closest('.app-card-delete')) return;
+            if (ev.target.closest('.dp-app-card-delete')) return;
             selectApp();
           },
           keydown: (ev) => {
-            if (ev.target.closest('.app-card-delete')) return;
+            if (ev.target.closest('.dp-app-card-delete')) return;
             if (ev.key === 'Enter' || ev.key === ' ') {
               ev.preventDefault();
               selectApp();
@@ -469,14 +469,14 @@
           }
         }
       });
-      card.appendChild(el('div', { class: 'app-card-emoji', text: app.emoji || '📦' }));
-      card.appendChild(el('div', { class: 'app-card-name', text: app.name }));
+      card.appendChild(el('div', { class: 'dp-app-card-emoji', text: app.emoji || '📦' }));
+      card.appendChild(el('div', { class: 'dp-app-card-name', text: app.name }));
       card.appendChild(
-        el('div', { class: 'app-card-count', text: `${countIdeasInApp(app.id)} ideas` })
+        el('div', { class: 'dp-app-card-count', text: `${countIdeasInApp(app.id)} ideas` })
       );
 
       const delBtn = el('button', {
-        class: 'app-card-delete',
+        class: 'dp-app-card-delete',
         attrs: { type: 'button', 'aria-label': `${app.name} を削除`, title: '削除' },
         text: '×',
         on: {
@@ -585,12 +585,12 @@
       modalState.delete(id);
     }
     // 他に開いているモーダルが無ければ body スクロールを戻す
-    const stillOpen = document.querySelector('.overlay:not([hidden])');
+    const stillOpen = document.querySelector('.modal-overlay:not([hidden])');
     if (!stillOpen) document.body.style.overflow = '';
   };
 
   const closeTopmostModal = () => {
-    const open = Array.from(document.querySelectorAll('.overlay:not([hidden])'));
+    const open = Array.from(document.querySelectorAll('.modal-overlay:not([hidden])'));
     if (open.length === 0) return;
     closeModal(open[open.length - 1].id);
   };
@@ -820,7 +820,7 @@
     });
 
     // オーバーレイクリックで閉じる（closeModal経由でフォーカス復帰させる）
-    document.querySelectorAll('.overlay').forEach((overlay) => {
+    document.querySelectorAll('.modal-overlay').forEach((overlay) => {
       overlay.addEventListener('click', (ev) => {
         if (ev.target === overlay) closeModal(overlay.id);
       });
@@ -967,10 +967,17 @@
     window.driveSync.init();
   };
 
+  const initTheme = () => {
+    if (!window.theme) return;
+    const m = document.getElementById('theme-mount');
+    if (m) window.theme.mountUI(m);
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     loadState();
     bindEvents();
     render();
+    initTheme();
     initDriveSync();
   });
 })();

@@ -1020,12 +1020,12 @@ function importProjectFromFile(e){
 
 function renameProject(id,ev){
   if(ev){ev.stopPropagation();}
-  const nameEl=document.querySelector(`.dash-card[data-id="${id}"] .dash-card-name`);
+  const nameEl=document.querySelector(`.app-card[data-id="${id}"] .app-card-name`);
   if(!nameEl)return;
   const meta=getProjectMeta(id);
   if(!meta)return;
   const input=document.createElement('input');
-  input.className='dash-card-name-input';
+  input.className='ap-name-input';
   input.value=meta.name;
   input.onclick=e=>e.stopPropagation();
   const finish=()=>{
@@ -1275,13 +1275,13 @@ function renderDashboard(){
 
   list.forEach(meta=>{
     const card=document.createElement('div');
-    card.className='dash-card';
+    card.className='app-card';
     card.dataset.id=meta.id;
     card.onclick=()=>openProject(meta.id);
 
     // Thumbnail area
     const thumbs=document.createElement('div');
-    thumbs.className='dash-card-thumbs';
+    thumbs.className='app-card-thumb';
     // Try rendering thumbnails from stored data
     const data=getProjectData(meta.id);
     if(data){
@@ -1302,22 +1302,22 @@ function renderDashboard(){
 
     // Actions (overlay)
     const actions=document.createElement('div');
-    actions.className='dash-card-actions';
+    actions.className='app-card-actions';
     actions.innerHTML=`
-      <button class="dash-card-btn dash-card-btn-dup" onclick="duplicateProject('${meta.id}',event)" title="複製">⧉</button>
-      <button class="dash-card-btn dash-card-btn-export" onclick="exportProjectJson('${meta.id}',event)" title="JSON書き出し">↓</button>
-      <button class="dash-card-btn dash-card-btn-del" onclick="deleteProject('${meta.id}',event)" title="削除">✕</button>
+      <button class="app-card-btn ap-btn-dup" onclick="duplicateProject('${meta.id}',event)" title="複製">⧉</button>
+      <button class="app-card-btn ap-btn-export" onclick="exportProjectJson('${meta.id}',event)" title="JSON書き出し">↓</button>
+      <button class="app-card-btn danger" onclick="deleteProject('${meta.id}',event)" title="削除">✕</button>
     `;
 
     // Info
     const info=document.createElement('div');
-    info.className='dash-card-info';
+    info.className='app-card-info';
     const nameEl=document.createElement('div');
-    nameEl.className='dash-card-name';
+    nameEl.className='app-card-name';
     nameEl.textContent=meta.name||'無題';
     nameEl.ondblclick=e=>renameProject(meta.id,e);
     const metaEl=document.createElement('div');
-    metaEl.className='dash-card-meta';
+    metaEl.className='app-card-meta';
     const slideCount=meta.slideCount||1;
     const updated=meta.updatedAt?formatDate(meta.updatedAt):'';
     metaEl.innerHTML=`<span>${slideCount}枚のスライド</span><span>${updated}</span>`;
@@ -2136,6 +2136,7 @@ function goStep(n){
   document.getElementById('st1').className='step'+(n===1?' active':' done');
   document.getElementById('st2').className='step'+(n===2?' active':n>2?' done':'');
   const st3=document.getElementById('st3');if(st3)st3.className='step'+(n===3?' active':'');
+  const saveBtn=document.getElementById('stepbar-save');if(saveBtn)saveBtn.style.display=n===3?'inline-flex':'none';
   if(n===2) buildFields();
   if(n===3) buildStep3();
   render();
@@ -2580,19 +2581,18 @@ function buildFxList(el,idSuffix=''){
   if(!el)return;el.innerHTML='';
   EFFECTS.forEach(fx=>{
     const s=slides[curSlide];const uid='fx-'+fx.id+(idSuffix?'-'+idSuffix:'');
-    const chip=document.createElement('div');chip.className='fx-chip'+(s.effects.includes(fx.id)?' sel':'');chip.id=uid;
+    const isOn=s.effects.includes(fx.id);
+    const chip=document.createElement('button');chip.type='button';
+    chip.className='list-chip'+(isOn?' active':'');chip.id=uid;
     chip.onclick=()=>{
       pushUndo();const s=slides[curSlide];const idx=s.effects.indexOf(fx.id);
       if(idx>=0)s.effects.splice(idx,1);else s.effects.push(fx.id);
-      // sync all instances of this fx chip
       document.querySelectorAll(`[id^="fx-${fx.id}"]`).forEach(c=>{
-        c.classList.toggle('sel',s.effects.includes(fx.id));
-        const chk=c.querySelector('.fx-chk-inner');
-        if(chk){chk.textContent=s.effects.includes(fx.id)?'✓':'';chk.style.background=s.effects.includes(fx.id)?'var(--acc)':'transparent';}
+        c.classList.toggle('active',s.effects.includes(fx.id));
       });
       render();
     };
-    chip.innerHTML=`<div class="fx-icon">${fx.icon}</div><div class="fx-text"><div class="fx-name">${fx.name}</div><div class="fx-desc">${fx.desc}</div></div><div class="fx-chk fx-chk-inner" style="background:${s.effects.includes(fx.id)?'var(--acc)':'transparent'}">${s.effects.includes(fx.id)?'✓':''}</div>`;
+    chip.innerHTML=`<span class="list-chip-icon">${fx.icon}</span><span class="list-chip-text"><span class="list-chip-name">${fx.name}</span><span class="list-chip-desc">${fx.desc}</span></span><span class="list-chip-check">✓</span>`;
     el.appendChild(chip);
   });
 }
@@ -2861,15 +2861,16 @@ function addCard(p,icon,title,sub){
 function addInlineColorField(p,label,key){
   const row=document.createElement('div');row.className='field-color-row';
   const lbl=document.createElement('div');lbl.className='fcr-lbl';lbl.textContent=label;
-  const crow=document.createElement('div');crow.className='crow';const s=slides[curSlide];
-  const cp=document.createElement('input');cp.type='color';cp.value=s[key]||'#FFFFFF';
-  const hx=document.createElement('input');hx.className='chex';hx.value=s[key]||'#FFFFFF';hx.maxLength=7;
+  const s=slides[curSlide];
+  const field=document.createElement('div');field.className='color-field';
+  const cp=document.createElement('input');cp.type='color';cp.className='color-field-swatch';cp.value=s[key]||'#FFFFFF';
+  const hx=document.createElement('input');hx.type='text';hx.className='color-field-hex';hx.value=s[key]||'#FFFFFF';hx.maxLength=7;
   cp.oninput=()=>{slides[curSlide][key]=cp.value;hx.value=cp.value;render();};
   cp.onchange=()=>pushUndo();
   hx.oninput=()=>{if(/^#[0-9a-fA-F]{6}$/.test(hx.value)){slides[curSlide][key]=hx.value;cp.value=hx.value;render();}};
   hx.onchange=()=>pushUndo();
-  crow.appendChild(cp);crow.appendChild(hx);
-  row.appendChild(lbl);row.appendChild(crow);p.appendChild(row);
+  field.appendChild(cp);field.appendChild(hx);
+  row.appendChild(lbl);row.appendChild(field);p.appendChild(row);
 }
 function addTextField(p,label,key,ph=''){
   const r=addRow(p,label);const inp=document.createElement('input');inp.type='text';inp.className='fi';inp.placeholder=ph;inp.value=slides[curSlide][key]||'';
@@ -2887,14 +2888,15 @@ function addSelectField(p,label,key,opts){
   sel.onchange=()=>{pushUndo();slides[curSlide][key]=sel.value;render();};r.appendChild(sel);
 }
 function addColorField(p,label,key){
-  const r=addRow(p,label);const crow=document.createElement('div');crow.className='crow';const s=slides[curSlide];
-  const cp=document.createElement('input');cp.type='color';cp.value=s[key]||'#FFFFFF';
-  const hx=document.createElement('input');hx.className='chex';hx.value=s[key]||'#FFFFFF';hx.maxLength=7;
+  const r=addRow(p,label);const s=slides[curSlide];
+  const field=document.createElement('div');field.className='color-field';
+  const cp=document.createElement('input');cp.type='color';cp.className='color-field-swatch';cp.value=s[key]||'#FFFFFF';
+  const hx=document.createElement('input');hx.type='text';hx.className='color-field-hex';hx.value=s[key]||'#FFFFFF';hx.maxLength=7;
   cp.oninput=()=>{slides[curSlide][key]=cp.value;hx.value=cp.value;render();};
   cp.onchange=()=>pushUndo();
   hx.oninput=()=>{if(/^#[0-9a-fA-F]{6}$/.test(hx.value)){slides[curSlide][key]=hx.value;cp.value=hx.value;render();}};
   hx.onchange=()=>pushUndo();
-  crow.appendChild(cp);crow.appendChild(hx);r.appendChild(crow);
+  field.appendChild(cp);field.appendChild(hx);r.appendChild(field);
 }
 function addUploadField(p,label,key,srcKey='_src'){
   const r=addRow(p,label);const s=slides[curSlide];const uz=document.createElement('div');uz.className='uz';
@@ -3280,12 +3282,22 @@ window.onload=async()=>{
   buildStep1();
   updateUndoBtn();
   iphoneSetup();
+  initTheme();
   initDriveSync();
   // ブラウザの戻る/進むで状態復元
   window.addEventListener('popstate',applyHashRoute);
   // 初期ルート: URL の #p/<id> を解釈し、なければダッシュボード
   applyHashRoute();
 };
+
+/* ═══ THEME ═══ */
+function initTheme(){
+  if(!window.theme) return;
+  ['theme-mount','theme-mount-editor'].forEach(id=>{
+    const m=document.getElementById(id);
+    if(m) window.theme.mountUI(m);
+  });
+}
 
 /* ═══ DRIVE SYNC INTEGRATION ═══
    /drive-sync.js（リポジトリ共通の汎用エンジン）に登録するだけ。
@@ -3306,8 +3318,10 @@ function initDriveSync(){
       }
     },
   });
-  const mount=document.getElementById('sync-mount');
-  if(mount) window.driveSync.mountUI(mount);
+  ['sync-mount','sync-mount-editor'].forEach(id=>{
+    const mount=document.getElementById(id);
+    if(mount) window.driveSync.mountUI(mount);
+  });
   window.driveSync.init();
 }
 

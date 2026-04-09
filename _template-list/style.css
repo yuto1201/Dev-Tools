@@ -1,0 +1,22 @@
+/* ============================================================
+   _template-list/style.css
+
+   このファイルは「ツール固有のスタイル」のためのもの。
+   標準の以下のスタイルは lib/components.css が提供している：
+     - reset / base / font
+     - .app-inner / .app-header / .app-title / .app-back-link / .app-toolbar
+     - .app-grid / .app-card / .app-card-thumb / .app-card-info ...
+     - .app-empty / .app-editor-body
+     - .btn / .btn-primary / .btn-ghost / .btn-danger
+     - .form-row / .form-label / .form-input
+     - .modal-overlay / .modal / .modal-header / .modal-body / .modal-footer
+     - .toast
+     - body[data-view] による画面切替
+     - レスポンシブメディアクエリ
+
+   テーマトークン（色・shadow・radius・spacing・font）は lib/theme.css。
+
+   このファイルにはツール固有のレイアウト・固有要素のスタイルだけ書く。
+   ============================================================ */
+
+/* TODO: ここにツール固有のスタイルを書く（必要な場合のみ） */

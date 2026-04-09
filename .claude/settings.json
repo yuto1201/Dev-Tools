@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(node -c appstore-preview/script.js)",
-      "Bash(node -c /Users/uesugiyuuto/Documents/GitHub/Dev-Tools/appstore-preview/script.js)"
+      "Bash(node -c /Users/uesugiyuuto/Documents/GitHub/Dev-Tools/appstore-preview/script.js)",
+      "Bash(git mv:*)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --no-sandbox --screenshot=/tmp/static-800.png --window-size=800,300 file:///tmp/static-test.html)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --no-sandbox --screenshot=/tmp/static-500.png --window-size=500,300 file:///tmp/static-test.html)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --no-sandbox --screenshot=/tmp/minimal-375.png --window-size=375,150 file:///tmp/minimal.html)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --no-sandbox --screenshot=/tmp/minimal-fixed-375.png --window-size=375,150 file:///tmp/minimal-fixed.html)"
     ]
   }
 }

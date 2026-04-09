@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__TOOL_NAME__ — yuto's dev tools</title>
+
+<!-- ===== 共通テーマ（FOUC 防止のため必ず head 内で読み込む） ===== -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<script src="../lib/theme.js"></script>
+
+<!-- ===== Drive sync（同期不要なツールは drive-sync 関連を全削除してよい） ===== -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="../lib/drive-sync.css">
+
+<!-- ===== このツール固有のスタイル（共有コンポは lib/components.css 参照） ===== -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-inner">
+  <header class="app-header">
+    <div class="app-header-left">
+      <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
+      <span class="app-title-icon">🔧</span>
+      <h1 class="app-title">__TOOL_NAME__</h1>
+    </div>
+    <div class="app-header-right">
+      <!-- テーマ切替ボタン（lib/theme.js が中身を生成） -->
+      <div id="theme-mount"></div>
+      <!-- Drive 同期 UI（lib/drive-sync.js が中身を生成。同期不要ならこの div ごと削除） -->
+      <div id="sync-mount"></div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- ============================================================ -->
+    <!-- TODO: ここに各ツール固有の単一画面 UI を実装する              -->
+    <!-- ============================================================ -->
+    <div class="placeholder">
+      <div class="placeholder-icon">✦</div>
+      <p class="placeholder-text">ツールの中身をここに実装する</p>
+      <p class="placeholder-sub">script.js の TODO コメント箇所を編集してください</p>
+    </div>
+  </main>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- 同期不要なら以下2行を削除してよい -->
+<script src="../lib/drive-sync.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

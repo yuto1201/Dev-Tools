@@ -4,77 +4,77 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>App Store Preview Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700;900&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=Hachi+Maru+Pop&family=DotGothic16&family=Yomogi&family=Rampart+One&family=RocknRoll+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700;900&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=Hachi+Maru+Pop&family=DotGothic16&family=Yomogi&family=Rampart+One&family=RocknRoll+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<script src="../lib/theme.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link rel="stylesheet" href="../drive-sync.css?v=20260409d">
+<link rel="stylesheet" href="../lib/drive-sync.css?v=20260409d">
 <link rel="stylesheet" href="style.css?v=20260409d">
 </head>
 <body>
 <script>document.body.dataset.view='dashboard';</script>
-<header>
-  <div class="logo" style="cursor:pointer" onclick="showDashboard()">
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="5" fill="#0A84FF"/><path d="M5 15V8l5-3 5 3v7l-5 2.5L5 15z" fill="white" opacity=".9"/><rect x="8" y="10" width="4" height="5" rx="2" fill="#0A84FF"/></svg>
-    Preview<em>Gen</em>
-  </div>
+<header class="editor-header">
+  <!-- 左: 戻る + アイコン + プロジェクト名 -->
+  <a href="#" class="app-back-btn" onclick="showDashboard();return false" title="一覧に戻る">← 一覧</a>
   <div class="proj-name-area" id="proj-name-area">
     <span class="proj-name" id="proj-name-display" title="ダブルクリックで名前を変更"></span>
   </div>
+  <!-- 中央: 操作ボタン群 -->
   <div class="header-spacer"></div>
-  <!-- Google Drive 同期 UI（drive-sync.js が中身を生成） -->
-  <div id="sync-mount"></div>
   <div class="hbtns" id="editor-header-btns">
-    <div class="hbtn-group">
-      <button class="btn btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
-      <button class="btn btn-undo" id="redo-btn" onclick="redo()" disabled title="やり直す (Ctrl+Shift+Z)">↪<span class="undo-count" id="redo-count"></span></button>
-    </div>
+    <button class="btn btn-ghost btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
+    <button class="btn btn-ghost btn-undo" id="redo-btn" onclick="redo()" disabled title="やり直す (Ctrl+Shift+Z)">↪<span class="undo-count" id="redo-count"></span></button>
     <div class="hbtn-sep"></div>
-    <div class="hbtn-group">
-      <button class="btn btn-g" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
-    </div>
+    <button class="btn btn-ghost" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
     <div class="hbtn-sep"></div>
-    <div class="hbtn-group">
-      <div class="hdr-dropdown">
-        <button class="btn btn-g" onclick="toggleDropdown(this)">📁 <span class="btn-lbl">ファイル</span> <span class="dd-arrow">▾</span></button>
-        <div class="dd-menu">
-          <button class="dd-item" onclick="saveProjectToStorage();closeDropdowns()">💾 保存</button>
-          <button class="dd-item" onclick="saveProject();closeDropdowns()">📥 JSON書出</button>
-          <button class="dd-item" onclick="document.getElementById('load-input').click();closeDropdowns()">📂 読込</button>
-        </div>
-        <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
-      </div>
-    </div>
-    <div class="hbtn-group">
-      <div class="hdr-dropdown">
-        <button class="btn btn-p" onclick="toggleDropdown(this)">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">↓</span> <span class="dd-arrow">▾</span></button>
-        <div class="dd-menu">
-          <button class="dd-item" onclick="exportCurrent();closeDropdowns()">🖼 PNG書き出し</button>
-          <button class="dd-item" onclick="exportZip();closeDropdowns()">🗜 ZIP</button>
-          <button class="dd-item" onclick="exportAllSizesZip();closeDropdowns()">🗜 全サイズZIP</button>
-        </div>
+    <button class="btn btn-ghost" onclick="saveProjectToStorage()" title="保存">💾 <span class="btn-lbl">保存</span></button>
+    <button class="btn btn-ghost" onclick="document.getElementById('load-input').click()" title="JSON読込">📂 <span class="btn-lbl">読込</span></button>
+    <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
+    <div class="hdr-dropdown">
+      <button class="btn btn-primary" onclick="toggleDropdown(this)">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">↓</span> <span class="dd-arrow">▾</span></button>
+      <div class="dd-menu">
+        <button class="dd-item" onclick="exportCurrent();closeDropdowns()">🖼 PNG</button>
+        <button class="dd-item" onclick="exportZip();closeDropdowns()">🗜 ZIP（全スライド）</button>
+        <button class="dd-item" onclick="exportAllSizesZip();closeDropdowns()">🗜 ZIP（全サイズ）</button>
+        <div style="height:1px;background:var(--border-strong);margin:4px 0"></div>
+        <button class="dd-item" onclick="saveProject();closeDropdowns()">📥 JSON（プロジェクト）</button>
       </div>
     </div>
   </div>
+  <!-- 右端: テーマ切替のみ（Drive同期はダッシュボードのみ） -->
+  <div id="theme-mount-editor"></div>
 </header>
 <!-- ═══ PROJECT DASHBOARD ═══ -->
 <div id="dashboard" class="dashboard">
-  <div class="dash-header">
-    <div class="dash-title-area">
-      <h1 class="dash-title">プロジェクト一覧</h1>
-      <span class="dash-subtitle">App Storeプレビュー画像を管理</span>
+  <div class="app-inner">
+    <header class="app-header">
+      <div class="app-header-left">
+        <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
+        <span class="app-title-icon">📱</span>
+        <h1 class="app-title">ApplePreview</h1>
+      </div>
+      <div class="app-header-right">
+        <div id="theme-mount"></div>
+        <div id="sync-mount"></div>
+      </div>
+    </header>
+    <div class="app-toolbar">
+      <div class="app-section-title"></div>
+      <div class="dash-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()">📂 JSONから読込</button>
+        <input type="file" id="import-input" accept=".json" style="display:none" onchange="importProjectFromFile(event)">
+        <button class="btn btn-primary" onclick="createNewProject()">+ 新規プロジェクト</button>
+      </div>
     </div>
-    <div class="dash-actions">
-      <button class="btn btn-g" onclick="document.getElementById('import-input').click()">📂 JSONから読込</button>
-      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importProjectFromFile(event)">
-      <button class="btn btn-p" onclick="createNewProject()">+ 新規プロジェクト</button>
+    <div class="app-grid" id="dash-grid"></div>
+    <div class="app-empty" id="dash-empty" style="display:none">
+      <div class="app-empty-icon">📱</div>
+      <div class="app-empty-text">プロジェクトがありません</div>
+      <div class="app-empty-sub">「新規プロジェクト」をクリックして始めましょう</div>
+      <button class="btn btn-primary" onclick="createNewProject()" style="margin-top:var(--space-4)">+ 新規プロジェクト</button>
     </div>
-  </div>
-  <div class="dash-grid" id="dash-grid"></div>
-  <div class="dash-empty" id="dash-empty" style="display:none">
-    <div class="dash-empty-icon">📱</div>
-    <div class="dash-empty-text">プロジェクトがありません</div>
-    <div class="dash-empty-sub">「新規プロジェクト」をクリックして始めましょう</div>
-    <button class="btn btn-p" onclick="createNewProject()" style="margin-top:16px;padding:12px 28px;font-size:14px">+ 新規プロジェクト</button>
   </div>
 </div>
 
@@ -86,6 +86,7 @@
   <div class="step" id="st2" onclick="goStep(2)"><div class="step-n">2</div><div class="step-l">内容を入力する</div></div>
   <div class="step-arr">›</div>
   <div class="step" id="st3" onclick="goStep(3)"><div class="step-n">3</div><div class="step-l">仕上げる</div></div>
+  <button class="btn btn-primary stepbar-save" id="stepbar-save" onclick="saveProjectToStorage();showDashboard()">💾 保存して終わる</button>
   <div class="stepbar-spacer"></div>
   <div class="dev-group" id="editor-header-controls">
     <span class="dev-label">iPhone</span>
@@ -110,10 +111,10 @@
     <!-- Step 1 -->
     <div class="ws" id="s1">
       <div class="s1-left">
-        <div class="s1-tab-bar" id="s1-tab-bar">
-          <button class="active" onclick="switchS1Tab('bg',this)">🎨 背景</button>
-          <button onclick="switchS1Tab('layout',this)">📱 配置</button>
-          <button onclick="switchS1Tab('fx',this)">✨ エフェクト</button>
+        <div class="tab-bar s1-tab-bar" id="s1-tab-bar">
+          <button class="tab active" onclick="switchS1Tab('bg',this)">🎨 背景</button>
+          <button class="tab" onclick="switchS1Tab('layout',this)">📱 配置</button>
+          <button class="tab" onclick="switchS1Tab('fx',this)">✨ エフェクト</button>
         </div>
         <div class="s1-tab-pane active" id="s1-pane-bg">
           <div class="opt-grid" id="bg-grid"></div>
@@ -124,7 +125,7 @@
           <div class="bg-adjust" id="lo-adjust"></div>
         </div>
         <div class="s1-tab-pane" id="s1-pane-fx">
-          <div class="fx-list" id="fx-list"></div>
+          <div class="list-chip-group" id="fx-list"></div>
         </div>
       </div>
       <div class="pane-splitter" aria-hidden="true"></div>
@@ -170,7 +171,7 @@
   </div>
 
   <!-- Always-visible slides panel -->
-  <div class="edit-right" style="border-left:1px solid var(--b1)">
+  <div class="edit-right">
     <div class="srh">
       <span>スライド</span>
       <button class="add-btn" onclick="addSlide()" title="スライドを追加">+</button>
@@ -283,7 +284,7 @@
   </div>
 </div>
 
-<script src="../drive-sync.js?v=20260409d"></script>
+<script src="../lib/drive-sync.js?v=20260409d"></script>
 <script src="script.js?v=20260409d"></script>
 </body>
 </html>

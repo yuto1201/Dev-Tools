@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__TOOL_NAME__ — yuto's dev tools</title>
+
+<!-- ===== 共通テーマ（FOUC 防止のため必ず head 内で読み込む） ===== -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<script src="../lib/theme.js"></script>
+
+<!-- ===== Drive sync ===== -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="../lib/drive-sync.css">
+
+<!-- ===== このツール固有のスタイル（共有コンポは lib/components.css 参照） ===== -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-view="list">
+
+<!-- ============================================================ -->
+<!-- LIST VIEW（ギャラリー型一覧）                                   -->
+<!-- ============================================================ -->
+<section class="app-view app-view-list">
+  <div class="app-inner">
+    <header class="app-header">
+      <div class="app-header-left">
+        <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
+        <span class="app-title-icon">🔧</span>
+        <h1 class="app-title">__TOOL_NAME__</h1>
+      </div>
+      <div class="app-header-right">
+        <!-- テーマ切替ボタン（lib/theme.js が中身を生成） -->
+        <div id="theme-mount"></div>
+        <!-- Google Drive 同期 UI（lib/drive-sync.js が中身を生成） -->
+        <div id="sync-mount"></div>
+      </div>
+    </header>
+
+    <div class="app-toolbar">
+      <h2 class="app-section-title"></h2>
+      <button type="button" class="btn btn-primary" id="btn-create">＋ 新規作成</button>
+    </div>
+
+    <div class="app-grid" id="app-grid"></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- EDITOR VIEW（個別アイテムの編集画面）                            -->
+<!-- ============================================================ -->
+<section class="app-view app-view-editor">
+  <div class="app-inner">
+    <header class="app-header">
+      <div class="app-header-left">
+        <a href="#" class="app-back-btn" id="back-to-list" title="一覧に戻る">← 一覧</a>
+        <span class="app-title-icon">🔧</span>
+        <h1 class="app-title" id="editor-title">アイテム名</h1>
+      </div>
+      <div class="app-header-right">
+        <div id="theme-mount-editor"></div>
+        <div id="sync-mount-editor"></div>
+      </div>
+    </header>
+
+    <div class="app-editor-body">
+      <!-- TODO: ここに各ツール固有の編集 UI を実装する -->
+      <p class="placeholder-note">編集 UI をここに実装する</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- MODAL: 新規追加                                                -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="modal-add" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-add-title">
+    <header class="modal-header">
+      <h3 class="modal-title" id="modal-add-title">新しいアイテム</h3>
+      <button type="button" class="modal-close" data-close="modal-add" aria-label="閉じる">×</button>
+    </header>
+    <form class="modal-body" id="form-add" autocomplete="off">
+      <div class="form-row">
+        <label class="form-label" for="add-name">名前 <span class="required">*</span></label>
+        <input class="form-input" id="add-name" name="name" type="text" required maxlength="80" placeholder="例: My first item">
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="add-note">メモ</label>
+        <textarea class="form-input" id="add-note" name="note" rows="3" placeholder="任意のメモ"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close="modal-add">キャンセル</button>
+        <button type="submit" class="btn btn-primary">作成</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TOAST                                                         -->
+<!-- ============================================================ -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../lib/drive-sync.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

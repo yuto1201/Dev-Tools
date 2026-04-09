@@ -1,0 +1,45 @@
+/* ============================================================
+   text-counter/style.css — Text Counter 固有のスタイル
+
+   標準コンポーネント（header / btn / form-input / toast 等）は
+   lib/components.css が提供。ここにはツール固有の要素だけ書く。
+   ============================================================ */
+
+/* テキスト入力エリア（.form-input を拡張） */
+.tc-textarea {
+  min-height: 280px;
+  font-size: 15px;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+/* 統計カード */
+.tc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.tc-stat {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-out-sm);
+}
+
+.tc-stat-label {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+  letter-spacing: .02em;
+}
+
+.tc-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  font-family: var(--font-mono);
+  letter-spacing: -.02em;
+}
