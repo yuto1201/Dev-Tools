@@ -905,6 +905,11 @@ async function setProjectData(id,json){
     }else{
       localStorage.setItem(PROJECT_PREFIX+id,json);
     }
+    // サムネイルキャッシュを更新
+    try{
+      const thumbInfo=buildThumbDataUrl(json);
+      if(thumbInfo) setThumbCache(id,thumbInfo);
+    }catch{}
     return true;
   }catch(e){
     console.error('Storage save failed:',e);
@@ -912,6 +917,7 @@ async function setProjectData(id,json){
   }
 }
 async function removeProjectData(id){
+  removeThumbCache(id);
   if(window.driveSync){
     await window.driveSync.removeItem(PROJECT_PREFIX+id);
   }else{
@@ -1156,26 +1162,31 @@ async function applyHashRoute(){
    opts.skipUrlSync を渡すと URL 履歴を更新しない（popstate / 初期ロード時に使用）。 */
 async function showDashboard(opts){
   opts=opts||{};
-  // Auto-save current project before leaving
-  try{
-    if(currentProjectId&&!inDashboard){
-      const json=serializeSlides();
-      if(await setProjectData(currentProjectId,json)){
-        const list=await getProjectsList();
-        const p=list.find(p=>p.id===currentProjectId);
-        if(p){
-          p.updatedAt=new Date().toISOString();
-          p.slideCount=slides.length;
-          await saveProjectsList(list);
-        }
-      }
-    }
-  }catch(e){console.error('Auto-save on dashboard transition failed:',e);}
+  // 画面切替を即座に実行（自動保存を待たない）
+  const needSave=currentProjectId&&!inDashboard;
+  const saveId=currentProjectId;
   inDashboard=true;
   document.body.dataset.view='dashboard';
   delete document.body.dataset.hasProject;
-  await renderDashboard();
   if(!opts.skipUrlSync) syncUrlForView();
+  // 自動保存をバックグラウンドで実行
+  if(needSave){
+    (async()=>{
+      try{
+        const json=serializeSlides();
+        if(await setProjectData(saveId,json)){
+          const list=await getProjectsList();
+          const p=list.find(p=>p.id===saveId);
+          if(p){
+            p.updatedAt=new Date().toISOString();
+            p.slideCount=slides.length;
+            await saveProjectsList(list);
+          }
+        }
+      }catch(e){console.error('Auto-save on dashboard transition failed:',e);}
+    })();
+  }
+  await renderDashboard();
 }
 
 function showEditor(opts){
@@ -1324,6 +1335,92 @@ async function startEditProjName(){
   input.focus();input.select();
 }
 
+/* サムネイルキャッシュ（メモリ内。プロジェクト保存時にも更新） */
+const _thumbCache=new Map();
+const THUMB_CACHE_PREFIX='previewgen_thumb_';
+
+function buildThumbDataUrl(projectData){
+  try{
+    const arr=JSON.parse(projectData);
+    const dev=DEVS['6.9'];
+    const tw=100,th=Math.round(tw*dev.h/dev.w);
+    const maxThumbs=Math.min(arr.length,4);
+    // 全サムネイルを1枚のcanvasにまとめて描画
+    const c=document.createElement('canvas');
+    c.width=tw*maxThumbs;c.height=th;
+    const ctx=c.getContext('2d');
+    for(let i=0;i<maxThumbs;i++){
+      const s={...defSlide(),...arr[i],screenshotImg:null,screenshotImg2:null,screenshotImg3:null,screenshotImg4:null,screenshotImgIpad:null,widgetSmallImg:null,widgetMediumImg:null,widgetLargeImg:null};
+      ctx.save();ctx.translate(tw*i,0);
+      renderSlide(ctx,tw,th,s);
+      ctx.restore();
+    }
+    return {dataUrl:c.toDataURL('image/jpeg',0.6),count:maxThumbs,tw,th};
+  }catch{return null;}
+}
+
+function getThumbCache(id){
+  if(_thumbCache.has(id)) return _thumbCache.get(id);
+  try{
+    const raw=localStorage.getItem(THUMB_CACHE_PREFIX+id);
+    if(raw){const parsed=JSON.parse(raw);_thumbCache.set(id,parsed);return parsed;}
+  }catch{}
+  return null;
+}
+function setThumbCache(id,thumbInfo){
+  _thumbCache.set(id,thumbInfo);
+  try{localStorage.setItem(THUMB_CACHE_PREFIX+id,JSON.stringify(thumbInfo));}catch{}
+}
+function removeThumbCache(id){
+  _thumbCache.delete(id);
+  try{localStorage.removeItem(THUMB_CACHE_PREFIX+id);}catch{}
+}
+
+function renderThumbsToElement(thumbsEl,thumbInfo){
+  if(!thumbInfo) return;
+  const img=new Image();
+  img.src=thumbInfo.dataUrl;
+  img.style.cssText=`width:${thumbInfo.tw*thumbInfo.count}px;height:${thumbInfo.th}px;display:flex;`;
+  thumbsEl.appendChild(img);
+}
+
+function buildCardElement(meta){
+  const card=document.createElement('div');
+  card.className='app-card';
+  card.dataset.id=meta.id;
+  card.onclick=()=>openProject(meta.id);
+
+  const thumbs=document.createElement('div');
+  thumbs.className='app-card-thumb';
+
+  const actions=document.createElement('div');
+  actions.className='app-card-actions';
+  actions.innerHTML=`
+    <button class="app-card-btn ap-btn-dup" onclick="duplicateProject('${meta.id}',event)" title="複製">⧉</button>
+    <button class="app-card-btn ap-btn-export" onclick="exportProjectJson('${meta.id}',event)" title="JSON書き出し">↓</button>
+    <button class="app-card-btn danger" onclick="deleteProject('${meta.id}',event)" title="削除">✕</button>
+  `;
+
+  const info=document.createElement('div');
+  info.className='app-card-info';
+  const nameEl=document.createElement('div');
+  nameEl.className='app-card-name';
+  nameEl.textContent=meta.name||'無題';
+  nameEl.ondblclick=e=>renameProject(meta.id,e);
+  const metaEl=document.createElement('div');
+  metaEl.className='app-card-meta';
+  const slideCount=meta.slideCount||1;
+  const updated=meta.updatedAt?formatDate(meta.updatedAt):'';
+  metaEl.innerHTML=`<span>${slideCount}枚のスライド</span><span>${updated}</span>`;
+  info.appendChild(nameEl);
+  info.appendChild(metaEl);
+
+  card.appendChild(thumbs);
+  card.appendChild(actions);
+  card.appendChild(info);
+  return {card,thumbs};
+}
+
 async function renderDashboard(){
   const useDrive=!!(window.driveSync&&window.driveSync.isSignedIn());
   if(useDrive){driveProgressStart();showDashLoading(true);}
@@ -1341,61 +1438,33 @@ async function renderDashboard(){
   empty.style.display='none';
   grid.innerHTML='';
 
+  // Phase 1: キャッシュ済みサムネイルで即座にカードを表示
+  const needFetch=[];
   for(const meta of list){
-    const card=document.createElement('div');
-    card.className='app-card';
-    card.dataset.id=meta.id;
-    card.onclick=()=>openProject(meta.id);
-
-    // Thumbnail area
-    const thumbs=document.createElement('div');
-    thumbs.className='app-card-thumb';
-    // Try rendering thumbnails from stored data
-    const data=await getProjectData(meta.id);
-    if(data){
-      try{
-        const arr=JSON.parse(data);
-        const dev=DEVS['6.9'];
-        const maxThumbs=Math.min(arr.length,4);
-        for(let i=0;i<maxThumbs;i++){
-          const s={...defSlide(),...arr[i],screenshotImg:null,screenshotImg2:null,screenshotImg3:null,screenshotImg4:null,screenshotImgIpad:null,widgetSmallImg:null,widgetMediumImg:null,widgetLargeImg:null};
-          const tc=document.createElement('canvas');
-          const tw=100;
-          tc.width=tw;tc.height=Math.round(tw*dev.h/dev.w);
-          renderSlide(tc.getContext('2d'),tc.width,tc.height,s);
-          thumbs.appendChild(tc);
-        }
-      }catch(e){}
+    const {card,thumbs}=buildCardElement(meta);
+    const cached=getThumbCache(meta.id);
+    if(cached){
+      renderThumbsToElement(thumbs,cached);
+    }else{
+      needFetch.push({meta,thumbs});
     }
-
-    // Actions (overlay)
-    const actions=document.createElement('div');
-    actions.className='app-card-actions';
-    actions.innerHTML=`
-      <button class="app-card-btn ap-btn-dup" onclick="duplicateProject('${meta.id}',event)" title="複製">⧉</button>
-      <button class="app-card-btn ap-btn-export" onclick="exportProjectJson('${meta.id}',event)" title="JSON書き出し">↓</button>
-      <button class="app-card-btn danger" onclick="deleteProject('${meta.id}',event)" title="削除">✕</button>
-    `;
-
-    // Info
-    const info=document.createElement('div');
-    info.className='app-card-info';
-    const nameEl=document.createElement('div');
-    nameEl.className='app-card-name';
-    nameEl.textContent=meta.name||'無題';
-    nameEl.ondblclick=e=>renameProject(meta.id,e);
-    const metaEl=document.createElement('div');
-    metaEl.className='app-card-meta';
-    const slideCount=meta.slideCount||1;
-    const updated=meta.updatedAt?formatDate(meta.updatedAt):'';
-    metaEl.innerHTML=`<span>${slideCount}枚のスライド</span><span>${updated}</span>`;
-    info.appendChild(nameEl);
-    info.appendChild(metaEl);
-
-    card.appendChild(thumbs);
-    card.appendChild(actions);
-    card.appendChild(info);
     grid.appendChild(card);
+  }
+
+  // Phase 2: キャッシュミスのみデータを並列取得してサムネイル生成
+  if(needFetch.length){
+    const fetched=await Promise.all(needFetch.map(async({meta,thumbs})=>{
+      const data=await getProjectData(meta.id);
+      return {meta,thumbs,data};
+    }));
+    for(const {meta,thumbs,data} of fetched){
+      if(!data) continue;
+      const thumbInfo=buildThumbDataUrl(data);
+      if(thumbInfo){
+        setThumbCache(meta.id,thumbInfo);
+        renderThumbsToElement(thumbs,thumbInfo);
+      }
+    }
   }
   }finally{
     if(useDrive) driveProgressEnd();
