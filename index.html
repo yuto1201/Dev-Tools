@@ -428,6 +428,24 @@ html, body {
         </div>
       </a>
 
+      <!-- Icon Gallery -->
+      <a class="card" href="icons/index.html">
+        <div class="card-icon" id="icon-gallery-icon"></div>
+        <div class="card-label">Design</div>
+        <div class="card-title">Icon Gallery</div>
+        <div class="card-desc">ミニマルなSVGアイコンセット。検索・プレビュー・コピーしてすぐ使える。</div>
+        <div class="card-tags">
+          <span class="tag">offline</span>
+          <span class="tag">SVG</span>
+          <span class="tag">icon</span>
+        </div>
+        <div class="card-arrow">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M7 17L17 7M17 7H7M17 7v10"/>
+          </svg>
+        </div>
+      </a>
+
     </div>
 
     <div class="github-link">
@@ -459,6 +477,7 @@ html, body {
 
 </div>
 
+<script src="lib/icons.js"></script>
 <script src="lib/drive-sync.js?v=20260409e"></script>
 <script>
 // テーマ切替ボタン + 同期 UI を mount
@@ -470,6 +489,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var mount = document.getElementById('sync-mount');
     if (mount) window.driveSync.mountUI(mount);
     window.driveSync.init();
+  }
+  // Icon Gallery カードにSVGアイコンを挿入
+  if (window.yutoIcons) {
+    var igIcon = document.getElementById('icon-gallery-icon');
+    if (igIcon) igIcon.innerHTML = window.yutoIcons.toSVG('grid-3x3', {size:26});
   }
 });
 </script>

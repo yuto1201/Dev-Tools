@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Icon Gallery — yuto's dev tools</title>
+
+<!-- ===== 共通テーマ（FOUC 防止のため必ず head 内で読み込む） ===== -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<script src="../lib/theme.js"></script>
+
+<!-- ===== アイコンレジストリ ===== -->
+<script src="../lib/icons.js"></script>
+
+<!-- ===== このツール固有のスタイル ===== -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-inner">
+  <header class="app-header">
+    <div class="app-header-left">
+      <a href="../index.html" class="app-back-btn" title="Back to Toolbox">&larr; 戻る</a>
+      <span class="app-title-icon" id="title-icon"></span>
+      <h1 class="app-title">Icon Gallery</h1>
+    </div>
+    <div class="app-header-right">
+      <div id="theme-mount"></div>
+    </div>
+  </header>
+
+  <!-- ===== ツールバー ===== -->
+  <div class="icon-toolbar">
+    <div class="icon-search-wrap">
+      <span class="icon-search-icon" id="search-icon"></span>
+      <input type="text" class="form-input icon-search" id="search" placeholder="アイコンを検索..." autocomplete="off">
+    </div>
+    <div class="icon-filters" id="filters">
+      <button class="tab active" data-cat="all">All</button>
+    </div>
+    <div class="icon-count" id="icon-count"></div>
+  </div>
+
+  <!-- ===== アイコングリッド ===== -->
+  <main class="icon-grid" id="grid"></main>
+</div>
+
+<!-- ===== コピー用トースト ===== -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ===== 詳細モーダル ===== -->
+<div class="modal-overlay" id="modal" hidden>
+  <div class="modal icon-modal">
+    <button class="modal-close" id="modal-close">&times;</button>
+    <div class="icon-modal-preview" id="modal-preview"></div>
+    <div class="modal-body">
+      <h2 class="icon-modal-name" id="modal-name"></h2>
+      <div class="icon-modal-tags" id="modal-tags"></div>
+
+      <div class="icon-modal-controls">
+        <div class="icon-modal-section icon-modal-section-inline">
+          <label class="form-label">サイズ</label>
+          <div class="icon-size-control">
+            <input type="range" class="slider" id="modal-size" min="16" max="64" value="48" step="2">
+            <span class="icon-size-value" id="modal-size-value">48px</span>
+          </div>
+        </div>
+
+        <div class="icon-modal-section icon-modal-section-inline">
+          <label class="form-label">カラー</label>
+          <div class="icon-color-control">
+            <div class="icon-color-presets" id="color-presets"></div>
+            <div class="color-field">
+              <input type="color" class="color-field-swatch" id="modal-color" value="#374151">
+              <input type="text" class="color-field-hex" id="modal-color-hex" value="currentColor" maxlength="20">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="icon-modal-section">
+        <label class="form-label">SVG コード</label>
+        <pre class="icon-code-block" id="modal-code"></pre>
+        <div class="icon-modal-actions">
+          <button class="btn btn-primary" id="btn-copy-svg">SVG をコピー</button>
+          <button class="btn" id="btn-copy-name">名前をコピー</button>
+          <button class="btn" id="btn-copy-js">JS コードをコピー</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

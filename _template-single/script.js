@@ -55,6 +55,14 @@ function initTheme(){
   if(m) window.theme.mountUI(m);
 }
 
+// ---- Icon（lib/icons.js のアイコンをタイトルに設定） ----------
+// TODO: ツールに合ったアイコン名に変更する（一覧: icons/index.html）
+function initIcon(){
+  if(!window.yutoIcons) return;
+  const el = document.getElementById('app-icon');
+  if(el) el.innerHTML = window.yutoIcons.toSVG('tool', {size:20});
+}
+
 // ---- Drive sync 統合 -----------------------------------------
 // 同期不要なら initDriveSync() ごと削除してよい
 function initDriveSync(){
@@ -79,5 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadState();
   render();
   initTheme();
+  initIcon();
   initDriveSync();
 });

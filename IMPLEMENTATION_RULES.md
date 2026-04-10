@@ -145,6 +145,12 @@ python3 -m http.server 5500
 - [ ] **`_theme-preview/index.html` にも対応セクションを追加した**（preview = 完全カタログのルール）
 - [ ] **CLAUDE.md の「標準コンポーネント早見表」にも行を追加した**
 
+## アイコン
+- [ ] **絵文字（Emoji）をアイコンとして使っていない**（新規実装のみ）
+- [ ] `lib/icons.js` を `<script>` で読み込んでいる
+- [ ] アイコンは `yutoIcons.toSVG()` / `yutoIcons.toElement()` で取得している
+- [ ] 必要なアイコンが `lib/icons.js` に存在することを `icons/index.html` で確認した
+
 ## コンソール
 - [ ] DevTools の Console タブにエラーが出ていないか
 - [ ] Network タブで 404 が出ていないか
@@ -271,6 +277,16 @@ cp -r _template-single my-new-tool
   - → ヘッダーとメインが融合して情報の優先順位が分からなくなる
 - ❌ **back-link をタイトルの上に置く**
   - → 旧ルール。今はタイトルの**下**に控えめに
+
+## アイコン関連
+- ❌ **新規ツールで絵文字（Emoji）をアイコンとして使う**
+  - → `lib/icons.js` の SVG アイコン（`yutoIcons.toSVG('name')`）を使う。一覧は `icons/index.html` で確認
+- ❌ **独自の SVG アイコンを各ツールのファイルに直接埋め込む**
+  - → 共有の `lib/icons.js` にアイコンを追加し、API 経由で利用する
+- ❌ **外部アイコンライブラリ（Font Awesome, Material Icons 等）を導入する**
+  - → `lib/icons.js` に統一。新しいアイコンが必要なら同じスタイルで `lib/icons.js` に追加する
+- ❌ **`lib/icons.js` を読み込まずにアイコンを使おうとする**
+  - → `<script src="../lib/icons.js"></script>` を `<head>` か `</body>` 前で読み込む
 
 ## 実装フロー関連
 - ❌ **テンプレを使わずにゼロから書き起こす**

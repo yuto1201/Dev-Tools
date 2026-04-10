@@ -1,0 +1,319 @@
+/* ============================================================
+   icons/style.css — Icon Gallery 固有スタイル
+   ============================================================ */
+
+/* ===== ツールバー ============================================ */
+.icon-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.icon-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+.icon-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+.icon-search {
+  padding-left: 40px !important;
+  width: 100%;
+}
+
+.icon-filters {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  background: var(--bg);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  box-shadow: var(--shadow-in-sm);
+}
+.icon-filters .tab {
+  font-size: 11px;
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+
+.icon-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+/* ===== グリッド ============================================== */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--space-3);
+}
+
+/* ===== 個別アイコンカード ==================================== */
+.icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: var(--shadow-out);
+  cursor: pointer;
+  transition: box-shadow .2s, transform .2s;
+  user-select: none;
+}
+.icon-cell:hover {
+  box-shadow: var(--shadow-out-lg);
+  transform: translateY(-2px);
+}
+.icon-cell:active {
+  box-shadow: var(--shadow-in-sm);
+  transform: translateY(0);
+}
+
+.icon-cell-svg {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+.icon-cell-name {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+
+/* ===== 空状態 ================================================ */
+.icon-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: 60px var(--space-5);
+  color: var(--muted);
+}
+.icon-empty-icon {
+  font-size: 48px;
+  opacity: .3;
+  color: var(--accent);
+}
+.icon-empty-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* ===== モーダル ============================================== */
+.icon-modal {
+  max-width: 480px;
+  width: 100%;
+}
+
+.icon-modal-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background: var(--bg);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: var(--shadow-in-sm);
+  color: var(--text);
+}
+
+.icon-modal-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: var(--space-2);
+}
+
+.icon-modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-5);
+}
+.icon-modal-tags .badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.icon-modal-tags .badge-ja {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  background: var(--bg);
+  color: var(--text-dim);
+  box-shadow: var(--shadow-out-sm);
+}
+
+.icon-modal-section {
+  margin-bottom: var(--space-5);
+}
+.icon-modal-section:last-child {
+  margin-bottom: 0;
+}
+
+.icon-modal-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.icon-modal-section-inline .form-label {
+  margin-bottom: var(--space-1);
+}
+
+.icon-size-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.icon-size-control .slider {
+  flex: 1;
+}
+.icon-size-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* ===== カラーコントロール ==================================== */
+.icon-color-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.icon-color-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.icon-color-preset {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: var(--shadow-out-sm);
+  transition: transform .15s, border-color .15s;
+  padding: 0;
+  outline: none;
+}
+.icon-color-preset:hover {
+  transform: scale(1.15);
+}
+.icon-color-preset.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.icon-color-preset-current {
+  background: var(--text);
+  position: relative;
+}
+.icon-color-preset-current::after {
+  content: 'A';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bg);
+  font-family: var(--font-mono);
+}
+.icon-color-control .color-field {
+  margin-top: var(--space-1);
+}
+.icon-color-control .color-field-hex {
+  font-size: 11px;
+  width: 100px;
+}
+
+.icon-code-block {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-in-sm);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: var(--space-2) 0 var(--space-4);
+  max-height: 120px;
+}
+
+.icon-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.icon-modal-actions .btn {
+  font-size: 12px;
+  padding: 8px 16px;
+}
+
+/* ===== レスポンシブ ========================================== */
+@media (max-width: 767px) {
+  .icon-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .icon-search-wrap {
+    max-width: none;
+  }
+  .icon-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .icon-count {
+    margin-left: 0;
+    text-align: center;
+  }
+  .icon-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--space-2);
+  }
+  .icon-cell {
+    padding: var(--space-3) var(--space-1);
+  }
+}
+
+@media (max-width: 479px) {
+  .icon-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .icon-modal {
+    margin: var(--space-3);
+  }
+}
