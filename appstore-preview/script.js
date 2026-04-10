@@ -1186,7 +1186,7 @@ async function showDashboard(opts){
       }catch(e){console.error('Auto-save on dashboard transition failed:',e);}
     })();
   }
-  await renderDashboard();
+  renderDashboard();
 }
 
 function showEditor(opts){
@@ -1423,10 +1423,12 @@ function buildCardElement(meta){
 
 async function renderDashboard(){
   const useDrive=!!(window.driveSync&&window.driveSync.isSignedIn());
+
+  // Drive使用時はローディング表示しつつプロジェクト一覧を取得
   if(useDrive){driveProgressStart();showDashLoading(true);}
-  try{
   const list=await getProjectsList();
-  if(useDrive) showDashLoading(false);
+  if(useDrive){showDashLoading(false);driveProgressEnd();}
+
   const grid=document.getElementById('dash-grid');
   const empty=document.getElementById('dash-empty');
   if(!list.length){
@@ -1438,7 +1440,7 @@ async function renderDashboard(){
   empty.style.display='none';
   grid.innerHTML='';
 
-  // Phase 1: キャッシュ済みサムネイルで即座にカードを表示
+  // Phase 1: カードを即座に表示（キャッシュ済みサムネイルがあれば使う）
   const needFetch=[];
   for(const meta of list){
     const {card,thumbs}=buildCardElement(meta);
@@ -1451,23 +1453,17 @@ async function renderDashboard(){
     grid.appendChild(card);
   }
 
-  // Phase 2: キャッシュミスのみデータを並列取得してサムネイル生成
+  // Phase 2: キャッシュミスのサムネイルをバックグラウンドで取得・描画（awaitしない）
   if(needFetch.length){
-    const fetched=await Promise.all(needFetch.map(async({meta,thumbs})=>{
+    Promise.all(needFetch.map(async({meta,thumbs})=>{
       const data=await getProjectData(meta.id);
-      return {meta,thumbs,data};
-    }));
-    for(const {meta,thumbs,data} of fetched){
-      if(!data) continue;
+      if(!data) return;
       const thumbInfo=buildThumbDataUrl(data);
       if(thumbInfo){
         setThumbCache(meta.id,thumbInfo);
         renderThumbsToElement(thumbs,thumbInfo);
       }
-    }
-  }
-  }finally{
-    if(useDrive) driveProgressEnd();
+    })).catch(e=>console.error('Thumbnail background fetch failed:',e));
   }
 }
 
