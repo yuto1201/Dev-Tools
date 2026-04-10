@@ -905,16 +905,16 @@ async function setProjectData(id,json){
     }else{
       localStorage.setItem(PROJECT_PREFIX+id,json);
     }
-    // サムネイルキャッシュを更新
-    try{
-      const thumbInfo=buildThumbDataUrl(json);
-      if(thumbInfo) setThumbCache(id,thumbInfo);
-    }catch{}
-    return true;
   }catch(e){
     console.error('Storage save failed:',e);
     return false;
   }
+  // サムネイルキャッシュを更新（失敗しても保存成功扱い）
+  try{
+    const thumbInfo=buildThumbDataUrl(json);
+    if(thumbInfo) setThumbCache(id,thumbInfo);
+  }catch(e){console.warn('Thumb cache update failed:',e);}
+  return true;
 }
 async function removeProjectData(id){
   removeThumbCache(id);
