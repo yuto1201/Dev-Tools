@@ -1791,41 +1791,67 @@ function showSaveStatus(text,type){
   el.innerHTML=(type?'':'<span class="spinner-sm"></span>')+text;
   if(type){_saveStatusTimer=setTimeout(function(){el.hidden=true;},2500);}
 }
+function useDrive(){return !!(window.driveSync&&window.driveSync.isSignedIn());}
+
 function autoSave(){
   clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(function(){
-    if(!currentProjectId)return;
-    showSaveStatus('保存中...');
-    try{
-      var state=getERState();
-      localStorage.setItem(LS_PROJECT_PREFIX+currentProjectId,JSON.stringify(state));
-      projectList[currentProjectId].updatedAt=new Date().toISOString();
-      projectList[currentProjectId].tableCount=Object.keys(tables).length;
-      saveProjectList();
-      if(window.driveSync) window.driveSync.markDirty(LS_PROJECT_PREFIX+currentProjectId);
-      showSaveStatus('✓ 保存済み','success');
-    }catch(e){console.warn('autoSave failed:',e);showSaveStatus('保存エラー','error');}
-  },500);
+  autoSaveTimer=setTimeout(function(){autoSaveNow();},500);
 }
 
-function saveProjectList(){
-  try{
-    localStorage.setItem(LS_PROJECTS,JSON.stringify(projectList));
-    if(window.driveSync) window.driveSync.markDirty(LS_PROJECTS);
-  }catch(e){}
+async function saveProjectData(){
+  if(!currentProjectId)return;
+  var state=getERState();
+  var json=JSON.stringify(state);
+  if(useDrive()){
+    await window.driveSync.saveItem(LS_PROJECT_PREFIX+currentProjectId,json);
+  }else{
+    localStorage.setItem(LS_PROJECT_PREFIX+currentProjectId,json);
+  }
 }
 
-function loadProjectList(){
+async function saveProjectList(){
+  var json=JSON.stringify(projectList);
+  if(useDrive()){
+    await window.driveSync.saveItem(LS_PROJECTS,json);
+  }else{
+    localStorage.setItem(LS_PROJECTS,json);
+  }
+}
+
+async function loadProjectList(){
   try{
-    var raw=localStorage.getItem(LS_PROJECTS);
-    if(raw)projectList=JSON.parse(raw);
-    else projectList={};
+    var raw;
+    if(useDrive()){
+      raw=await window.driveSync.loadItem(LS_PROJECTS);
+    }else{
+      raw=localStorage.getItem(LS_PROJECTS);
+    }
+    projectList=raw?JSON.parse(raw):{};
   }catch(e){projectList={};}
 }
 
-function createNewProject(name){
-  // 現在のプロジェクトを保存
-  if(currentProjectId)autoSaveNow();
+async function loadProjectData(id){
+  try{
+    var raw;
+    if(useDrive()){
+      raw=await window.driveSync.loadItem(LS_PROJECT_PREFIX+id);
+    }else{
+      raw=localStorage.getItem(LS_PROJECT_PREFIX+id);
+    }
+    return raw?JSON.parse(raw):null;
+  }catch(e){return null;}
+}
+
+async function removeProjectData(id){
+  if(useDrive()){
+    await window.driveSync.removeItem(LS_PROJECT_PREFIX+id);
+  }else{
+    localStorage.removeItem(LS_PROJECT_PREFIX+id);
+  }
+}
+
+async function createNewProject(name){
+  if(currentProjectId)await autoSaveNow();
   var id=generateId();
   var pName=name||'untitled';
   // プロンプトで名前入力
@@ -1843,81 +1869,70 @@ function createNewProject(name){
   showToast('✓ "'+pName+'" を作成しました','success');
 }
 
-function switchProject(id,isNew){
+async function switchProject(id,isNew){
   if(id===currentProjectId)return;
-  // 現在のプロジェクトを保存
-  if(currentProjectId)autoSaveNow();
+  if(currentProjectId)await autoSaveNow();
   currentProjectId=id;
   localStorage.setItem(LS_CURRENT,id);
   if(isNew){
     clearERState();
   }else{
-    // プロジェクトデータを読み込み
-    try{
-      var raw=localStorage.getItem(LS_PROJECT_PREFIX+id);
-      if(raw){
-        loadERState(JSON.parse(raw));
-      }else{
-        clearERState();
-      }
-    }catch(e){clearERState();}
+    var data=await loadProjectData(id);
+    if(data){loadERState(data);}else{clearERState();}
   }
   updateProjectUI();
   closeProjectDropdown();
 }
 
-function autoSaveNow(){
+async function autoSaveNow(){
   clearTimeout(autoSaveTimer);
   if(!currentProjectId)return;
-  showSaveStatus('保存中...');
+  showSaveStatus(useDrive()?'Drive に保存中...':'保存中...');
   try{
-    var state=getERState();
-    localStorage.setItem(LS_PROJECT_PREFIX+currentProjectId,JSON.stringify(state));
     projectList[currentProjectId].updatedAt=new Date().toISOString();
     projectList[currentProjectId].tableCount=Object.keys(tables).length;
-    saveProjectList();
-    if(window.driveSync) window.driveSync.markDirty(LS_PROJECT_PREFIX+currentProjectId);
+    await saveProjectData();
+    await saveProjectList();
     showSaveStatus('✓ 保存済み','success');
-  }catch(e){showSaveStatus('保存エラー','error');}
+  }catch(e){console.warn('autoSave failed:',e);showSaveStatus('保存エラー','error');}
 }
 
-function renameProject(id){
+async function renameProject(id){
   var proj=projectList[id];if(!proj)return;
   var newName=prompt('新しい名前:',proj.name);
   if(newName===null||!newName.trim())return;
   proj.name=newName.trim();
   proj.updatedAt=new Date().toISOString();
-  saveProjectList();
+  await saveProjectList();
   updateProjectUI();
   renderProjectManager();
   showToast('✓ 名前を変更しました','success');
 }
 
-function duplicateProject(id){
+async function duplicateProject(id){
   var proj=projectList[id];if(!proj)return;
   var newId=generateId();
   projectList[newId]={name:proj.name+' (コピー)',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:proj.tableCount||0};
-  // データもコピー
-  try{
-    var raw=localStorage.getItem(LS_PROJECT_PREFIX+id);
-    if(raw)localStorage.setItem(LS_PROJECT_PREFIX+newId,raw);
-  }catch(e){}
-  saveProjectList();
-  if(window.driveSync) window.driveSync.markDirty(LS_PROJECT_PREFIX+newId);
+  var data=await loadProjectData(id);
+  if(data){
+    var json=JSON.stringify(data);
+    if(useDrive()){await window.driveSync.saveItem(LS_PROJECT_PREFIX+newId,json);}
+    else{localStorage.setItem(LS_PROJECT_PREFIX+newId,json);}
+  }
+  await saveProjectList();
   renderProjectManager();
   renderProjectDropdownList();
   showToast('✓ "'+projectList[newId].name+'" を作成しました','success');
 }
 
-function deleteProjectById(id){
+async function deleteProjectById(id){
   var proj=projectList[id];if(!proj)return;
   var ids=Object.keys(projectList);
   if(ids.length<=1){showToast('最後のプロジェクトは削除できません','error');return;}
   if(!confirm('"'+proj.name+'" を削除しますか？'))return;
   delete projectList[id];
-  try{localStorage.removeItem(LS_PROJECT_PREFIX+id);}catch(e){}
-  saveProjectList();
-  if(window.driveSync) window.driveSync.markDeleted(LS_PROJECT_PREFIX+id);
+  await removeProjectData(id);
+  await saveProjectList();
   // 削除したのが現在のプロジェクトなら別のに切替
   if(id===currentProjectId){
     var remainIds=Object.keys(projectList);
@@ -1954,7 +1969,7 @@ function initProjNameEdit(){
     if(e.key==='Escape'){el.textContent=projectList[currentProjectId].name;el.blur();}
   });
 }
-function commitProjName(el){
+async function commitProjName(el){
   el.contentEditable='false';
   el.classList.remove('editing');
   if(!currentProjectId||!projectList[currentProjectId])return;
@@ -1962,7 +1977,7 @@ function commitProjName(el){
   if(!v)v='untitled';
   projectList[currentProjectId].name=v;
   el.textContent=v;
-  saveProjectList();
+  await saveProjectList();
 }
 
 function openProjectManager(){
@@ -2131,25 +2146,22 @@ function renderPSSList(){
   });
 }
 
-function pssOpenProject(id){
+async function pssOpenProject(id){
   currentProjectId=id;
   localStorage.setItem(LS_CURRENT,id);
-  try{
-    var raw=localStorage.getItem(LS_PROJECT_PREFIX+id);
-    if(raw){loadERState(JSON.parse(raw));}
-    else{clearERState();}
-  }catch(e){clearERState();}
+  var data=await loadProjectData(id);
+  if(data){loadERState(data);}else{clearERState();}
   updateProjectUI();
   showEditor();
 }
 
-function pssCreateNew(){
+async function pssCreateNew(){
   var input=prompt('プロジェクト名を入力してください:','新しいプロジェクト');
   if(input===null)return;
   var pName=input.trim()||'untitled';
   var id=generateId();
   projectList[id]={name:pName,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:0};
-  saveProjectList();
+  await saveProjectList();
   currentProjectId=id;
   localStorage.setItem(LS_CURRENT,id);
   clearERState();
@@ -2158,25 +2170,24 @@ function pssCreateNew(){
   showToast('✓ "'+pName+'" を作成しました','success');
 }
 
-function pssRenameProject(id){
+async function pssRenameProject(id){
   var proj=projectList[id];if(!proj)return;
   var newName=prompt('新しい名前:',proj.name);
   if(newName===null||!newName.trim())return;
   proj.name=newName.trim();
   proj.updatedAt=new Date().toISOString();
-  saveProjectList();
+  await saveProjectList();
   renderPSSList();
 }
 
-function pssDeleteProject(id){
+async function pssDeleteProject(id){
   var proj=projectList[id];if(!proj)return;
   var ids=Object.keys(projectList);
   if(ids.length<=1){showToast('最後のプロジェクトは削除できません','error');return;}
   if(!confirm('"'+proj.name+'" を削除しますか？'))return;
   delete projectList[id];
-  try{localStorage.removeItem(LS_PROJECT_PREFIX+id);}catch(e){}
-  saveProjectList();
-  if(window.driveSync) window.driveSync.markDeleted(LS_PROJECT_PREFIX+id);
+  await removeProjectData(id);
+  await saveProjectList();
   if(id===currentProjectId){currentProjectId=null;}
   renderPSSList();
   showToast('プロジェクトを削除しました');
@@ -2185,15 +2196,14 @@ function pssDeleteProject(id){
 // ヘッダータイトルクリックでプロジェクト選択画面に戻る
 
 // ─── Initialize Projects ─────────────────────────────────
-function initProjects(){
-  loadProjectList();
+async function initProjects(){
+  await loadProjectList();
   var ids=Object.keys(projectList);
   if(!ids.length){
     var id=generateId();
     projectList[id]={name:'untitled',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),tableCount:0};
-    saveProjectList();
+    await saveProjectList();
   }
-  // 常にプロジェクト選択画面を表示
   showProjectSelectScreen();
 }
 
@@ -2204,9 +2214,8 @@ function initDriveSync(){
     toolId:'er-diagram',
     keys:[LS_PROJECTS],
     keyPatterns:[new RegExp('^'+LS_PROJECT_PREFIX.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))],
-    onSyncedFromRemote:function(changedKeys){
-      // Drive 側から更新が降ってきたらプロジェクト一覧をリロードして UI を再描画
-      loadProjectList();
+    onSyncedFromRemote:async function(changedKeys){
+      await loadProjectList();
       // PSS が表示されているなら一覧を更新
       var pss=document.getElementById('projectSelectScreen');
       if(pss && pss.style.display!=='none' && typeof renderPSSList==='function'){
@@ -2223,17 +2232,6 @@ function initDriveSync(){
         showProjectSelectScreen();
       }
     },
-  });
-  // 同期状態をヘッダーに表示
-  window.driveSync.onStateChange(function(state){
-    if(!state.signedIn)return;
-    if(state.status==='syncing'){
-      showSaveStatus('同期中...');
-    }else if(state.status==='synced'){
-      showSaveStatus('✓ 同期完了','success');
-    }else if(state.status==='error'){
-      showSaveStatus('同期エラー','error');
-    }
   });
   // 同期UIはプロジェクト選択画面のみにマウント（編集画面では非表示）
   var pssMount=document.getElementById('pss-sync-mount');
