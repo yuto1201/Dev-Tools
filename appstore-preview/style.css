@@ -1,4 +1,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
+/* インラインSVGアイコン */
+.ic{display:inline-flex;align-items:center;vertical-align:middle;line-height:0;flex-shrink:0}
+.ic svg{display:block}
 /* ツール固有変数（:root には置かない — テーマトークンは lib/theme.css から継承） */
 body{
   --ap-accent-dim: color-mix(in srgb, var(--accent) 13%, transparent);

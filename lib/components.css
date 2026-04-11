@@ -103,8 +103,9 @@ body[data-view="editor"] .app-view-editor { display: block; }
   transform: scale(.96);
 }
 /* 広い画面では戻るボタンを左余白に配置（ネガティブマージンで引き出し） */
+/* ※ editor ビューは max-width:none なので適用しない */
 @media (min-width: 1500px) {
-  .app-header-left > .app-back-btn:first-child {
+  body[data-view="list"] .app-header-left > .app-back-btn:first-child {
     margin-left: calc(-1 * (var(--space-10) + 70px));
   }
 }
@@ -132,6 +133,28 @@ body[data-view="editor"] .app-view-editor { display: block; }
   margin: 0;
   line-height: 1.2;
   letter-spacing: -.02em;
+}
+
+/* ---- 編集可能タイトル ---- */
+.app-title-editable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  transition: background .15s;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 60px;
+}
+.app-title-editable:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.app-title-editable.editing {
+  cursor: text;
+  background: var(--bg);
+  box-shadow: var(--shadow-in-sm);
+  outline: none;
 }
 
 /* ---- 旧 back-link（後方互換 — 新規では使わない） ---- */

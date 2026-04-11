@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="../lib/theme.css">
 <link rel="stylesheet" href="../lib/components.css">
 <script src="../lib/theme.js"></script>
+<script src="../lib/icons.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="../lib/drive-sync.css?v=20260409d">
@@ -26,23 +27,23 @@
   <!-- 中央: 操作ボタン群 -->
   <div class="header-spacer"></div>
   <div class="hbtns" id="editor-header-btns">
-    <button class="btn btn-ghost btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)">↩<span class="undo-count" id="undo-count"></span></button>
-    <button class="btn btn-ghost btn-undo" id="redo-btn" onclick="redo()" disabled title="やり直す (Ctrl+Shift+Z)">↪<span class="undo-count" id="redo-count"></span></button>
+    <button class="btn btn-ghost btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)"><span class="ic" data-ic="undo"></span><span class="undo-count" id="undo-count"></span></button>
+    <button class="btn btn-ghost btn-undo" id="redo-btn" onclick="redo()" disabled title="やり直す (Ctrl+Shift+Z)"><span class="ic" data-ic="redo"></span><span class="undo-count" id="redo-count"></span></button>
     <div class="hbtn-sep"></div>
-    <button class="btn btn-ghost" onclick="showTemplates()">🎯 <span class="btn-lbl">テンプレ</span></button>
+    <button class="btn btn-ghost" onclick="showTemplates()"><span class="ic" data-ic="target"></span> <span class="btn-lbl">テンプレ</span></button>
     <div class="hbtn-sep"></div>
-    <button class="btn btn-ghost" onclick="saveProjectToStorage()" title="保存">💾 <span class="btn-lbl">保存</span></button>
+    <button class="btn btn-ghost" onclick="saveProjectToStorage()" title="保存"><span class="ic" data-ic="save"></span> <span class="btn-lbl">保存</span></button>
     <span id="save-status" class="save-status" hidden></span>
-    <button class="btn btn-ghost" onclick="document.getElementById('load-input').click()" title="JSON読込">📂 <span class="btn-lbl">読込</span></button>
+    <button class="btn btn-ghost" onclick="document.getElementById('load-input').click()" title="JSON読込"><span class="ic" data-ic="folder"></span> <span class="btn-lbl">読込</span></button>
     <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
     <div class="hdr-dropdown">
-      <button class="btn btn-primary" onclick="toggleDropdown(this)">↓ <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph">↓</span> <span class="dd-arrow">▾</span></button>
+      <button class="btn btn-primary" onclick="toggleDropdown(this)"><span class="ic" data-ic="chevron-down"></span> <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph"><span class="ic" data-ic="chevron-down"></span></span> <span class="dd-arrow">▾</span></button>
       <div class="dd-menu">
-        <button class="dd-item" onclick="exportCurrent();closeDropdowns()">🖼 PNG</button>
-        <button class="dd-item" onclick="exportZip();closeDropdowns()">🗜 ZIP（全スライド）</button>
-        <button class="dd-item" onclick="exportAllSizesZip();closeDropdowns()">🗜 ZIP（全サイズ）</button>
+        <button class="dd-item" onclick="exportCurrent();closeDropdowns()"><span class="ic" data-ic="image"></span> PNG</button>
+        <button class="dd-item" onclick="exportZip();closeDropdowns()"><span class="ic" data-ic="archive"></span> ZIP（全スライド）</button>
+        <button class="dd-item" onclick="exportAllSizesZip();closeDropdowns()"><span class="ic" data-ic="archive"></span> ZIP（全サイズ）</button>
         <div style="height:1px;background:var(--border-strong);margin:4px 0"></div>
-        <button class="dd-item" onclick="saveProject();closeDropdowns()">📥 JSON（プロジェクト）</button>
+        <button class="dd-item" onclick="saveProject();closeDropdowns()"><span class="ic" data-ic="download"></span> JSON（プロジェクト）</button>
       </div>
     </div>
   </div>
@@ -55,7 +56,7 @@
     <header class="app-header">
       <div class="app-header-left">
         <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
-        <span class="app-title-icon">📱</span>
+        <span class="app-title-icon" data-ic="smartphone" data-ic-size="20"></span>
         <h1 class="app-title">ApplePreview</h1>
       </div>
       <div class="app-header-right">
@@ -66,7 +67,7 @@
     <div class="app-toolbar">
       <div class="app-section-title"></div>
       <div class="dash-actions">
-        <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()">📂 JSONから読込</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()"><span class="ic" data-ic="folder"></span> JSONから読込</button>
         <input type="file" id="import-input" accept=".json" style="display:none" onchange="importProjectFromFile(event)">
         <button class="btn btn-primary" onclick="createNewProject()">+ 新規プロジェクト</button>
       </div>
@@ -77,7 +78,7 @@
       <div class="dash-loading-text">Google Drive から読み込み中...</div>
     </div>
     <div class="app-empty" id="dash-empty" style="display:none">
-      <div class="app-empty-icon">📱</div>
+      <div class="app-empty-icon" data-ic="smartphone" data-ic-size="48"></div>
       <div class="app-empty-text">プロジェクトがありません</div>
       <div class="app-empty-sub">「新規プロジェクト」をクリックして始めましょう</div>
       <button class="btn btn-primary" onclick="createNewProject()" style="margin-top:var(--space-4)">+ 新規プロジェクト</button>
@@ -93,7 +94,7 @@
   <div class="step" id="st2" onclick="goStep(2)"><div class="step-n">2</div><div class="step-l">内容を入力する</div></div>
   <div class="step-arr">›</div>
   <div class="step" id="st3" onclick="goStep(3)"><div class="step-n">3</div><div class="step-l">仕上げる</div></div>
-  <button class="btn btn-primary stepbar-save" id="stepbar-save" onclick="saveProjectToStorage();showDashboard()">💾 保存して終わる</button>
+  <button class="btn btn-primary stepbar-save" id="stepbar-save" onclick="saveProjectToStorage();showDashboard()"><span class="ic" data-ic="save"></span> 保存して終わる</button>
   <div class="stepbar-spacer"></div>
   <div class="dev-group" id="editor-header-controls">
     <span class="dev-label">iPhone</span>
@@ -105,7 +106,7 @@
     <button class="dev-btn"        onclick="setDevice('ipad13')" id="dev-ipad13">12.9"</button>
     <button class="dev-btn"        onclick="setDevice('ipad11')" id="dev-ipad11">11"</button>
     <button class="dev-btn"        onclick="setDevice('ipad97')" id="dev-ipad97">9.7"</button>
-    <button class="dev-btn dev-ref-btn" onclick="showDeviceCatalog()" title="歴代iPhone / iPad サイズ一覧">📚 一覧</button>
+    <button class="dev-btn dev-ref-btn" onclick="showDeviceCatalog()" title="歴代iPhone / iPad サイズ一覧"><span class="ic" data-ic="book"></span> 一覧</button>
   </div>
 </div>
 
@@ -119,9 +120,9 @@
     <div class="ws" id="s1">
       <div class="s1-left">
         <div class="tab-bar s1-tab-bar" id="s1-tab-bar">
-          <button class="tab active" onclick="switchS1Tab('bg',this)">🎨 背景</button>
-          <button class="tab" onclick="switchS1Tab('layout',this)">📱 配置</button>
-          <button class="tab" onclick="switchS1Tab('fx',this)">✨ エフェクト</button>
+          <button class="tab active" onclick="switchS1Tab('bg',this)"><span class="ic" data-ic="palette"></span> 背景</button>
+          <button class="tab" onclick="switchS1Tab('layout',this)"><span class="ic" data-ic="smartphone"></span> 配置</button>
+          <button class="tab" onclick="switchS1Tab('fx',this)"><span class="ic" data-ic="sparkles"></span> エフェクト</button>
         </div>
         <div class="s1-tab-pane active" id="s1-pane-bg">
           <div class="opt-grid" id="bg-grid"></div>
@@ -157,7 +158,7 @@
           <button class="zoom-btn" onclick="zoomPreview(-1)" title="縮小">−</button>
           <span class="zoom-level" id="zoom-level">フィット</span>
           <button class="zoom-btn" onclick="zoomPreview(1)" title="拡大">+</button>
-          <button class="zoom-btn zoom-btn-fit" onclick="zoomPreviewReset()" title="画面にフィット">⤢</button>
+          <button class="zoom-btn zoom-btn-fit" onclick="zoomPreviewReset()" title="画面にフィット"><span class="ic" data-ic="maximize"></span></button>
         </div>
       </div>
     </div><!-- end s2 -->
@@ -168,7 +169,7 @@
       <div class="pane-splitter" aria-hidden="true"></div>
       <div class="s3-main">
         <div class="s3-main-head">
-          <div class="s3-main-title">📸 全スライド プレビュー</div>
+          <div class="s3-main-title"><span class="ic" data-ic="camera"></span> 全スライド プレビュー</div>
           <div class="s3-main-sub" id="s3-dev-info"></div>
         </div>
         <div class="s3-gallery" id="s3-gallery"></div>
@@ -193,7 +194,7 @@
 <!-- Convert Modal -->
 <div class="modal-overlay" id="conv-modal" style="display:none" onclick="if(event.target===this)hideConvModal()">
   <div class="modal-box">
-    <div class="modal-title">🔄 パーツを変換</div>
+    <div class="modal-title"><span class="ic" data-ic="refresh"></span> パーツを変換</div>
     <div>
       <div class="modal-sub" style="margin-bottom:8px">背景スタイル</div>
       <div class="modal-grid" id="conv-bg-grid"></div>
@@ -213,7 +214,7 @@
 <div class="modal-overlay" id="device-catalog-modal" style="display:none" onclick="if(event.target===this)hideDeviceCatalog()">
   <div class="modal-box devdb-box">
     <div class="devdb-head">
-      <div class="modal-title">📚 歴代 iPhone / iPad サイズ一覧</div>
+      <div class="modal-title"><span class="ic" data-ic="book"></span> 歴代 iPhone / iPad サイズ一覧</div>
       <button class="btn btn-g" onclick="hideDeviceCatalog()">閉じる</button>
     </div>
     <div class="devdb-note">画面サイズ、解像度、PPI の代表値です。右端の「このサイズで作業」で現在のプレビューサイズに切り替えできます。</div>
@@ -240,8 +241,8 @@
 <div class="tpl-overlay" id="tpl-modal" style="display:none" onclick="if(event.target===this)hideTpl()">
   <div class="tpl-box">
     <div class="tpl-head">
-      <div class="tpl-title">🎯 テンプレートから始める</div>
-      <button class="tpl-close" onclick="hideTpl()">✕</button>
+      <div class="tpl-title"><span class="ic" data-ic="target"></span> テンプレートから始める</div>
+      <button class="tpl-close" onclick="hideTpl()"><span class="ic" data-ic="x" data-ic-size="18"></span></button>
     </div>
     <div class="tpl-grid" id="tpl-grid"></div>
   </div>
@@ -253,13 +254,13 @@
     <span class="nav-icon">←</span>パーツ
   </button>
   <button onclick="showTemplates()">
-    <span class="nav-icon">🎯</span>テンプレ
+    <span class="nav-icon" data-ic="target"></span>テンプレ
   </button>
   <button onclick="iphoneShowSlides()">
-    <span class="nav-icon">📋</span>スライド
+    <span class="nav-icon" data-ic="clipboard"></span>スライド
   </button>
   <button onclick="iphoneShowDevMenu()">
-    <span class="nav-icon">📐</span>サイズ
+    <span class="nav-icon" data-ic="ruler"></span>サイズ
   </button>
 </nav>
 

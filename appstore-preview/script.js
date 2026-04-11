@@ -1,3 +1,12 @@
+/* ═══ SVG アイコンヘルパー ═══ */
+function ic(name,size=16){return window.yutoIcons?yutoIcons.toSVG(name,{size}):'';}
+function initIcons(){
+  document.querySelectorAll('[data-ic]').forEach(el=>{
+    const size=parseInt(el.dataset.icSize)||16;
+    el.innerHTML=yutoIcons.toSVG(el.dataset.ic,{size});
+  });
+}
+
 /* ═══ ヘッダー ドロップダウン ═══ */
 function toggleDropdown(btn){
   const dd=btn.closest('.hdr-dropdown');
@@ -163,7 +172,7 @@ function undo(){
   if(inStep===2)buildFields();
   if(inStep===3)buildStep3();
   updateUndoBtn();
-  showToast('元に戻しました ↩');
+  showToast('元に戻しました '+ic('undo',14));
 }
 function redo(){
   if(!redoStack.length)return;
@@ -174,7 +183,7 @@ function redo(){
   if(inStep===2)buildFields();
   if(inStep===3)buildStep3();
   updateUndoBtn();
-  showToast('やり直しました ↪');
+  showToast('やり直しました '+ic('redo',14));
 }
 function updateUndoBtn(){
   const btn=document.getElementById('undo-btn');
@@ -631,12 +640,12 @@ const PHONE_LAYOUTS=[
 
 /* ═══ EFFECTS ═══ */
 const EFFECTS=[
-  {id:'glow',name:'グロウ',desc:'テキストに光る発光エフェクト',icon:'✨'},
-  {id:'deco',name:'デコシェイプ',desc:'背景に装飾の丸や図形を追加',icon:'🔮'},
-  {id:'particles',name:'パーティクル',desc:'キラキラ光る粒子を背景に散らす',icon:'🌟'},
-  {id:'grain',name:'グレインノイズ',desc:'フィルム風のザラつきテクスチャ',icon:'🎞'},
-  {id:'reflection',name:'デバイス反射',desc:'iPhoneの下に薄い映り込み',icon:'🪞'},
-  {id:'border',name:'ボーダー',desc:'スライド全体に余白付きの枠線',icon:'🔲'},
+  {id:'glow',name:'グロウ',desc:'テキストに光る発光エフェクト',iconName:'sparkles'},
+  {id:'deco',name:'デコシェイプ',desc:'背景に装飾の丸や図形を追加',iconName:'wand'},
+  {id:'particles',name:'パーティクル',desc:'キラキラ光る粒子を背景に散らす',iconName:'sparkle'},
+  {id:'grain',name:'グレインノイズ',desc:'フィルム風のザラつきテクスチャ',iconName:'hash'},
+  {id:'reflection',name:'デバイス反射',desc:'iPhoneの下に薄い映り込み',iconName:'smartphone-2'},
+  {id:'border',name:'ボーダー',desc:'スライド全体に余白付きの枠線',iconName:'app-window'},
 ];
 
 /* ═══ STATE ═══ */
@@ -806,7 +815,7 @@ async function saveProject(){
   a.download=`${name}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  showToast('JSONファイルを保存しました 📥');
+  showToast('JSONファイルを保存しました '+ic('download',14));
 }
 function loadProject(e){
   const file=e.target.files[0];if(!file)return;
@@ -816,7 +825,7 @@ function loadProject(e){
       pushUndo();
       deserializeSlides(ev.target.result);
       if(currentProjectId) saveProjectToStorage();
-      showToast('プロジェクトを読み込みました 📂');
+      showToast('プロジェクトを読み込みました '+ic('folder',14));
     }catch(err){showToast('読み込みに失敗しました');}
   };
   reader.readAsText(file);
@@ -961,7 +970,7 @@ async function openProject(id){
 async function saveProjectToStorage(options={}){
   const silent=!!options.silent;
   if(!currentProjectId){
-    if(!silent)showToast('⚠️ プロジェクトが選択されていません');
+    if(!silent)showToast(ic('alert-triangle',14)+' プロジェクトが選択されていません');
     return false;
   }
   const useDrive=!!(window.driveSync&&window.driveSync.isSignedIn());
@@ -987,7 +996,7 @@ async function saveProjectToStorage(options={}){
       }
     }
     if(!saved){
-      if(!silent)showToast('⚠️ 保存に失敗しました。不要なプロジェクト削除かJSON保存を試してください');
+      if(!silent)showToast(ic('alert-triangle',14)+' 保存に失敗しました。不要なプロジェクト削除かJSON保存を試してください');
       if(useDrive) showSaveStatus('保存失敗','error');
       return false;
     }
@@ -1001,17 +1010,17 @@ async function saveProjectToStorage(options={}){
     }
     if(!silent){
       if(useDrive){
-        showSaveStatus('✓ 保存完了','success');
+        showSaveStatus(ic('check-circle',14)+' 保存完了','success');
       }else{
-        showToast(recoveredByCompression?'保存しました（画像を圧縮） 💾':'保存しました 💾');
+        showToast(recoveredByCompression?'保存しました（画像を圧縮） '+ic('save',14):'保存しました '+ic('save',14));
       }
     }else if(useDrive){
-      showSaveStatus('✓ 保存完了','success');
+      showSaveStatus(ic('check-circle',14)+' 保存完了','success');
     }
     return true;
   }catch(e){
     console.error('saveProjectToStorage error:',e);
-    if(!silent)showToast('⚠️ 保存中にエラーが発生しました');
+    if(!silent)showToast(ic('alert-triangle',14)+' 保存中にエラーが発生しました');
     if(useDrive) showSaveStatus('保存エラー','error');
     return false;
   }finally{
@@ -1068,7 +1077,7 @@ async function exportProjectJson(id,ev){
   a.download=`${meta?meta.name:'project'}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  showToast('JSONファイルを保存しました 📥');
+  showToast('JSONファイルを保存しました '+ic('download',14));
 }
 
 function importProjectFromFile(e){
@@ -1087,7 +1096,7 @@ function importProjectFromFile(e){
       await saveProjectsList(list);
       await setProjectData(id,ev.target.result);
       await renderDashboard();
-      showToast('プロジェクトを読み込みました 📂');
+      showToast('プロジェクトを読み込みました '+ic('folder',14));
     }catch(err){showToast('読み込みに失敗しました');}
   };
   reader.readAsText(file);
@@ -1396,9 +1405,9 @@ function buildCardElement(meta){
   const actions=document.createElement('div');
   actions.className='app-card-actions';
   actions.innerHTML=`
-    <button class="app-card-btn ap-btn-dup" onclick="duplicateProject('${meta.id}',event)" title="複製">⧉</button>
-    <button class="app-card-btn ap-btn-export" onclick="exportProjectJson('${meta.id}',event)" title="JSON書き出し">↓</button>
-    <button class="app-card-btn danger" onclick="deleteProject('${meta.id}',event)" title="削除">✕</button>
+    <button class="app-card-btn ap-btn-dup" onclick="duplicateProject('${meta.id}',event)" title="複製">${ic('copy',14)}</button>
+    <button class="app-card-btn ap-btn-export" onclick="exportProjectJson('${meta.id}',event)" title="JSON書き出し">${ic('download',14)}</button>
+    <button class="app-card-btn danger" onclick="deleteProject('${meta.id}',event)" title="削除">${ic('x',14)}</button>
   `;
 
   const info=document.createElement('div');
@@ -2289,8 +2298,8 @@ function buildS3Left(){
   if(!el)return;
   el.innerHTML='';
 
-  // 📐 デバイスサイズ
-  const devCard=addCard(el,'📐','書き出しサイズ',DEVS[curDev].lbl.split(' ')[0]);
+  // デバイスサイズ
+  const devCard=addCard(el,ic('ruler'),'書き出しサイズ',DEVS[curDev].lbl.split(' ')[0]);
   const iphoneIds=['6.9','6.7','6.5','5.5'];
   const ipadIds=['ipad13','ipad11','ipad97'];
   const makeDevBtn=(id)=>{
@@ -2313,8 +2322,8 @@ function buildS3Left(){
   ipadIds.forEach(id=>ipadGrid.appendChild(makeDevBtn(id)));
   devCard.appendChild(ipadGrid);
 
-  // 📦 書き出し
-  const expCard=addCard(el,'📦','書き出し');
+  // 書き出し
+  const expCard=addCard(el,ic('package'),'書き出し');
   const makeExpBtn=(icon,name,desc,onClick)=>{
     const btn=document.createElement('button');btn.type='button';
     btn.className='s3-export-btn';
@@ -2322,12 +2331,12 @@ function buildS3Left(){
     btn.onclick=onClick;
     return btn;
   };
-  expCard.appendChild(makeExpBtn('🗜','現在のサイズで全スライド ZIP',`${DEVS[curDev].lbl.split(' ')[1]||''} を ${slides.length}枚`,()=>exportZip()));
-  expCard.appendChild(makeExpBtn('🌐','全サイズで全スライド ZIP','iPhone+iPad の全7サイズ',()=>exportAllSizesZip()));
-  expCard.appendChild(makeExpBtn('🖼','選択中のスライドだけ PNG',`スライド ${curSlide+1} を1枚だけ`,()=>exportCurrent()));
+  expCard.appendChild(makeExpBtn(ic('archive',18),'現在のサイズで全スライド ZIP',`${DEVS[curDev].lbl.split(' ')[1]||''} を ${slides.length}枚`,()=>exportZip()));
+  expCard.appendChild(makeExpBtn(ic('globe',18),'全サイズで全スライド ZIP','iPhone+iPad の全7サイズ',()=>exportAllSizesZip()));
+  expCard.appendChild(makeExpBtn(ic('image',18),'選択中のスライドだけ PNG',`スライド ${curSlide+1} を1枚だけ`,()=>exportCurrent()));
 
-  // 📋 サマリー
-  const sumCard=addCard(el,'📋','サマリー');
+  // サマリー
+  const sumCard=addCard(el,ic('clipboard'),'サマリー');
   const stats=document.createElement('div');stats.className='s3-stats';
   const dev=DEVS[curDev];
   const mkStat=(lbl,val)=>{const d=document.createElement('div');d.className='s3-stat';d.innerHTML=`<div class="s3-stat-lbl">${lbl}</div><div class="s3-stat-val">${val}</div>`;return d;};
@@ -2352,7 +2361,7 @@ function renderS3Gallery(){
     tc.style.cssText='width:100%;height:auto;display:block';
     const foot=document.createElement('div');foot.className='s3-tile-foot';
     const num=document.createElement('div');num.className='s3-tile-n';num.textContent='#'+(i+1);
-    const dl=document.createElement('button');dl.type='button';dl.className='s3-tile-dl';dl.textContent='↓ PNG';
+    const dl=document.createElement('button');dl.type='button';dl.className='s3-tile-dl';dl.innerHTML=ic('download',12)+' PNG';
     dl.onclick=()=>exportSlide(i);
     foot.appendChild(num);foot.appendChild(dl);
     tile.appendChild(tc);tile.appendChild(foot);
@@ -2473,20 +2482,20 @@ function buildBgAdjust(el){
   const isPattern=resolved==='pattern';
   // 背景スタイルごとのアイコン・名前
   const bgInfo={
-    solid:{icon:'⬛',name:'単色'},
-    gradient:{icon:'🌈',name:'グラデーション'},
-    split:{icon:'⚡',name:'スプリット'},
-    radial:{icon:'☀️',name:'ラジアル'},
-    mesh:{icon:'🌌',name:'メッシュ'},
-    pattern:{icon:'🎭',name:'パターン'},
+    solid:{iconName:'square',name:'単色'},
+    gradient:{iconName:'droplet',name:'グラデーション'},
+    split:{iconName:'zap',name:'スプリット'},
+    radial:{iconName:'sun',name:'ラジアル'},
+    mesh:{iconName:'grid',name:'メッシュ'},
+    pattern:{iconName:'layers',name:'パターン'},
   };
-  const info=bgInfo[resolved]||{icon:'🎨',name:'背景'};
+  const info=bgInfo[resolved]||{iconName:'palette',name:'背景'};
   // ── 配色プリセットカード（ダーク／ライト切り替え対応） ──
-  const presetCard=addCard(el,'🎨','配色プリセット',presetColorMode==='dark'?'DARK':'LIGHT');
+  const presetCard=addCard(el,ic('palette'),'配色プリセット',presetColorMode==='dark'?'DARK':'LIGHT');
   // ダーク／ライト モードトグル
   const modeToggle=document.createElement('div');modeToggle.className='preset-mode-toggle';
-  [['dark','🌙 ダーク'],['light','☀️ ライト']].forEach(([m,lbl])=>{
-    const mBtn=document.createElement('button');mBtn.type='button';mBtn.textContent=lbl;
+  [['dark',ic('moon',14)+' ダーク'],['light',ic('sun',14)+' ライト']].forEach(([m,lbl])=>{
+    const mBtn=document.createElement('button');mBtn.type='button';mBtn.innerHTML=lbl;
     if(presetColorMode===m)mBtn.classList.add('active');
     mBtn.onclick=()=>{presetColorMode=m;buildAllBgAdjust();};
     modeToggle.appendChild(mBtn);
@@ -2514,7 +2523,7 @@ function buildBgAdjust(el){
   });
   presetCard.appendChild(presetRow);
   // ── 背景カスタマイズカード（選択スタイルごと） ──
-  const card=addCard(el,info.icon,info.name+'の詳細',resolved.toUpperCase());
+  const card=addCard(el,ic(info.iconName),info.name+'の詳細',resolved.toUpperCase());
   // メインカラー（全スタイル共通）
   addColorField(card,'メインカラー','bgColor1');
   // サブカラー（単色以外）
@@ -2572,12 +2581,12 @@ function buildLoAdjust(el){
   const lo=s.phoneLayout;
   // 傾き
   if(lo==='tilted'){
-    const card=addCard(el,'📐','傾き設定');
+    const card=addCard(el,ic('ruler'),'傾き設定');
     addSliderField(card,'傾き角度','phoneTilt',-30,30,s.phoneTilt||10,'°');
   }
   // ウィジェット+iPhone
   if(lo==='widget-phone'){
-    const card=addCard(el,'🧩','ウィジェット + iPhone');
+    const card=addCard(el,ic('puzzle'),'ウィジェット + iPhone');
     addSliderField(card,'ウィジェット サイズ','wpWidgetSize',20,100,s.wpWidgetSize||70,'%');
     addSliderField(card,'iPhone サイズ','wpPhoneSize',15,80,s.wpPhoneSize||42,'%');
     // 中央揃えボタン
@@ -2592,7 +2601,7 @@ function buildLoAdjust(el){
   }
   // ウィジェットグリッド
   if(lo==='widget-grid'){
-    const card=addCard(el,'🧩','ウィジェットグリッド');
+    const card=addCard(el,ic('puzzle'),'ウィジェットグリッド');
     addSliderField(card,'横幅（カラム数）','wgCols',2,4,s.wgCols||4,'列');
     const items=(s.wgItems||'xl,l,m,s').split(',').map(v=>v.trim()).filter(Boolean);
     const nameMap={s:'小',m:'中',l:'大',xl:'特大'};
@@ -2657,7 +2666,7 @@ function buildLoAdjust(el){
   }
   // マルチiPhone
   if(lo==='multi-phone'){
-    const card=addCard(el,'📱','マルチ iPhone');
+    const card=addCard(el,ic('smartphone'),'マルチ iPhone');
     addSliderField(card,'台数','mpCount',1,5,s.mpCount||3,'台');
     // 台数変更時にUIを再構築
     const countSlider=card.querySelector('input[type=range]');
@@ -2668,7 +2677,7 @@ function buildLoAdjust(el){
   // フリー配置（デバイスごとに個別カード）
   if(lo==='free-device'){
     // MacBook
-    const macCard=addCard(el,'💻','MacBook','フリー配置');
+    const macCard=addCard(el,ic('laptop'),'MacBook','フリー配置');
     addToggleField_s1(macCard,'表示','fdMacOn',true);
     if(s.fdMacOn!==false){
       addSliderField(macCard,'サイズ','fdMacSize',20,90,s.fdMacSize||60,'%');
@@ -2676,7 +2685,7 @@ function buildLoAdjust(el){
       addSliderField(macCard,'重なり順','fdMacZ',0,3,s.fdMacZ!=null?s.fdMacZ:0,'');
     }
     // iPhone
-    const iphCard=addCard(el,'📱','iPhone','フリー配置');
+    const iphCard=addCard(el,ic('smartphone'),'iPhone','フリー配置');
     addToggleField_s1(iphCard,'表示','fdIphoneOn',true);
     if(s.fdIphoneOn!==false){
       addSliderField(iphCard,'サイズ','fdIphoneSize',15,80,s.fdIphoneSize||50,'%');
@@ -2684,7 +2693,7 @@ function buildLoAdjust(el){
       addSliderField(iphCard,'重なり順','fdIphoneZ',0,3,s.fdIphoneZ!=null?s.fdIphoneZ:2,'');
     }
     // iPad
-    const ipdCard=addCard(el,'🖥️','iPad','フリー配置');
+    const ipdCard=addCard(el,ic('tablet'),'iPad','フリー配置');
     addToggleField_s1(ipdCard,'表示','fdIpadOn',true);
     if(s.fdIpadOn!==false){
       addSliderField(ipdCard,'サイズ','fdIpadSize',15,80,s.fdIpadSize||45,'%');
@@ -2692,7 +2701,7 @@ function buildLoAdjust(el){
       addSliderField(ipdCard,'重なり順','fdIpadZ',0,3,s.fdIpadZ!=null?s.fdIpadZ:1,'');
     }
     // Apple Watch
-    const wchCard=addCard(el,'⌚','Apple Watch','フリー配置');
+    const wchCard=addCard(el,ic('watch'),'Apple Watch','フリー配置');
     addToggleField_s1(wchCard,'表示','fdWatchOn',true);
     if(s.fdWatchOn!==false){
       addSliderField(wchCard,'サイズ','fdWatchSize',10,60,s.fdWatchSize||22,'%');
@@ -2728,7 +2737,7 @@ function buildFxList(el,idSuffix=''){
       });
       render();
     };
-    chip.innerHTML=`<span class="list-chip-icon">${fx.icon}</span><span class="list-chip-text"><span class="list-chip-name">${fx.name}</span><span class="list-chip-desc">${fx.desc}</span></span><span class="list-chip-check">✓</span>`;
+    chip.innerHTML=`<span class="list-chip-icon">${ic(fx.iconName)}</span><span class="list-chip-text"><span class="list-chip-name">${fx.name}</span><span class="list-chip-desc">${fx.desc}</span></span><span class="list-chip-check">${ic('check',14)}</span>`;
     el.appendChild(chip);
   });
 }
@@ -2782,29 +2791,29 @@ function buildFields(){
   // Helper: build a section's content into a container el
   function buildTextSection(el){
     // タイトル（テキスト＋色を1枚のカードにまとめる）
-    const titleCard=addCard(el,'✏️','タイトル');
+    const titleCard=addCard(el,ic('edit-2'),'タイトル');
     addTextareaField(titleCard,null,'title','キャッチコピーを入力');
     addInlineColorField(titleCard,'文字色','titleColor');
     // サブタイトル
-    const subCard=addCard(el,'💬','サブタイトル');
+    const subCard=addCard(el,ic('message-square'),'サブタイトル');
     addTextField(subCard,null,'subtitle','サブコピーを入力');
     addInlineColorField(subCard,'文字色','subColor');
     // iPhone 文字調整
-    const iphCard=addCard(el,'📱','iPhone 文字調整','iPhone');
+    const iphCard=addCard(el,ic('smartphone'),'iPhone 文字調整','iPhone');
     addSliderField(iphCard,'上下位置','textOffsetY',-50,50,s.textOffsetY||0,'px');
     addSliderField(iphCard,'文字サイズ','titleSize',60,160,s.titleSize||100,'%');
     // iPad 文字調整
-    const ipdCard=addCard(el,'🖥️','iPad 文字調整','iPad');
+    const ipdCard=addCard(el,ic('tablet'),'iPad 文字調整','iPad');
     addSliderField(ipdCard,'上下位置','textOffsetYIpad',-50,50,s.textOffsetYIpad||0,'px');
     addSliderField(ipdCard,'文字サイズ','titleSizeIpad',60,160,s.titleSizeIpad||100,'%');
     // 機能リスト（feature-listレイアウトのみ）
     if(s.phoneLayout==='feature-list'){
-      const flCard=addCard(el,'📋','機能リスト');
+      const flCard=addCard(el,ic('clipboard'),'機能リスト');
       addTextareaField(flCard,'項目（1行1項目、先頭に絵文字可）','featureItems','✓ 機能その1\n✓ 機能その2');
     }
   }
   function buildFontSection(el){
-    const fontCard=addCard(el,'🔤','フォント');
+    const fontCard=addCard(el,ic('type'),'フォント');
     addFontPicker(fontCard);
     addFontWeightPicker(fontCard);
   }
@@ -2822,44 +2831,44 @@ function buildFields(){
 
     // ── フリー配置は専用フロー ──
     if(isFree){
-      // 📸 スクリーンショット（4デバイス分まとめて）
-      const ssCard=addCard(el,'📸','スクリーンショット','フリー配置');
+      // スクリーンショット（4デバイス分まとめて）
+      const ssCard=addCard(el,ic('camera'),'スクリーンショット','フリー配置');
       if(s.fdIphoneOn!==false) addUploadField(ssCard,'iPhone用','screenshotImg','_src');
       if(s.fdIpadOn!==false) addUploadField(ssCard,'iPad用','screenshotImg2','_src2');
       if(s.fdMacOn!==false) addUploadField(ssCard,'MacBook用','screenshotImg3','_src3');
       if(s.fdWatchOn!==false) addUploadField(ssCard,'Apple Watch用','widgetMediumImg','_srcWidgetMedium');
       // iPhoneフレーム調整（フリー配置のiPhoneにも適用される）
-      const adjCard=addCard(el,'🎚','iPhone スクショ調整');
+      const adjCard=addCard(el,ic('sliders'),'iPhone スクショ調整');
       addSliderField(adjCard,'ズーム','screenshotScale',100,200,s.screenshotScale||100,'%');
       addSliderField(adjCard,'横位置','screenshotOffsetX',-50,50,s.screenshotOffsetX||0,'%');
       addSliderField(adjCard,'縦位置','screenshotOffsetY',-50,50,s.screenshotOffsetY||0,'%');
       addSelectField(adjCard,'iPhoneフレーム色','frameColor',[['black','ブラック'],['silver','シルバー'],['gold','ゴールド'],['none','フレームなし']]);
-      // 💻 MacBook
-      const macCard=addCard(el,'💻','MacBook','フリー配置');
+      // MacBook
+      const macCard=addCard(el,ic('laptop'),'MacBook','フリー配置');
       addToggleField(macCard,'表示','fdMacOn',true);
       if(s.fdMacOn!==false){
         addSliderField(macCard,'サイズ','fdMacSize',20,90,s.fdMacSize||60,'%');
         addSliderField(macCard,'回転','fdMacRot',-30,30,s.fdMacRot||0,'°');
         addSliderField(macCard,'重なり順','fdMacZ',0,3,s.fdMacZ!=null?s.fdMacZ:0,'');
       }
-      // 📱 iPhone
-      const fdIphCard=addCard(el,'📱','iPhone','フリー配置');
+      // iPhone
+      const fdIphCard=addCard(el,ic('smartphone'),'iPhone','フリー配置');
       addToggleField(fdIphCard,'表示','fdIphoneOn',true);
       if(s.fdIphoneOn!==false){
         addSliderField(fdIphCard,'サイズ','fdIphoneSize',15,80,s.fdIphoneSize||50,'%');
         addSliderField(fdIphCard,'回転','fdIphoneRot',-30,30,s.fdIphoneRot||0,'°');
         addSliderField(fdIphCard,'重なり順','fdIphoneZ',0,3,s.fdIphoneZ!=null?s.fdIphoneZ:2,'');
       }
-      // 🖥️ iPad
-      const fdIpdCard=addCard(el,'🖥️','iPad','フリー配置');
+      // iPad
+      const fdIpdCard=addCard(el,ic('tablet'),'iPad','フリー配置');
       addToggleField(fdIpdCard,'表示','fdIpadOn',true);
       if(s.fdIpadOn!==false){
         addSliderField(fdIpdCard,'サイズ','fdIpadSize',15,80,s.fdIpadSize||45,'%');
         addSliderField(fdIpdCard,'回転','fdIpadRot',-30,30,s.fdIpadRot||0,'°');
         addSliderField(fdIpdCard,'重なり順','fdIpadZ',0,3,s.fdIpadZ!=null?s.fdIpadZ:1,'');
       }
-      // ⌚ Apple Watch
-      const fdWchCard=addCard(el,'⌚','Apple Watch','フリー配置');
+      // Apple Watch
+      const fdWchCard=addCard(el,ic('watch'),'Apple Watch','フリー配置');
       addToggleField(fdWchCard,'表示','fdWatchOn',true);
       if(s.fdWatchOn!==false){
         addSliderField(fdWchCard,'サイズ','fdWatchSize',10,60,s.fdWatchSize||22,'%');
@@ -2875,19 +2884,19 @@ function buildFields(){
 
     if(s.phoneLayout==='multi-phone'){
       const count=Math.max(1,Math.min(5,s.mpCount||3));
-      const mpCard=addCard(el,'📱','iPhone スクショ',count+'台分');
+      const mpCard=addCard(el,ic('smartphone'),'iPhone スクショ',count+'台分');
       const imgKeys=[['screenshotImg','_src'],['screenshotImg2','_src2'],['screenshotImg3','_src3'],['screenshotImg4','_src4'],['screenshotImgIpad','_srcIpad']];
       for(let i=0;i<count;i++){
         addUploadField(mpCard,'iPhone '+(i+1),imgKeys[i][0],imgKeys[i][1]);
       }
     } else if(needsPhone){
-      const ssCard=addCard(el,'📸','スクリーンショット','iPhone & iPad');
+      const ssCard=addCard(el,ic('camera'),'スクリーンショット','iPhone & iPad');
       addUploadField(ssCard,'iPhone用','screenshotImg','_src');
       addUploadField(ssCard,'iPad用','screenshotImgIpad','_srcIpad');
       if(s.phoneLayout==='before-after') addUploadField(ssCard,'下段','screenshotImg2','_src2');
     }
     if(isWidgetLayout){
-      const wgCard=addCard(el,'🧩','ウィジェット画像');
+      const wgCard=addCard(el,ic('puzzle'),'ウィジェット画像');
       if(s.phoneLayout==='widget-grid'){
         addUploadField(wgCard,'大 / 特大 ウィジェット','widgetLargeImg','_srcWidgetLarge');
         addUploadField(wgCard,'中ウィジェット','widgetMediumImg','_srcWidgetMedium');
@@ -2897,7 +2906,7 @@ function buildFields(){
       }
     }
     if(needsPhone||s.phoneLayout==='screen-fill'||s.phoneLayout==='screen-fill-top'){
-      const adjCard=addCard(el,'🎚','スクショ表示調整');
+      const adjCard=addCard(el,ic('sliders'),'スクショ表示調整');
       addSliderField(adjCard,'ズーム','screenshotScale',100,200,s.screenshotScale||100,'%');
       addSliderField(adjCard,'横位置','screenshotOffsetX',-50,50,s.screenshotOffsetX||0,'%');
       addSliderField(adjCard,'縦位置','screenshotOffsetY',-50,50,s.screenshotOffsetY||0,'%');
@@ -2916,12 +2925,12 @@ function buildFields(){
   // タブバー（標準 .tab-bar .tab を使用）
   const tabBar=document.createElement('div');
   tabBar.className='tab-bar s2-tab-bar';tabBar.id='s2-tab-bar';
-  const tabs=[['text','✍️ テキスト'],['font','🔤 フォント'],['device','📱 デバイス']];
+  const tabs=[['text',ic('edit-2',14)+' テキスト'],['font',ic('type',14)+' フォント'],['device',ic('smartphone',14)+' デバイス']];
   const curTab=s2left.dataset.tab||'text';
   tabs.forEach(([id,label])=>{
     const btn=document.createElement('button');
     btn.className='tab'+(id===curTab?' active':'');
-    btn.textContent=label;
+    btn.innerHTML=label;
     btn.onclick=()=>{s2left.dataset.tab=id;buildFields();};
     tabBar.appendChild(btn);
   });
@@ -2985,7 +2994,7 @@ function addRow(p,label){const r=document.createElement('div');r.className='frow
 function addCard(p,icon,title,sub){
   const card=document.createElement('div');card.className='field-card';
   const head=document.createElement('div');head.className='field-card-head';
-  const ic=document.createElement('div');ic.className='field-card-icon';ic.textContent=icon||'';
+  const ic=document.createElement('div');ic.className='field-card-icon';ic.innerHTML=icon||'';
   const tt=document.createElement('div');tt.className='field-card-title';tt.textContent=title||'';
   head.appendChild(ic);head.appendChild(tt);
   if(sub){const sb=document.createElement('div');sb.className='field-card-sub';sb.textContent=sub;head.appendChild(sb);}
@@ -3040,7 +3049,7 @@ function addUploadField(p,label,key,srcKey='_src'){
   uz.onclick=()=>inp.click();uz.ondragover=e=>{e.preventDefault();uz.style.borderColor='var(--acc)';};uz.ondragleave=()=>uz.style.borderColor='';uz.ondrop=e=>{e.preventDefault();uz.style.borderColor='';loadImg(e.dataTransfer.files[0],key,srcKey);};
   const t=document.createElement('div');t.className='uz-t';t.textContent='クリックまたはドロップ';const sm=document.createElement('div');sm.className='uz-s';sm.textContent='⌘V で貼り付けも可能';
   uz.appendChild(inp);uz.appendChild(t);uz.appendChild(sm);
-  if(s[key]){const img=document.createElement('img');img.className='uz-img';img.src=s[srcKey]||'';uz.appendChild(img);const cx=document.createElement('button');cx.className='cx';cx.textContent='✕';cx.onclick=e=>{e.stopPropagation();pushUndo();slides[curSlide][key]=null;slides[curSlide][srcKey]='';buildFields();render();};uz.appendChild(cx);}
+  if(s[key]){const img=document.createElement('img');img.className='uz-img';img.src=s[srcKey]||'';uz.appendChild(img);const cx=document.createElement('button');cx.className='cx';cx.innerHTML=ic('x',14);cx.onclick=e=>{e.stopPropagation();pushUndo();slides[curSlide][key]=null;slides[curSlide][srcKey]='';buildFields();render();};uz.appendChild(cx);}
   r.appendChild(uz);
 }
 async function loadImg(file,key,srcKey='_src'){
@@ -3105,7 +3114,7 @@ function applyConv(){
   slides[convTargetIdx].phoneLayout=convSelLo;
   hideConvModal();
   if(convTargetIdx===curSlide){if(inStep===2)buildFields();if(inStep===1){buildAllBgAdjust();buildAllLoAdjust();}}
-  render();showToast('パーツを変換しました 🔄');
+  render();showToast('パーツを変換しました '+ic('refresh',14));
 }
 
 /* ═══ SLIDES + DRAG&DROP ═══ */
@@ -3160,9 +3169,9 @@ function renderThumbs(){
     const tw=160;const tc=document.createElement('canvas');tc.width=tw;tc.height=Math.round(tw*dev.h/dev.w);
     renderSlide(tc.getContext('2d'),tc.width,tc.height,s);tc.style.cssText='width:100%;height:auto;display:block';
     const n=document.createElement('div');n.className='sth-n';n.textContent=i+1;
-    const del=document.createElement('button');del.className='sth-del';del.textContent='✕';del.onclick=e=>{e.stopPropagation();delSlide(i);};
-    const dup=document.createElement('button');dup.className='sth-dup';dup.textContent='⧉';dup.onclick=e=>{e.stopPropagation();dupSlide(i);};
-    const conv=document.createElement('button');conv.className='sth-conv';conv.textContent='🔄';conv.title='パーツを変換';conv.onclick=e=>{e.stopPropagation();showConvModal(i);};
+    const del=document.createElement('button');del.className='sth-del';del.innerHTML=ic('x',12);del.onclick=e=>{e.stopPropagation();delSlide(i);};
+    const dup=document.createElement('button');dup.className='sth-dup';dup.innerHTML=ic('copy',12);dup.onclick=e=>{e.stopPropagation();dupSlide(i);};
+    const conv=document.createElement('button');conv.className='sth-conv';conv.innerHTML=ic('refresh',12);conv.title='パーツを変換';conv.onclick=e=>{e.stopPropagation();showConvModal(i);};
     div.appendChild(tc);div.appendChild(n);div.appendChild(del);div.appendChild(dup);div.appendChild(conv);list.appendChild(div);
   });
 }
@@ -3201,7 +3210,7 @@ async function exportZip(){
   a.download=`preview_${curDev}inch_all${slides.length}slides.zip`;
   a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  showToast(`${slides.length}枚をZIPで書き出しました！🗜`);
+  showToast(`${slides.length}枚をZIPで書き出しました！ `+ic('archive',14));
 }
 function exportSlide(i,silent=false){
   const dev=DEVS[curDev];
@@ -3246,7 +3255,7 @@ function exportSlide(i,silent=false){
   }
 }
 let _toastTimer=null;
-function showToast(m){const t=document.getElementById('toast');if(_toastTimer)clearTimeout(_toastTimer);t.textContent=m;t.classList.add('show');_toastTimer=setTimeout(()=>{t.classList.remove('show');_toastTimer=null;},2400);}
+function showToast(m){const t=document.getElementById('toast');if(_toastTimer)clearTimeout(_toastTimer);t.innerHTML=m;t.classList.add('show');_toastTimer=setTimeout(()=>{t.classList.remove('show');_toastTimer=null;},2400);}
 
 /* ═══ TEMPLATES ═══ */
 const TEMPLATES=[
@@ -3373,7 +3382,7 @@ function applyTemplate(tpl){
   renderThumbs();
   if(inStep===2)buildFields();
   render();
-  showToast(`「${tpl.name}」を適用しました！テキストを編集してね ✏️`);
+  showToast('「'+tpl.name+'」を適用しました！テキストを編集してね '+ic('edit-2',14));
 }
 
 /* ═══ ALL SIZES ZIP ═══ */
@@ -3408,10 +3417,11 @@ async function exportAllSizesZip(){
   a.download=`preview_allsizes_${slides.length}slides.zip`;
   a.click();
   setTimeout(()=>URL.revokeObjectURL(url2),1000);
-  showToast(`全サイズZIPを書き出しました 🗜`);
+  showToast('全サイズZIPを書き出しました '+ic('archive',14));
 }
 window.onload=async()=>{
   await document.fonts.ready;
+  initIcons();
   initS1PreviewZoom();
   initEditorPaneResizer();
   initAllCanvas();
@@ -3557,29 +3567,29 @@ function renderIphoneSlides(){
     const reorderRow=document.createElement('div');
     reorderRow.style.cssText='display:flex;gap:4px';
     const moveUpBtn=document.createElement('button');
-    moveUpBtn.innerHTML='↑';
+    moveUpBtn.innerHTML=ic('chevron-up',14);
     moveUpBtn.style.cssText='flex:1;padding:6px 0;border-radius:7px;border:1px solid var(--b2);background:var(--card);color:var(--dm);font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;opacity:'+(i===0?'.3':'1');
     moveUpBtn.disabled=i===0;
     moveUpBtn.onclick=(e)=>{e.stopPropagation();if(i===0)return;pushUndo();const moved=slides.splice(i,1)[0];slides.splice(i-1,0,moved);if(curSlide===i)curSlide=i-1;else if(curSlide===i-1)curSlide=i;renderThumbs();renderIphoneSlides();render();showToast('スライドを移動しました');};
     const moveDownBtn=document.createElement('button');
-    moveDownBtn.innerHTML='↓';
+    moveDownBtn.innerHTML=ic('chevron-down',14);
     moveDownBtn.style.cssText='flex:1;padding:6px 0;border-radius:7px;border:1px solid var(--b2);background:var(--card);color:var(--dm);font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;opacity:'+(i===slides.length-1?'.3':'1');
     moveDownBtn.disabled=i===slides.length-1;
     moveDownBtn.onclick=(e)=>{e.stopPropagation();if(i>=slides.length-1)return;pushUndo();const moved=slides.splice(i,1)[0];slides.splice(i+1,0,moved);if(curSlide===i)curSlide=i+1;else if(curSlide===i+1)curSlide=i;renderThumbs();renderIphoneSlides();render();showToast('スライドを移動しました');};
     reorderRow.appendChild(moveUpBtn);reorderRow.appendChild(moveDownBtn);
 
     const dupBtn=document.createElement('button');
-    dupBtn.innerHTML='⧉ 複製';
+    dupBtn.innerHTML=ic('copy',12)+' 複製';
     dupBtn.style.cssText='flex:1;padding:7px 0;border-radius:7px;border:1px solid var(--b2);background:var(--card);color:var(--dm);font-size:11px;font-family:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent';
     dupBtn.onclick=()=>{dupSlide(i);renderIphoneSlides();showToast('複製しました');};
 
     const saveBtn=document.createElement('button');
-    saveBtn.innerHTML='↓ 保存';
+    saveBtn.innerHTML=ic('download',12)+' 保存';
     saveBtn.style.cssText='flex:1;padding:7px 0;border-radius:7px;border:1px solid rgba(10,132,255,.4);background:rgba(10,132,255,.1);color:var(--acc);font-size:11px;font-family:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent';
     saveBtn.onclick=()=>{exportSlide(i);};
 
     const delBtn=document.createElement('button');
-    delBtn.innerHTML='✕ 削除';
+    delBtn.innerHTML=ic('x',12)+' 削除';
     delBtn.style.cssText='flex:1;padding:7px 0;border-radius:7px;border:1px solid rgba(255,69,58,.35);background:rgba(255,69,58,.08);color:var(--red);font-size:11px;font-family:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent';
     delBtn.onclick=()=>{
       if(slides.length===1){showToast('最低1枚必要です');return;}

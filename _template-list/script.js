@@ -96,9 +96,10 @@ function renderList(){
   );
 
   if(sorted.length === 0){
+    const emptyIcon = window.yutoIcons ? yutoIcons.toSVG('inbox', {size:48}) : '';
     grid.innerHTML = `
       <div class="app-empty">
-        <div class="app-empty-icon">✦</div>
+        <div class="app-empty-icon">${emptyIcon}</div>
         <div class="app-empty-text">アイテムがありません</div>
         <div class="app-empty-sub">「＋ 新規作成」から最初のアイテムを追加</div>
       </div>`;
@@ -112,6 +113,8 @@ function renderList(){
       ? new Date(item.updatedAt).toLocaleDateString('ja-JP')
       : '';
 
+    const icRename = window.yutoIcons ? yutoIcons.toSVG('edit-2', {size:14}) : '✏';
+    const icDelete = window.yutoIcons ? yutoIcons.toSVG('trash', {size:14}) : '🗑';
     card.innerHTML = `
       <div class="app-card-thumb">${renderThumbnail(id)}</div>
       <div class="app-card-info">
@@ -119,8 +122,8 @@ function renderList(){
         <div class="app-card-meta"><span>${date}</span></div>
       </div>
       <div class="app-card-actions">
-        <button class="app-card-btn" data-action="rename" title="名前変更">✏</button>
-        <button class="app-card-btn danger" data-action="delete" title="削除">🗑</button>
+        <button class="app-card-btn" data-action="rename" title="名前変更">${icRename}</button>
+        <button class="app-card-btn danger" data-action="delete" title="削除">${icDelete}</button>
       </div>
     `;
 
@@ -141,7 +144,7 @@ function renderList(){
 //   - 画像コレクションなら <img>
 //   - テキストノートなら先頭行プレビュー
 function renderThumbnail(id){
-  return '<span style="font-size:36px;opacity:.4">✦</span>';
+  return window.yutoIcons ? yutoIcons.toSVG('file-text', {size:36, style:'opacity:.4;color:var(--muted)'}) : '';
 }
 
 // ---- Render: editor ------------------------------------------
@@ -150,6 +153,38 @@ function renderEditor(id){
   if(!item){ showList(); return; }
   document.getElementById('editor-title').textContent = item.name || '無題';
   // TODO: 編集 UI の中身をここで描画する
+}
+
+// ---- Editable title ------------------------------------------
+function initEditableTitle(){
+  const el = document.getElementById('editor-title');
+  if(!el) return;
+  el.addEventListener('click', (e) => {
+    e.stopPropagation(); e.preventDefault();
+    if(!currentItemId || !items[currentItemId]) return;
+    el.contentEditable = 'true';
+    el.classList.add('editing');
+    el.focus();
+  });
+  el.addEventListener('blur', () => commitTitle(el));
+  el.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); el.blur(); }
+    if(e.key === 'Escape'){
+      el.textContent = items[currentItemId]?.name || '無題';
+      el.blur();
+    }
+  });
+}
+function commitTitle(el){
+  el.contentEditable = 'false';
+  el.classList.remove('editing');
+  if(!currentItemId || !items[currentItemId]) return;
+  let v = el.textContent.trim();
+  if(!v) v = '無題';
+  items[currentItemId].name = v;
+  items[currentItemId].updatedAt = new Date().toISOString();
+  el.textContent = v;
+  saveItems();
 }
 
 // ---- Actions -------------------------------------------------
@@ -233,11 +268,9 @@ function initDriveSync(){
       }
     },
   });
-  // 一覧画面と編集画面の両方にマウント
-  ['sync-mount', 'sync-mount-editor'].forEach((mid) => {
-    const m = document.getElementById(mid);
-    if(m) window.driveSync.mountUI(m);
-  });
+  // 同期UIは一覧画面のみにマウント（編集画面では非表示）
+  const syncEl = document.getElementById('sync-mount');
+  if(syncEl) window.driveSync.mountUI(syncEl);
   window.driveSync.init();
 }
 
@@ -284,5 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
   showList();
   initTheme();
   initIcon();
+  initEditableTitle();
   initDriveSync();
 });
