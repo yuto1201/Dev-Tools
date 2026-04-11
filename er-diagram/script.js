@@ -1781,10 +1781,21 @@ function clearERState(){
   document.getElementById('tblList').innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding-top:20px;line-height:1.9;">「＋ テーブル追加」または<br>ファイルを読み込んでください</div>';
 }
 
+var _saveStatusTimer=null;
+function showSaveStatus(text,type){
+  var el=document.getElementById('save-status');
+  if(!el)return;
+  clearTimeout(_saveStatusTimer);
+  el.hidden=false;
+  el.className='save-status'+(type?' is-'+type:'');
+  el.innerHTML=(type?'':'<span class="spinner-sm"></span>')+text;
+  if(type){_saveStatusTimer=setTimeout(function(){el.hidden=true;},2500);}
+}
 function autoSave(){
   clearTimeout(autoSaveTimer);
   autoSaveTimer=setTimeout(function(){
     if(!currentProjectId)return;
+    showSaveStatus('保存中...');
     try{
       var state=getERState();
       localStorage.setItem(LS_PROJECT_PREFIX+currentProjectId,JSON.stringify(state));
@@ -1792,7 +1803,8 @@ function autoSave(){
       projectList[currentProjectId].tableCount=Object.keys(tables).length;
       saveProjectList();
       if(window.driveSync) window.driveSync.markDirty(LS_PROJECT_PREFIX+currentProjectId);
-    }catch(e){console.warn('autoSave failed:',e);}
+      showSaveStatus('✓ 保存済み','success');
+    }catch(e){console.warn('autoSave failed:',e);showSaveStatus('保存エラー','error');}
   },500);
 }
 
@@ -1857,6 +1869,7 @@ function switchProject(id,isNew){
 function autoSaveNow(){
   clearTimeout(autoSaveTimer);
   if(!currentProjectId)return;
+  showSaveStatus('保存中...');
   try{
     var state=getERState();
     localStorage.setItem(LS_PROJECT_PREFIX+currentProjectId,JSON.stringify(state));
@@ -1864,7 +1877,8 @@ function autoSaveNow(){
     projectList[currentProjectId].tableCount=Object.keys(tables).length;
     saveProjectList();
     if(window.driveSync) window.driveSync.markDirty(LS_PROJECT_PREFIX+currentProjectId);
-  }catch(e){}
+    showSaveStatus('✓ 保存済み','success');
+  }catch(e){showSaveStatus('保存エラー','error');}
 }
 
 function renameProject(id){

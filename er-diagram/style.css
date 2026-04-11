@@ -7,6 +7,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-mono);min-hei
 /* ── エディタヘッダー ── */
 .editor-header{padding:0 var(--space-5);height:52px;flex-shrink:0;z-index:10;}
 .editor-header .app-title{font-size:16px;font-family:var(--font-mono);}
+.save-status{display:inline-flex;align-items:center;gap:var(--space-1);font-size:11px;font-weight:600;color:var(--text-dim);white-space:nowrap;animation:fade-in .15s;}
+.save-status .spinner-sm{width:14px;height:14px;border-width:2px;}
+.save-status.is-success{color:var(--success);}
+.save-status.is-error{color:var(--danger);}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
 .ed-btns{display:flex;align-items:center;gap:var(--space-2);flex:1;justify-content:center;padding:0 var(--space-4);}
 .ed-sep{width:1px;height:22px;background:var(--border-strong);flex-shrink:0;margin:0 var(--space-2);}
 /* エディタヘッダー内ボタン */
