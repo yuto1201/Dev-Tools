@@ -1948,8 +1948,7 @@ function commitProjName(el){
   if(!v)v='untitled';
   projectList[currentProjectId].name=v;
   el.textContent=v;
-  localStorage.setItem(LS_LIST,JSON.stringify(projectList));
-  if(window.driveSync)window.driveSync.markDirty(LS_LIST);
+  saveProjectList();
 }
 
 function openProjectManager(){
