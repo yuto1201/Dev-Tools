@@ -307,6 +307,27 @@ el.innerHTML = yutoIcons.toSVG('star', { size: 20, class: 'my-icon' });
 一覧画面とは異なり、編集画面（個別アイテムを編集する画面）では**作業領域を最大化**する。
 左右の余白を 0 にして、ヘッダーだけに最小限の padding を持たせる。
 
+## エディタヘッダーのアクション領域
+
+編集画面のヘッダーでは `.app-header-left` と `.app-header-right` の間に `.app-header-actions` を配置し、以下のパターンでアクションボタンを並べる。
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ [←] [icon] タイトル(.app-title-editable)                 │
+│              [Save(.btn-primary)] [Import▾] [Export▾]    │
+│              (.app-header-actions)          [🌙]          │
+│                                     (.app-header-right)   │
+└──────────────────────────────────────────────────────────┘
+```
+
+| 要素 | クラス | 説明 |
+|---|---|---|
+| 保存ボタン | `.btn .btn-primary` | 青アクセント色、save 関数を呼ぶ |
+| Import ドロップダウン | `.btn` + `.dropdown` | デフォルト neumorphism、JSON/CSV 選択 |
+| Export ドロップダウン | `.btn` + `.dropdown` | デフォルト neumorphism、JSON/CSV 選択 |
+| 保存ステータス | `.save-status` | スピナー + `.is-success` / `.is-error` 状態 |
+| 編集可能タイトル | `.app-title-editable` | インライン編集可能なタイトル |
+
 ```css
 body[data-view="editor"] .app-inner {
   max-width: none;
@@ -371,6 +392,8 @@ body[data-view="editor"] .app-editor-body {
 | `.btn-primary` | プライマリ（accent カラー、塗りつぶし） |
 | `.btn-ghost` | サブ・キャンセル系（透過） |
 | `.btn-danger` | 削除系（赤文字） |
+| `.btn-orange` | オレンジ色バリアント（`--orange` カラー） |
+| `.btn-teal` | ティール色バリアント（`--teal` カラー） |
 
 ## フォーム
 | クラス | 用途 |

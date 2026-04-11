@@ -135,6 +135,69 @@ body[data-view="editor"] .app-view-editor { display: block; }
   letter-spacing: -.02em;
 }
 
+/* ---- ヘッダーアクション（編集画面の保存・読込・書出） ---- */
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  justify-content: flex-end;
+  padding: 0 var(--space-4);
+}
+.app-header-actions .btn {
+  font-size: 12px;
+  padding: 8px 14px;
+  gap: 6px;
+}
+.app-header-actions .dropdown {
+  position: relative;
+}
+.app-header-actions .dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 4px;
+  min-width: 140px;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+.app-header-actions .dropdown.open .dropdown-menu {
+  display: flex;
+}
+.app-header-actions .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-dim);
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.app-header-actions .dropdown-item:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+
+/* ---- 保存ステータス ---- */
+.save-status { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 11px; font-weight: 600; color: var(--text-dim); white-space: nowrap; animation: fadeIn .15s; }
+.save-status .spinner-sm { width: 14px; height: 14px; border-width: 2px; }
+.save-status.is-success { color: var(--success); }
+.save-status.is-error { color: var(--danger); }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
 /* ---- 編集可能タイトル ---- */
 .app-title-editable {
   cursor: pointer;
@@ -392,6 +455,16 @@ body[data-view="editor"] .app-editor-body {
   color: var(--danger);
 }
 .btn-danger:hover { color: var(--danger); }
+.btn-orange {
+  background: var(--orange);
+  color: #fff;
+}
+.btn-orange:hover { opacity: .85; color: #fff; }
+.btn-teal {
+  background: var(--teal);
+  color: #fff;
+}
+.btn-teal:hover { opacity: .85; color: #fff; }
 
 /* ============================================================
    Forms — .form-row / .form-label / .form-input

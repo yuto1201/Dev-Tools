@@ -64,18 +64,20 @@
 
     <div class="ed-sep"></div>
 
-    <!-- 読み込み ▼ -->
+    <button class="btn btn-primary" onclick="autoSaveNow()"><span class="ic" data-ic="save" data-ic-size="14"></span> 保存</button>
+
+    <!-- 読込 ▼ -->
     <div class="dropdown" id="ddFile">
-      <button class="btn" onclick="toggleDD('ddFile')"><span class="ic" data-ic="upload"></span> 読み込み ▾</button>
+      <button class="btn" onclick="toggleDD('ddFile')"><span class="ic" data-ic="upload"></span> 読込 ▾</button>
       <div class="dropdown-menu">
         <button class="dropdown-item" onclick="openUploadModal();closeDD()"><span class="ic" data-ic="upload"></span> CSV / JSON</button>
         <button class="dropdown-item" onclick="showAIHelp();closeDD()"><span class="ic" data-ic="cpu"></span> Claudeと連携する</button>
       </div>
     </div>
 
-    <!-- 出力 ▼ -->
+    <!-- 書出 ▼ -->
     <div class="dropdown" id="ddExport">
-      <button class="btn" onclick="toggleDD('ddExport')"><span class="ic" data-ic="download"></span> 出力 ▾</button>
+      <button class="btn" onclick="toggleDD('ddExport')"><span class="ic" data-ic="download"></span> 書出 ▾</button>
       <div class="dropdown-menu">
         <button class="dropdown-item" onclick="exportJSON();closeDD()"><span class="ic" data-ic="file"></span> JSON</button>
         <button class="dropdown-item" onclick="exportDDL();closeDD()"><span class="ic" data-ic="database"></span> DDL（SQL）</button>

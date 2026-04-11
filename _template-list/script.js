@@ -63,6 +63,92 @@ function escapeHtml(s){
   }[c]));
 }
 
+// ---- Save status ---------------------------------------------
+let _saveStatusTimer = null;
+function showSaveStatus(text, type){
+  const el = document.getElementById('save-status');
+  if(!el) return;
+  clearTimeout(_saveStatusTimer);
+  el.hidden = false;
+  el.className = 'save-status' + (type ? ' is-' + type : '');
+  el.innerHTML = (type ? '' : '<span class="spinner-sm"></span>') + text;
+  if(type){ _saveStatusTimer = setTimeout(() => { el.hidden = true; }, 2500); }
+}
+
+// ---- Dropdown ------------------------------------------------
+function toggleDropdown(id){
+  const dd = document.getElementById(id);
+  if(!dd) return;
+  const wasOpen = dd.classList.contains('open');
+  document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+  if(!wasOpen) dd.classList.add('open');
+}
+function closeDropdown(){
+  document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+}
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.dropdown')) closeDropdown();
+});
+
+// ---- Save / Import / Export ----------------------------------
+function saveCurrentItem(){
+  if(!currentItemId || !items[currentItemId]) return;
+  showSaveStatus('保存中...');
+  try{
+    items[currentItemId].updatedAt = new Date().toISOString();
+    saveItems();
+    // TODO: アイテム固有データも保存する場合は saveItem(currentItemId, data) を呼ぶ
+    showSaveStatus('✓ 保存完了', 'success');
+  }catch(e){
+    showSaveStatus('保存エラー', 'error');
+  }
+}
+
+function importItem(ev, type){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      if(type === 'json'){
+        const data = JSON.parse(e.target.result);
+        // TODO: インポートしたデータを現在のアイテムに適用するロジック
+      } else if(type === 'csv'){
+        // TODO: CSV パースロジック
+      }
+      showToast('読み込みました', 'success');
+    }catch(err){
+      showToast('ファイルの読み込みに失敗しました', 'error');
+    }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+function exportJSON(){
+  if(!currentItemId || !items[currentItemId]) return;
+  const item = items[currentItemId];
+  const blob = new Blob([JSON.stringify(item, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (item.name || 'item') + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportCSV(){
+  if(!currentItemId || !items[currentItemId]) return;
+  // TODO: アイテム固有の CSV 変換ロジック
+  const item = items[currentItemId];
+  const csv = 'name,note\n' + (item.name||'') + ',' + (item.note||'');
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (item.name || 'item') + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 function showToast(msg, type){
   const t = document.getElementById('toast');
   if(!t) return;
@@ -82,6 +168,21 @@ function showEditor(id){
   document.body.dataset.view = 'editor';
   currentItemId = id;
   renderEditor(id);
+  initEditorIcons();
+}
+
+function initEditorIcons(){
+  if(!window.yutoIcons) return;
+  const map = {
+    '.ic-save':'save', '.ic-import':'upload', '.ic-export':'download',
+    '.ic-dd-json':'file', '.ic-dd-csv':'file-text',
+    '.ic-dd-json2':'file', '.ic-dd-csv2':'file-text'
+  };
+  Object.entries(map).forEach(([sel, name]) => {
+    document.querySelectorAll(sel).forEach(el => {
+      if(!el.innerHTML.trim()) el.innerHTML = yutoIcons.toSVG(name, {size:14});
+    });
+  });
 }
 
 // ---- Render: list --------------------------------------------
