@@ -369,6 +369,17 @@ function initDriveSync(){
       }
     },
   });
+  // 同期状態をヘッダーに表示
+  window.driveSync.onStateChange((state) => {
+    if(!state.signedIn) return;
+    if(state.status === 'syncing'){
+      showSaveStatus('同期中...');
+    } else if(state.status === 'synced'){
+      showSaveStatus('✓ 同期完了', 'success');
+    } else if(state.status === 'error'){
+      showSaveStatus('同期エラー', 'error');
+    }
+  });
   // 同期UIは一覧画面のみにマウント（編集画面では非表示）
   const syncEl = document.getElementById('sync-mount');
   if(syncEl) window.driveSync.mountUI(syncEl);

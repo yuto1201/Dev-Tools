@@ -2224,6 +2224,17 @@ function initDriveSync(){
       }
     },
   });
+  // 同期状態をヘッダーに表示
+  window.driveSync.onStateChange(function(state){
+    if(!state.signedIn)return;
+    if(state.status==='syncing'){
+      showSaveStatus('同期中...');
+    }else if(state.status==='synced'){
+      showSaveStatus('✓ 同期完了','success');
+    }else if(state.status==='error'){
+      showSaveStatus('同期エラー','error');
+    }
+  });
   // 同期UIはプロジェクト選択画面のみにマウント（編集画面では非表示）
   var pssMount=document.getElementById('pss-sync-mount');
   if(pssMount) window.driveSync.mountUI(pssMount);
