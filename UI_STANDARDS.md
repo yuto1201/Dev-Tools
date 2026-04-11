@@ -312,20 +312,21 @@ el.innerHTML = yutoIcons.toSVG('star', { size: 20, class: 'my-icon' });
 編集画面のヘッダーでは `.app-header-left` と `.app-header-right` の間に `.app-header-actions` を配置し、以下のパターンでアクションボタンを並べる。
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│ [←] [icon] タイトル(.app-title-editable)                 │
-│              [Save(.btn-primary)] [Import▾] [Export▾]    │
-│              (.app-header-actions)          [🌙]          │
-│                                     (.app-header-right)   │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ [←] [icon] タイトル(.app-title-editable)                            │
+│        [Save(.btn-primary)] [Import▾] [Export▾] [⚙Settings]        │
+│        (.app-header-actions)                    [🌙] [●dot]         │
+│                                          (.app-header-right)         │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 | 要素 | クラス | 説明 |
 |---|---|---|
-| 保存ボタン | `.btn .btn-primary` | 青アクセント色、save 関数を呼ぶ |
+| 保存ボタン | `.btn .btn-primary` `id="save-btn"` | 青アクセント色、`min-width:100px` 固定幅。ボタン内で状態変化（保存中→保存済み→元に戻る）。`.btn-save-done` / `.btn-save-error` |
 | Import ドロップダウン | `.btn` + `.dropdown` | デフォルト neumorphism、JSON/CSV 選択 |
 | Export ドロップダウン | `.btn` + `.dropdown` | デフォルト neumorphism、JSON/CSV 選択 |
-| 保存ステータス | `.save-status` | スピナー + `.is-success` / `.is-error` 状態 |
+| Settings ドロップダウン | `.btn` + `.dropdown` | ⚙ アイコン付き設定メニュー |
+| 同期状態ドット | `.sync-dot` | ヘッダー右端に配置、同期状態を色で示すインジケーター |
 | 編集可能タイトル | `.app-title-editable` | インライン編集可能なタイトル |
 
 ```css
@@ -481,17 +482,97 @@ body[data-view="editor"] .app-editor-body {
 </head>
 ```
 
-## Drive 同期の初期化
+## Drive 同期の標準パターン
+
+### 方式: `saveItem/loadItem/removeItem`（推奨）
+
+ログイン時は Drive に直接保存（localStorage はキャッシュ）、未ログイン時は localStorage のみ。
+`await` で保存完了を待つため、成否が確実にわかる。
+
+**旧方式の `markDirty/markDeleted` は新規ツールでは使わないこと。**
+
+### ヘルパー関数（各ツールに定義）
+
+```js
+// Drive ログイン判定
+function _useDrive(){ return !!(window.driveSync && window.driveSync.isSignedIn()); }
+
+// プログレスバー制御（参照カウント方式）
+let _driveProgressCount = 0;
+function driveProgressStart(){
+  _driveProgressCount++;
+  const el = document.getElementById('drive-progress');
+  if(el) el.hidden = false;
+}
+function driveProgressEnd(){
+  _driveProgressCount = Math.max(0, _driveProgressCount - 1);
+  if(_driveProgressCount === 0){
+    const el = document.getElementById('drive-progress');
+    if(el) el.hidden = true;
+  }
+}
+```
+
+### 保存の標準フロー
+
+```js
+async function saveMyData(){
+  const drive = _useDrive();
+  showSaveStatus(drive ? 'Drive に保存中...' : '保存中...');
+  if(drive) driveProgressStart();
+  try{
+    const json = JSON.stringify(data);
+    if(drive){
+      await window.driveSync.saveItem(MY_KEY, json);     // Drive 直接保存
+    } else {
+      localStorage.setItem(MY_KEY, json);                 // localStorage のみ
+    }
+    showSaveStatus('✓ 保存済み', 'success');
+  }catch(e){
+    showSaveStatus('保存エラー', 'error');
+  } finally {
+    if(drive) driveProgressEnd();
+  }
+}
+```
+
+### 読み込みの標準フロー
+
+```js
+async function loadMyData(){
+  let raw;
+  if(_useDrive()){
+    raw = await window.driveSync.loadItem(MY_KEY);       // ローカルキャッシュ → Drive フォールバック
+  } else {
+    raw = localStorage.getItem(MY_KEY);
+  }
+  return raw ? JSON.parse(raw) : null;
+}
+```
+
+### 削除の標準フロー
+
+```js
+async function deleteMyData(key){
+  if(_useDrive()){
+    await window.driveSync.removeItem(key);              // 両方から削除
+  } else {
+    localStorage.removeItem(key);
+  }
+}
+```
+
+### driveSync 登録（initDriveSync）
 
 ```js
 function initDriveSync(){
   if(!window.driveSync) return;
   window.driveSync.register({
     toolId: 'my-tool',
-    keys: [LS_KEY_MAIN],                    // 同期したい localStorage キー
-    keyPatterns: [/^my_tool_item_/],        // 接頭辞ベースの一括登録
-    onSyncedFromRemote: (changedKeys) => {
-      reloadFromLocalStorage();
+    keys: [LS_KEY_MAIN],
+    keyPatterns: [/^my_tool_item_/],
+    onSyncedFromRemote: async (changedKeys) => {
+      await loadMyData();
       render();
     },
   });
@@ -501,7 +582,12 @@ function initDriveSync(){
 }
 ```
 
-保存・削除サイトでは `window.driveSync.markDirty(localKey)` / `window.driveSync.markDeleted(localKey)` を呼ぶ。
+### 必須 HTML 要素
+
+```html
+<!-- body 直下に配置 -->
+<div id="drive-progress" class="drive-progress" hidden></div>
+```
 
 ## テーマ切替ボタンの初期化
 

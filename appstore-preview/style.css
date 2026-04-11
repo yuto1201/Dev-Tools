@@ -12,13 +12,6 @@ body{
 body{background:var(--bg);color:var(--text);font-family:var(--font-sans);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px}
 
 /* ── Drive 保存・読み込みインジケーター ── */
-.drive-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:linear-gradient(90deg,transparent,var(--accent),transparent);background-size:200% 100%;animation:drive-bar .9s ease-in-out infinite}
-@keyframes drive-bar{0%{background-position:100% 0}100%{background-position:-100% 0}}
-.save-status{display:inline-flex;align-items:center;gap:var(--space-1);font-size:11px;font-weight:600;color:var(--text-dim);white-space:nowrap;animation:fade-in .15s}
-.save-status .spinner-sm{width:14px;height:14px;border-width:2px}
-.save-status.is-success{color:var(--success)}
-.save-status.is-error{color:var(--danger)}
-@keyframes fade-in{from{opacity:0}to{opacity:1}}
 
 /* ── ダッシュボード読み込み中 ── */
 .dash-loading{flex-direction:column;align-items:center;justify-content:center;gap:var(--space-4);padding:var(--space-10) 0;color:var(--text-dim);display:none}
@@ -27,11 +20,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);height:
 
 /* エディタヘッダー */
 .editor-header{display:flex;align-items:center;padding:0 var(--space-5);height:50px;background:var(--bg);border-bottom:1px solid var(--border-strong);box-shadow:0 1px 0 var(--shadow-light);flex-shrink:0;gap:var(--space-3)}
-.header-spacer{flex:1}
-.proj-name-area{display:flex;align-items:center;min-width:0;flex-shrink:1;overflow:hidden}
-.proj-name{font-size:16px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid transparent;transition:.14s}
-.proj-name:hover{color:var(--text);border-color:var(--border-strong);background:var(--bg)}
-.proj-name-input{font-size:12px;font-weight:700;color:var(--text);background:var(--bg);border:1px solid var(--accent);border-radius:6px;padding:3px 8px;outline:none;font-family:inherit;width:160px}
 .dev-group{display:flex;gap:var(--space-1);align-items:center}
 .dev-btn{padding:4px var(--space-3);border-radius:var(--radius-sm);border:none;background:var(--bg);color:var(--text-dim);cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:.14s;box-shadow:var(--shadow-out-sm)}
 .dev-btn:hover{color:var(--text)}
@@ -752,8 +740,9 @@ body{-webkit-text-size-adjust:100%;height:100dvh}
 /* サムネイル：複数 canvas を横並び */
 #dashboard .app-card-thumb{
   display:flex;gap:4px;padding:var(--space-3);height:140px;
-  align-items:flex-end;overflow:hidden;
+  align-items:center;justify-content:center;overflow:hidden;
 }
+#dashboard .app-card-thumb img,
 #dashboard .app-card-thumb canvas{height:100%;width:auto;border-radius:4px;flex-shrink:0}
 /* カードアクションボタン（色付き） */
 .ap-btn-dup{background:color-mix(in srgb, var(--accent) 85%, transparent);color:#fff}
@@ -793,4 +782,3 @@ body[data-view="editor"] #dashboard{display:none}
 body[data-view="editor"] #editor-wrapper{display:flex}
 body[data-view="editor"] .hbtns{display:flex}
 body[data-view="editor"] #theme-mount-editor{display:inline-flex}
-body[data-view="editor"][data-has-project] .proj-name-area{display:flex}

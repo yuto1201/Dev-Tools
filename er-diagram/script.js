@@ -1783,13 +1783,25 @@ function clearERState(){
 
 var _saveStatusTimer=null;
 function showSaveStatus(text,type){
-  var el=document.getElementById('save-status');
-  if(!el)return;
+  var btn=document.getElementById('save-btn');
+  if(!btn)return;
   clearTimeout(_saveStatusTimer);
-  el.hidden=false;
-  el.className='save-status'+(type?' is-'+type:'');
-  el.innerHTML=(type?'':'<span class="spinner-sm"></span>')+text;
-  if(type){_saveStatusTimer=setTimeout(function(){el.hidden=true;},2500);}
+  if(!btn._defaultHTML)btn._defaultHTML=btn.innerHTML;
+  if(type==='success'){
+    btn.innerHTML='✓ 保存';
+    btn.classList.add('btn-save-done');
+  }else if(type==='error'){
+    btn.innerHTML='✗ エラー';
+    btn.classList.add('btn-save-error');
+  }else{
+    btn.innerHTML='<span class="spinner spinner-sm" style="border-top-color:#fff"></span>';
+    btn.classList.remove('btn-save-done','btn-save-error');
+    return;
+  }
+  _saveStatusTimer=setTimeout(function(){
+    btn.innerHTML=btn._defaultHTML;
+    btn.classList.remove('btn-save-done','btn-save-error');
+  },2000);
 }
 function useDrive(){return !!(window.driveSync&&window.driveSync.isSignedIn());}
 
@@ -2252,6 +2264,15 @@ function initDriveSync(){
       }
     },
   });
+  // 同期状態ドット（エディタヘッダー用）
+  var dot=document.getElementById('syncDot');
+  if(dot){
+    var labels={offline:'未ログイン',syncing:'同期中…',synced:'同期済み',error:'同期エラー'};
+    window.driveSync.onStateChange(function(state){
+      dot.dataset.status=state.signedIn?state.status:'offline';
+      dot.title=labels[state.signedIn?state.status:'offline']||'';
+    });
+  }
   // 同期UIはプロジェクト選択画面のみにマウント（編集画面では非表示）
   var pssMount=document.getElementById('pss-sync-mount');
   if(pssMount) window.driveSync.mountUI(pssMount);

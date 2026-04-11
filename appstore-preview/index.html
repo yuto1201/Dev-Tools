@@ -6,7 +6,7 @@
 <title>App Store Preview Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700;900&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=Hachi+Maru+Pop&family=DotGothic16&family=Yomogi&family=Rampart+One&family=RocknRoll+One&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../lib/theme.css">
-<link rel="stylesheet" href="../lib/components.css">
+<link rel="stylesheet" href="../lib/components.css?v=20260411b">
 <script src="../lib/theme.js"></script>
 <script src="../lib/icons.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -19,25 +19,26 @@
 <!-- Drive 保存・読み込みインジケーター -->
 <div id="drive-progress" class="drive-progress" hidden></div>
 <header class="editor-header">
-  <!-- 左: 戻る + アイコン + プロジェクト名 -->
-  <a href="#" class="app-back-btn" onclick="event.preventDefault();showDashboard()" title="一覧に戻る">← 一覧</a>
-  <div class="proj-name-area" id="proj-name-area">
-    <span class="proj-name" id="proj-name-display" title="ダブルクリックで名前を変更"></span>
+  <div class="app-header-left">
+    <button class="app-back-btn" onclick="showDashboard()" title="一覧に戻る">← 一覧</button>
+    <h1 class="app-title app-title-editable" id="proj-name-display" title="クリックで名前を変更"></h1>
   </div>
-  <!-- 中央: 操作ボタン群 -->
-  <div class="header-spacer"></div>
   <div class="hbtns" id="editor-header-btns">
     <button class="btn btn-ghost btn-undo" id="undo-btn" onclick="undo()" disabled title="元に戻す (Ctrl+Z)"><span class="ic" data-ic="undo"></span><span class="undo-count" id="undo-count"></span></button>
     <button class="btn btn-ghost btn-undo" id="redo-btn" onclick="redo()" disabled title="やり直す (Ctrl+Shift+Z)"><span class="ic" data-ic="redo"></span><span class="undo-count" id="redo-count"></span></button>
     <div class="hbtn-sep"></div>
     <button class="btn btn-ghost" onclick="showTemplates()"><span class="ic" data-ic="target"></span> <span class="btn-lbl">テンプレ</span></button>
     <div class="hbtn-sep"></div>
-    <button class="btn btn-ghost" onclick="saveProjectToStorage()" title="保存"><span class="ic" data-ic="save"></span> <span class="btn-lbl">保存</span></button>
-    <span id="save-status" class="save-status" hidden></span>
-    <button class="btn btn-ghost" onclick="document.getElementById('load-input').click()" title="JSON読込"><span class="ic" data-ic="folder"></span> <span class="btn-lbl">読込</span></button>
+    <button class="btn btn-primary" id="save-btn" onclick="saveProjectToStorage()" title="保存"><span class="ic" data-ic="save" data-ic-size="14"></span> <span class="btn-lbl">保存</span></button>
+    <div class="dropdown" id="ddImportAP">
+      <button class="btn" onclick="toggleDropdown(this)"><span class="ic" data-ic="upload" data-ic-size="14"></span> <span class="btn-lbl">読込</span> ▾</button>
+      <div class="dd-menu">
+        <button class="dd-item" onclick="document.getElementById('load-input').click();closeDropdowns()"><span class="ic" data-ic="file"></span> JSON</button>
+      </div>
+    </div>
     <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
-    <div class="hdr-dropdown">
-      <button class="btn btn-primary" onclick="toggleDropdown(this)"><span class="ic" data-ic="chevron-down"></span> <span class="btn-lbl">書き出し</span><span class="btn-lbl-iph"><span class="ic" data-ic="chevron-down"></span></span> <span class="dd-arrow">▾</span></button>
+    <div class="hdr-dropdown" id="ddExportAP">
+      <button class="btn" onclick="toggleDropdown(this)"><span class="ic" data-ic="download" data-ic-size="14"></span> <span class="btn-lbl">書出</span> ▾</button>
       <div class="dd-menu">
         <button class="dd-item" onclick="exportCurrent();closeDropdowns()"><span class="ic" data-ic="image"></span> PNG</button>
         <button class="dd-item" onclick="exportZip();closeDropdowns()"><span class="ic" data-ic="archive"></span> ZIP（全スライド）</button>
@@ -46,9 +47,17 @@
         <button class="dd-item" onclick="saveProject();closeDropdowns()"><span class="ic" data-ic="download"></span> JSON（プロジェクト）</button>
       </div>
     </div>
+    <div class="hdr-dropdown" id="ddSettingsAP">
+      <button class="btn btn-icon" onclick="toggleDropdown(this)" title="設定"><span class="ic" data-ic="settings" data-ic-size="16"></span></button>
+      <div class="dd-menu" style="right:0;left:auto;">
+        <button class="dd-item" onclick="closeDropdowns()"><span class="ic" data-ic="info"></span> バージョン情報</button>
+      </div>
+    </div>
   </div>
-  <!-- 右端: テーマ切替のみ（Drive同期はダッシュボードのみ） -->
-  <div id="theme-mount-editor"></div>
+  <div class="app-header-right">
+    <div id="theme-mount-editor"></div>
+    <span class="sync-dot" id="syncDotAP" title="未ログイン"></span>
+  </div>
 </header>
 <!-- ═══ PROJECT DASHBOARD ═══ -->
 <div id="dashboard" class="dashboard">

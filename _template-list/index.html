@@ -61,27 +61,35 @@
         <h1 class="app-title app-title-editable" id="editor-title" title="クリックで名前を変更">アイテム名</h1>
       </div>
       <div class="app-header-actions">
-        <button class="btn btn-primary" onclick="saveCurrentItem()"><span class="ic ic-save"></span> 保存</button>
-        <span id="save-status" class="save-status" hidden></span>
+        <button class="btn btn-primary" id="save-btn" onclick="saveCurrentItem()"><span class="ic" data-ic="save" data-ic-size="14"></span> 保存</button>
         <div class="dropdown" id="ddImport">
-          <button class="btn" onclick="toggleDropdown('ddImport')"><span class="ic ic-import"></span> 読込 ▾</button>
+          <button class="btn" onclick="toggleDropdown('ddImport')"><span class="ic" data-ic="upload" data-ic-size="14"></span> 読込 ▾</button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" onclick="document.getElementById('import-json').click();closeDropdown()"><span class="ic ic-dd-json"></span> JSON</button>
-            <button class="dropdown-item" onclick="document.getElementById('import-csv').click();closeDropdown()"><span class="ic ic-dd-csv"></span> CSV</button>
+            <button class="dropdown-item" onclick="document.getElementById('import-json').click();closeDropdown()"><span class="ic" data-ic="file"></span> JSON</button>
+            <button class="dropdown-item" onclick="document.getElementById('import-csv').click();closeDropdown()"><span class="ic" data-ic="file-text"></span> CSV</button>
           </div>
         </div>
         <input type="file" id="import-json" accept=".json" style="display:none" onchange="importItem(event,'json')">
         <input type="file" id="import-csv" accept=".csv" style="display:none" onchange="importItem(event,'csv')">
         <div class="dropdown" id="ddExport">
-          <button class="btn" onclick="toggleDropdown('ddExport')"><span class="ic ic-export"></span> 書出 ▾</button>
+          <button class="btn" onclick="toggleDropdown('ddExport')"><span class="ic" data-ic="download" data-ic-size="14"></span> 書出 ▾</button>
           <div class="dropdown-menu">
-            <button class="dropdown-item" onclick="exportJSON();closeDropdown()"><span class="ic ic-dd-json2"></span> JSON</button>
-            <button class="dropdown-item" onclick="exportCSV();closeDropdown()"><span class="ic ic-dd-csv2"></span> CSV</button>
+            <button class="dropdown-item" onclick="exportJSON();closeDropdown()"><span class="ic" data-ic="file"></span> JSON</button>
+            <button class="dropdown-item" onclick="exportCSV();closeDropdown()"><span class="ic" data-ic="file-text"></span> CSV</button>
+          </div>
+        </div>
+        <!-- 設定 -->
+        <div class="dropdown" id="ddSettings">
+          <button class="btn btn-icon" onclick="toggleDropdown('ddSettings')" title="設定"><span class="ic" data-ic="settings" data-ic-size="16"></span></button>
+          <div class="dropdown-menu" style="right:0;left:auto;">
+            <!-- TODO: ツール固有の設定項目を追加 -->
+            <button class="dropdown-item" onclick="closeDropdown()"><span class="ic" data-ic="info"></span> バージョン情報</button>
           </div>
         </div>
       </div>
       <div class="app-header-right">
         <div id="theme-mount-editor"></div>
+        <span class="sync-dot" id="syncDot" title="未ログイン"></span>
       </div>
     </header>
 

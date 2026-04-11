@@ -848,19 +848,32 @@ function driveProgressEnd(){
 }
 let _saveStatusTimer=null;
 function showSaveStatus(text,type){
-  const el=document.getElementById('save-status');
-  if(!el)return;
+  const btn=document.getElementById('save-btn');
+  if(!btn)return;
   clearTimeout(_saveStatusTimer);
-  el.hidden=false;
-  el.className='save-status'+(type?' is-'+type:'');
-  el.innerHTML=(type?'':'<span class="spinner-sm"></span>')+text;
-  if(type){
-    _saveStatusTimer=setTimeout(()=>{el.hidden=true;},2500);
+  if(!btn._defaultHTML)btn._defaultHTML=btn.innerHTML;
+  if(type==='success'){
+    btn.innerHTML='✓ 保存';
+    btn.classList.add('btn-save-done');
+  }else if(type==='error'){
+    btn.innerHTML='✗ エラー';
+    btn.classList.add('btn-save-error');
+  }else{
+    btn.innerHTML='<span class="spinner spinner-sm" style="border-top-color:#fff"></span>';
+    btn.classList.remove('btn-save-done','btn-save-error');
+    return;
   }
+  _saveStatusTimer=setTimeout(()=>{
+    btn.innerHTML=btn._defaultHTML;
+    btn.classList.remove('btn-save-done','btn-save-error');
+  },2000);
 }
 function hideSaveStatus(){
-  const el=document.getElementById('save-status');
-  if(el) el.hidden=true;
+  const btn=document.getElementById('save-btn');
+  if(!btn||!btn._defaultHTML)return;
+  clearTimeout(_saveStatusTimer);
+  btn.innerHTML=btn._defaultHTML;
+  btn.classList.remove('btn-save-done','btn-save-error');
 }
 function showDashLoading(show){
   const el=document.getElementById('dash-loading');
@@ -920,7 +933,7 @@ async function setProjectData(id,json){
   }
   // サムネイルキャッシュを更新（失敗しても保存成功扱い）
   try{
-    const thumbInfo=buildThumbDataUrl(json);
+    const thumbInfo=await buildThumbDataUrl(json);
     if(thumbInfo) setThumbCache(id,thumbInfo);
   }catch(e){console.warn('Thumb cache update failed:',e);}
   return true;
@@ -974,33 +987,26 @@ async function saveProjectToStorage(options={}){
     return false;
   }
   const useDrive=!!(window.driveSync&&window.driveSync.isSignedIn());
-  if(useDrive){
-    driveProgressStart();
-    if(!silent) showSaveStatus('Drive に保存中...');
-  }
+  if(useDrive) driveProgressStart();
+  showSaveStatus(useDrive?'Drive に保存中...':'保存中...');
   try{
     let recoveredByCompression=false;
     let json=serializeSlides();
     let saved=await setProjectData(currentProjectId,json);
     if(!saved){
-      // localStorage 容量超過時のみ画像圧縮リカバリ（Drive 使用時は不要）
       for(const stepOpt of IMAGE_RECOVERY_STEPS){
         const changed=await compactProjectImages(stepOpt);
         if(!changed)continue;
         json=serializeSlides();
         saved=await setProjectData(currentProjectId,json);
-        if(saved){
-          recoveredByCompression=true;
-          break;
-        }
+        if(saved){recoveredByCompression=true;break;}
       }
     }
     if(!saved){
       if(!silent)showToast(ic('alert-triangle',14)+' 保存に失敗しました。不要なプロジェクト削除かJSON保存を試してください');
-      if(useDrive) showSaveStatus('保存失敗','error');
+      showSaveStatus('保存失敗','error');
       return false;
     }
-    // メタ情報更新
     const list=await getProjectsList();
     const p=list.find(p=>p.id===currentProjectId);
     if(p){
@@ -1008,20 +1014,12 @@ async function saveProjectToStorage(options={}){
       p.slideCount=slides.length;
       await saveProjectsList(list);
     }
-    if(!silent){
-      if(useDrive){
-        showSaveStatus(ic('check-circle',14)+' 保存完了','success');
-      }else{
-        showToast(recoveredByCompression?'保存しました（画像を圧縮） '+ic('save',14):'保存しました '+ic('save',14));
-      }
-    }else if(useDrive){
-      showSaveStatus(ic('check-circle',14)+' 保存完了','success');
-    }
+    showSaveStatus('✓ 保存','success');
     return true;
   }catch(e){
     console.error('saveProjectToStorage error:',e);
     if(!silent)showToast(ic('alert-triangle',14)+' 保存中にエラーが発生しました');
-    if(useDrive) showSaveStatus('保存エラー','error');
+    showSaveStatus('✗ エラー','error');
     return false;
   }finally{
     if(useDrive) driveProgressEnd();
@@ -1307,61 +1305,78 @@ async function updateProjNameDisplay(){
   if(!currentProjectId){delete document.body.dataset.hasProject;return;}
   const meta=await getProjectMeta(currentProjectId);
   if(!meta){delete document.body.dataset.hasProject;return;}
-  // 表示は CSS（body[data-view="editor"][data-has-project] .proj-name-area）が制御
   document.body.dataset.hasProject='1';
   el.textContent=meta.name||'無題';
-  el.ondblclick=startEditProjName;
-  el.onclick=startEditProjName;
 }
 
-async function startEditProjName(){
+function initProjNameEdit(){
   const el=document.getElementById('proj-name-display');
-  if(!el||!currentProjectId)return;
-  const meta=await getProjectMeta(currentProjectId);
-  if(!meta)return;
-  const input=document.createElement('input');
-  input.className='proj-name-input';
-  input.value=meta.name;
-  const finish=async()=>{
-    const newName=input.value.trim()||meta.name;
-    const list=await getProjectsList();
-    const p=list.find(p=>p.id===currentProjectId);
-    if(p && p.name!==newName){
-      p.name=newName;
-      p.updatedAt=new Date().toISOString();
-      await saveProjectsList(list);
-    }
-    const span=document.createElement('span');
-    span.className='proj-name';
-    span.id='proj-name-display';
-    span.title='ダブルクリックで名前を変更';
-    input.replaceWith(span);
-    updateProjNameDisplay();
-  };
-  input.onblur=finish;
-  input.onkeydown=e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape'){input.value=meta.name;input.blur();}};
-  el.replaceWith(input);
-  input.focus();input.select();
+  if(!el)return;
+  el.addEventListener('click',function(e){
+    e.stopPropagation();e.preventDefault();
+    if(!currentProjectId)return;
+    el.contentEditable='true';
+    el.classList.add('editing');
+    el.focus();
+  });
+  el.addEventListener('blur',function(){commitProjName(el);});
+  el.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();el.blur();}
+    if(e.key==='Escape'){updateProjNameDisplay();el.blur();}
+  });
+}
+async function commitProjName(el){
+  el.contentEditable='false';
+  el.classList.remove('editing');
+  if(!currentProjectId)return;
+  const newName=el.textContent.trim()||'無題';
+  const list=await getProjectsList();
+  const p=list.find(p=>p.id===currentProjectId);
+  if(p && p.name!==newName){
+    p.name=newName;
+    p.updatedAt=new Date().toISOString();
+    await saveProjectsList(list);
+  }
+  el.textContent=newName;
 }
 
 /* サムネイルキャッシュ（メモリ内。プロジェクト保存時にも更新） */
 const _thumbCache=new Map();
 const THUMB_CACHE_PREFIX='previewgen_thumb_';
 
-function buildThumbDataUrl(projectData){
+function _loadImg(src){
+  return new Promise(function(resolve){
+    if(!src){resolve(null);return;}
+    var img=new Image();
+    img.onload=function(){resolve(img);};
+    img.onerror=function(){resolve(null);};
+    img.src=src;
+  });
+}
+async function buildThumbDataUrl(projectData){
   try{
     const arr=JSON.parse(projectData);
     const dev=DEVS['6.9'];
     const tw=100,th=Math.round(tw*dev.h/dev.w);
     const maxThumbs=Math.min(arr.length,4);
+    // スライドごとにスクリーンショットを読み込む
+    const prepared=[];
+    for(let i=0;i<maxThumbs;i++){
+      const d=arr[i]||{};
+      const s={...defSlide(),...d,screenshotImg:null,screenshotImg2:null,screenshotImg3:null,screenshotImg4:null,screenshotImgIpad:null,widgetSmallImg:null,widgetMediumImg:null,widgetLargeImg:null};
+      const [img1,img2,img3,img4,imgIpad]=await Promise.all([
+        _loadImg(d._src),_loadImg(d._src2),_loadImg(d._src3),_loadImg(d._src4),_loadImg(d._srcIpad)
+      ]);
+      s.screenshotImg=img1;s.screenshotImg2=img2;s.screenshotImg3=img3;s.screenshotImg4=img4;s.screenshotImgIpad=imgIpad;
+      prepared.push(s);
+    }
     // 全サムネイルを1枚のcanvasにまとめて描画
     const c=document.createElement('canvas');
     c.width=tw*maxThumbs;c.height=th;
     const ctx=c.getContext('2d');
     for(let i=0;i<maxThumbs;i++){
-      const s={...defSlide(),...arr[i],screenshotImg:null,screenshotImg2:null,screenshotImg3:null,screenshotImg4:null,screenshotImgIpad:null,widgetSmallImg:null,widgetMediumImg:null,widgetLargeImg:null};
       ctx.save();ctx.translate(tw*i,0);
-      renderSlide(ctx,tw,th,s);
+      renderSlide(ctx,tw,th,prepared[i]);
       ctx.restore();
     }
     return {dataUrl:c.toDataURL('image/jpeg',0.6),count:maxThumbs,tw,th};
@@ -1389,7 +1404,6 @@ function renderThumbsToElement(thumbsEl,thumbInfo){
   if(!thumbInfo) return;
   const img=new Image();
   img.src=thumbInfo.dataUrl;
-  img.style.cssText=`width:${thumbInfo.tw*thumbInfo.count}px;height:${thumbInfo.th}px;display:flex;`;
   thumbsEl.appendChild(img);
 }
 
@@ -1467,7 +1481,7 @@ async function renderDashboard(){
     Promise.all(needFetch.map(async({meta,thumbs})=>{
       const data=await getProjectData(meta.id);
       if(!data) return;
-      const thumbInfo=buildThumbDataUrl(data);
+      const thumbInfo=await buildThumbDataUrl(data);
       if(thumbInfo){
         setThumbCache(meta.id,thumbInfo);
         renderThumbsToElement(thumbs,thumbInfo);
@@ -3429,6 +3443,7 @@ window.onload=async()=>{
   updateUndoBtn();
   iphoneSetup();
   initTheme();
+  initProjNameEdit();
   initDriveSync();
   // ブラウザの戻る/進むで状態復元
   window.addEventListener('popstate',applyHashRoute);
@@ -3463,6 +3478,15 @@ function initDriveSync(){
       }
     },
   });
+  // 同期状態ドット（エディタヘッダー用）
+  const dot=document.getElementById('syncDotAP');
+  if(dot){
+    const labels={offline:'未ログイン',syncing:'同期中…',synced:'同期済み',error:'同期エラー'};
+    window.driveSync.onStateChange(state=>{
+      dot.dataset.status=state.signedIn?state.status:'offline';
+      dot.title=labels[state.signedIn?state.status:'offline']||'';
+    });
+  }
   ['sync-mount','sync-mount-editor'].forEach(id=>{
     const mount=document.getElementById(id);
     if(mount) window.driveSync.mountUI(mount);

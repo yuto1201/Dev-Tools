@@ -49,7 +49,6 @@
   <div class="app-header-left">
     <button class="app-back-btn" onclick="showProjectSelectScreen()" title="プロジェクト一覧へ戻る">← 一覧</button>
     <h1 class="app-title app-title-editable" id="edProjName" title="クリックで名前を変更" onclick="event.stopPropagation();startProjNameEdit()"></h1>
-    <span id="save-status" class="save-status" hidden></span>
   </div>
 
   <div class="ed-btns">
@@ -65,7 +64,7 @@
 
     <div class="ed-sep"></div>
 
-    <button class="btn btn-primary" onclick="autoSaveNow()"><span class="ic" data-ic="save" data-ic-size="14"></span> 保存</button>
+    <button class="btn btn-primary" id="save-btn" onclick="autoSaveNow()"><span class="ic" data-ic="save" data-ic-size="14"></span> 保存</button>
 
     <!-- 読込 ▼ -->
     <div class="dropdown" id="ddFile">
@@ -102,6 +101,7 @@
 
   <div class="app-header-right">
     <div id="theme-mount"></div>
+    <span class="sync-dot" id="syncDot" title="未ログイン"></span>
   </div>
 </header>
 <main>

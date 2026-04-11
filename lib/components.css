@@ -195,12 +195,21 @@ body[data-view="editor"] .app-view-editor { display: block; }
 .drive-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 9999; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 200% 100%; animation: driveBar .9s ease-in-out infinite; }
 @keyframes driveBar { 0% { background-position: 100% 0 } 100% { background-position: -100% 0 } }
 
-/* ---- 保存ステータス ---- */
-.save-status { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 11px; font-weight: 600; color: var(--text-dim); white-space: nowrap; animation: fadeIn .15s; }
-.save-status .spinner-sm { width: 14px; height: 14px; border-width: 2px; }
-.save-status.is-success { color: var(--success); }
-.save-status.is-error { color: var(--danger); }
-@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+/* ---- 同期状態ドット（エディタ画面用） ---- */
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--muted); transition: background .2s, box-shadow .2s;
+}
+.sync-dot[data-status="synced"] { background: var(--success); box-shadow: 0 0 6px rgba(33,168,125,.55); }
+.sync-dot[data-status="syncing"] { background: var(--accent); animation: syncPulse 1.2s ease-in-out infinite; }
+.sync-dot[data-status="error"] { background: var(--danger); box-shadow: 0 0 6px rgba(255,114,114,.55); }
+@keyframes syncPulse { 0%,100%{opacity:.4;transform:scale(.85)} 50%{opacity:1;transform:scale(1.1)} }
+
+/* ---- 保存ボタン状態変化 ---- */
+#save-btn { min-width: 80px; justify-content: center; }
+.app-header-actions .btn-icon { width: 36px; height: 36px; padding: 0; display: inline-grid; place-items: center; }
+.btn-save-done { background: var(--success); }
+.btn-save-error { background: var(--danger); }
 
 /* ---- 編集可能タイトル ---- */
 .app-title-editable {

@@ -15,41 +15,78 @@ const LS_PREFIX = 'my_tool_item_';            // 個別アイテムの localStor
 let items = {};               // {id: {name, note, updatedAt, ...}}
 let currentItemId = null;
 
-// ---- Storage -------------------------------------------------
-function loadItems(){
+// ---- Drive helpers -------------------------------------------
+function _useDrive(){ return !!(window.driveSync && window.driveSync.isSignedIn()); }
+
+let _driveProgressCount = 0;
+function driveProgressStart(){
+  _driveProgressCount++;
+  const el = document.getElementById('drive-progress');
+  if(el) el.hidden = false;
+}
+function driveProgressEnd(){
+  _driveProgressCount = Math.max(0, _driveProgressCount - 1);
+  if(_driveProgressCount === 0){
+    const el = document.getElementById('drive-progress');
+    if(el) el.hidden = true;
+  }
+}
+
+// ---- Storage（saveItem/loadItem/removeItem 方式） ---------------
+// ログイン時: Drive に直接保存（localStorage はキャッシュ）
+// 未ログイン時: localStorage のみ
+async function loadItems(){
   try{
-    const raw = localStorage.getItem(LS_LIST);
+    let raw;
+    if(_useDrive()){
+      raw = await window.driveSync.loadItem(LS_LIST);
+    } else {
+      raw = localStorage.getItem(LS_LIST);
+    }
     items = raw ? JSON.parse(raw) : {};
   }catch(e){
     items = {};
   }
 }
 
-function saveItems(){
-  try{
-    localStorage.setItem(LS_LIST, JSON.stringify(items));
-    if(window.driveSync) window.driveSync.markDirty(LS_LIST);
-  }catch(e){
-    console.warn('saveItems failed:', e);
+async function saveItems(){
+  const json = JSON.stringify(items);
+  if(_useDrive()){
+    await window.driveSync.saveItem(LS_LIST, json);
+  } else {
+    localStorage.setItem(LS_LIST, json);
   }
 }
 
-function saveItem(id, data){
-  try{
-    localStorage.setItem(LS_PREFIX + id, JSON.stringify(data));
-    if(window.driveSync) window.driveSync.markDirty(LS_PREFIX + id);
-  }catch(e){
-    console.warn('saveItem failed:', e);
+async function saveItemData(id, data){
+  const json = JSON.stringify(data);
+  if(_useDrive()){
+    await window.driveSync.saveItem(LS_PREFIX + id, json);
+  } else {
+    localStorage.setItem(LS_PREFIX + id, json);
   }
 }
 
-function deleteItemFromStorage(id){
+async function loadItemData(id){
+  try{
+    let raw;
+    if(_useDrive()){
+      raw = await window.driveSync.loadItem(LS_PREFIX + id);
+    } else {
+      raw = localStorage.getItem(LS_PREFIX + id);
+    }
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+async function deleteItemFromStorage(id){
   delete items[id];
-  saveItems();
-  try{
+  await saveItems();
+  if(_useDrive()){
+    await window.driveSync.removeItem(LS_PREFIX + id);
+  } else {
     localStorage.removeItem(LS_PREFIX + id);
-    if(window.driveSync) window.driveSync.markDeleted(LS_PREFIX + id);
-  }catch(e){}
+  }
 }
 
 // ---- Util ----------------------------------------------------
@@ -63,16 +100,29 @@ function escapeHtml(s){
   }[c]));
 }
 
-// ---- Save status ---------------------------------------------
+// ---- Save status（ボタン内表示） --------------------------------
 let _saveStatusTimer = null;
+const _saveBtnDefault = null; // initで設定
 function showSaveStatus(text, type){
-  const el = document.getElementById('save-status');
-  if(!el) return;
+  const btn = document.getElementById('save-btn');
+  if(!btn) return;
   clearTimeout(_saveStatusTimer);
-  el.hidden = false;
-  el.className = 'save-status' + (type ? ' is-' + type : '');
-  el.innerHTML = (type ? '' : '<span class="spinner-sm"></span>') + text;
-  if(type){ _saveStatusTimer = setTimeout(() => { el.hidden = true; }, 2500); }
+  if(!btn._defaultHTML) btn._defaultHTML = btn.innerHTML;
+  if(type === 'success'){
+    btn.innerHTML = '✓ 保存';
+    btn.classList.add('btn-save-done');
+  } else if(type === 'error'){
+    btn.innerHTML = '✗ エラー';
+    btn.classList.add('btn-save-error');
+  } else {
+    btn.innerHTML = '<span class="spinner spinner-sm" style="border-top-color:#fff"></span>';
+    btn.classList.remove('btn-save-done', 'btn-save-error');
+    return;
+  }
+  _saveStatusTimer = setTimeout(() => {
+    btn.innerHTML = btn._defaultHTML;
+    btn.classList.remove('btn-save-done', 'btn-save-error');
+  }, 2000);
 }
 
 // ---- Dropdown ------------------------------------------------
@@ -91,16 +141,20 @@ document.addEventListener('click', (e) => {
 });
 
 // ---- Save / Import / Export ----------------------------------
-function saveCurrentItem(){
+async function saveCurrentItem(){
   if(!currentItemId || !items[currentItemId]) return;
-  showSaveStatus('保存中...');
+  const drive = _useDrive();
+  showSaveStatus(drive ? 'Drive に保存中...' : '保存中...');
+  if(drive) driveProgressStart();
   try{
     items[currentItemId].updatedAt = new Date().toISOString();
-    saveItems();
-    // TODO: アイテム固有データも保存する場合は saveItem(currentItemId, data) を呼ぶ
+    await saveItems();
+    // TODO: アイテム固有データも保存する場合は await saveItemData(currentItemId, data) を呼ぶ
     showSaveStatus('✓ 保存完了', 'success');
   }catch(e){
     showSaveStatus('保存エラー', 'error');
+  } finally {
+    if(drive) driveProgressEnd();
   }
 }
 
@@ -168,21 +222,7 @@ function showEditor(id){
   document.body.dataset.view = 'editor';
   currentItemId = id;
   renderEditor(id);
-  initEditorIcons();
-}
-
-function initEditorIcons(){
-  if(!window.yutoIcons) return;
-  const map = {
-    '.ic-save':'save', '.ic-import':'upload', '.ic-export':'download',
-    '.ic-dd-json':'file', '.ic-dd-csv':'file-text',
-    '.ic-dd-json2':'file', '.ic-dd-csv2':'file-text'
-  };
-  Object.entries(map).forEach(([sel, name]) => {
-    document.querySelectorAll(sel).forEach(el => {
-      if(!el.innerHTML.trim()) el.innerHTML = yutoIcons.toSVG(name, {size:14});
-    });
-  });
+  initIcons();
 }
 
 // ---- Render: list --------------------------------------------
@@ -276,7 +316,7 @@ function initEditableTitle(){
     }
   });
 }
-function commitTitle(el){
+async function commitTitle(el){
   el.contentEditable = 'false';
   el.classList.remove('editing');
   if(!currentItemId || !items[currentItemId]) return;
@@ -285,34 +325,35 @@ function commitTitle(el){
   items[currentItemId].name = v;
   items[currentItemId].updatedAt = new Date().toISOString();
   el.textContent = v;
-  saveItems();
+  await saveItems();
 }
 
 // ---- Actions -------------------------------------------------
-function handleCreate(name, extra){
+async function handleCreate(name, extra){
   const id = generateId();
   const now = new Date().toISOString();
+  const data = { id, name, ...extra, createdAt: now, updatedAt: now };
   items[id] = { name, ...extra, createdAt: now, updatedAt: now };
-  saveItems();
-  saveItem(id, { id, name, ...extra, createdAt: now, updatedAt: now });
+  await saveItems();
+  await saveItemData(id, data);
   renderList();
   showToast('作成しました', 'success');
 }
 
-function handleRename(id){
+async function handleRename(id){
   const item = items[id];
   if(!item) return;
   const newName = prompt('新しい名前:', item.name);
   if(!newName || !newName.trim()) return;
   item.name = newName.trim();
   item.updatedAt = new Date().toISOString();
-  saveItems();
+  await saveItems();
   renderList();
 }
 
-function handleDelete(id){
+async function handleDelete(id){
   if(!confirm('削除しますか？')) return;
-  deleteItemFromStorage(id);
+  await deleteItemFromStorage(id);
   renderList();
   showToast('削除しました');
 }
@@ -338,12 +379,16 @@ function initTheme(){
   });
 }
 
-// ---- Icon（lib/icons.js のアイコンをタイトルに設定） ----------
+// ---- Icon（lib/icons.js のアイコンを設定） ----------
 // TODO: ツールに合ったアイコン名に変更する（一覧: icons/index.html）
-function initIcon(){
+function initIcons(){
   if(!window.yutoIcons) return;
   document.querySelectorAll('.app-icon').forEach((el) => {
     el.innerHTML = window.yutoIcons.toSVG('tool', {size:20});
+  });
+  document.querySelectorAll('[data-ic]').forEach((el) => {
+    const size = parseInt(el.dataset.icSize) || 16;
+    el.innerHTML = yutoIcons.toSVG(el.dataset.ic, {size});
   });
 }
 
@@ -354,8 +399,8 @@ function initDriveSync(){
     toolId: TOOL_ID,
     keys: [LS_LIST],
     keyPatterns: [new RegExp('^' + LS_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))],
-    onSyncedFromRemote: (changedKeys) => {
-      loadItems();
+    onSyncedFromRemote: async (changedKeys) => {
+      await loadItems();
       if(document.body.dataset.view === 'list'){
         renderList();
       } else if(currentItemId){
@@ -369,17 +414,15 @@ function initDriveSync(){
       }
     },
   });
-  // 同期状態をヘッダーに表示
-  window.driveSync.onStateChange((state) => {
-    if(!state.signedIn) return;
-    if(state.status === 'syncing'){
-      showSaveStatus('同期中...');
-    } else if(state.status === 'synced'){
-      showSaveStatus('✓ 同期完了', 'success');
-    } else if(state.status === 'error'){
-      showSaveStatus('同期エラー', 'error');
-    }
-  });
+  // 同期状態ドット（エディタヘッダー用）
+  const dot = document.getElementById('syncDot');
+  if(dot){
+    const labels = {offline:'未ログイン', syncing:'同期中…', synced:'同期済み', error:'同期エラー'};
+    window.driveSync.onStateChange((state) => {
+      dot.dataset.status = state.signedIn ? state.status : 'offline';
+      dot.title = labels[state.signedIn ? state.status : 'offline'] || '';
+    });
+  }
   // 同期UIは一覧画面のみにマウント（編集画面では非表示）
   const syncEl = document.getElementById('sync-mount');
   if(syncEl) window.driveSync.mountUI(syncEl);
@@ -387,8 +430,8 @@ function initDriveSync(){
 }
 
 // ---- Init ----------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-  loadItems();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadItems();
 
   // 「+ 新規作成」ボタン
   document.getElementById('btn-create').addEventListener('click', () => {
@@ -428,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 初期表示
   showList();
   initTheme();
-  initIcon();
+  initIcons();
   initEditableTitle();
   initDriveSync();
 });
