@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legal — yuto's dev tools</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<script src="../lib/theme.js"></script>
+<script src="../lib/icons.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-inner">
+
+  <header class="app-header">
+    <div class="app-header-left">
+      <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
+      <span class="app-title-icon" id="app-icon"></span>
+      <h1 class="app-title">Legal</h1>
+    </div>
+    <div class="app-header-right">
+      <div id="theme-mount"></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="legal-doc">
+      <div class="legal-meta">// legal · documents</div>
+      <h1 class="legal-title">ポリシーと規約</h1>
+      <p class="legal-lead">
+        yuto's dev tools の利用、および Google アカウントによるサインイン（Google Drive 同期機能）に適用されるドキュメントです。
+        利用開始前にご一読ください。
+      </p>
+
+      <div class="legal-links">
+        <a class="legal-link-card" href="privacy.html">
+          <span class="legal-link-icon" id="icon-privacy"></span>
+          <span class="legal-link-body">
+            <div class="legal-link-name">プライバシーポリシー</div>
+            <div class="legal-link-desc">取得する情報・利用目的・データの保存場所について</div>
+          </span>
+          <span class="legal-link-arrow">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M7 17L17 7M17 7H7M17 7v10"/>
+            </svg>
+          </span>
+        </a>
+
+        <a class="legal-link-card" href="terms.html">
+          <span class="legal-link-icon" id="icon-terms"></span>
+          <span class="legal-link-body">
+            <div class="legal-link-name">利用規約</div>
+            <div class="legal-link-desc">サービス内容・免責事項・禁止事項について</div>
+          </span>
+          <span class="legal-link-arrow">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M7 17L17 7M17 7H7M17 7v10"/>
+            </svg>
+          </span>
+        </a>
+      </div>
+
+      <div class="legal-footer-meta">
+        <div>// 施行日: 2026-04-11</div>
+        <div>// 運営: yuto1201</div>
+      </div>
+    </section>
+  </main>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.theme) {
+    window.theme.mountUI(document.getElementById('theme-mount'));
+  }
+  if (window.yutoIcons) {
+    document.getElementById('app-icon').innerHTML = window.yutoIcons.toSVG('book-open', {size:20});
+    document.getElementById('icon-privacy').innerHTML = window.yutoIcons.toSVG('shield-check', {size:22});
+    document.getElementById('icon-terms').innerHTML = window.yutoIcons.toSVG('file-text', {size:22});
+  }
+});
+</script>
+</body>
+</html>

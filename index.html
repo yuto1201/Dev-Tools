@@ -269,6 +269,10 @@ html, body {
   margin-top: var(--space-4);
   text-align: center;
   padding: var(--space-4) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
 }
 .footer-text {
   font-family: var(--font-mono);
@@ -284,6 +288,25 @@ html, body {
   background: var(--accent);
   margin: 0 8px 1px;
   vertical-align: middle;
+}
+.footer-legal {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.footer-legal a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .15s;
+}
+.footer-legal a:hover {
+  color: var(--accent);
+}
+.footer-legal .footer-sep {
+  margin: 0 6px;
+  opacity: .5;
 }
 
 /* ===== Responsive ========================================== */
@@ -438,6 +461,9 @@ html, body {
   <footer class="footer">
     <p class="footer-text">
       yuto1201<span class="footer-dot"></span>GitHub Pages
+    </p>
+    <p class="footer-legal">
+      <a href="legal/privacy.html">Privacy</a><span class="footer-sep">·</span><a href="legal/terms.html">Terms</a>
     </p>
   </footer>
 
