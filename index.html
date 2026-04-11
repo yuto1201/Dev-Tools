@@ -182,6 +182,122 @@ html, body {
   transform: translate(2px, -2px);
 }
 
+/* ===== Version badge（カード右上） ========================== */
+.card-version {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg);
+  box-shadow: var(--shadow-in-sm);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.card-version-stage {
+  font-weight: 800;
+}
+.card-version-num {
+  color: var(--muted);
+  font-weight: 600;
+}
+.card-version.alpha   .card-version-stage { color: var(--warning); }
+.card-version.beta    .card-version-stage { color: var(--purple); }
+.card-version.release .card-version-stage { color: var(--success); }
+
+/* ===== Coming soon section ================================= */
+.soon-section {
+  margin-top: var(--space-5);
+}
+.soon-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.soon-heading-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.soon-heading-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-strong);
+}
+.soon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+.soon-card {
+  position: relative;
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-in-sm);
+  opacity: .75;
+  cursor: default;
+  transition: opacity .2s;
+}
+.soon-card:hover {
+  opacity: 1;
+}
+.soon-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+.soon-card-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-out-sm);
+}
+.soon-card-badge {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg);
+  box-shadow: var(--shadow-in-sm);
+}
+.soon-card-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.01em;
+  line-height: 1.3;
+}
+.soon-card-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
 /* ===== Dev dock（標準化アセットへの控えめリンク） ============ */
 .dev-dock {
   margin-top: var(--space-8);
@@ -351,6 +467,10 @@ html, body {
 
       <!-- ER Diagram -->
       <a class="card" href="er-diagram/index.html">
+        <span class="card-version beta">
+          <span class="card-version-stage">beta</span>
+          <span class="card-version-num">v0.8</span>
+        </span>
         <div class="card-icon">🗂️</div>
         <div class="card-label">Database</div>
         <div class="card-title">ER Diagram Generator</div>
@@ -368,6 +488,10 @@ html, body {
 
       <!-- App Store Preview -->
       <a class="card" href="appstore-preview/index.html">
+        <span class="card-version beta">
+          <span class="card-version-stage">beta</span>
+          <span class="card-version-num">v0.8</span>
+        </span>
         <div class="card-icon">📱</div>
         <div class="card-label">iOS Dev</div>
         <div class="card-title">App Store Preview</div>
@@ -385,6 +509,10 @@ html, body {
 
       <!-- DesignPocket -->
       <a class="card" href="DesignPocket/index.html">
+        <span class="card-version alpha">
+          <span class="card-version-stage">alpha</span>
+          <span class="card-version-num">v0.3</span>
+        </span>
         <div class="card-icon">🎨</div>
         <div class="card-label">UI / UX</div>
         <div class="card-title">Design Pocket</div>
@@ -402,6 +530,10 @@ html, body {
 
       <!-- Text Counter -->
       <a class="card" href="text-counter/index.html">
+        <span class="card-version release">
+          <span class="card-version-stage">release</span>
+          <span class="card-version-num">v1.0</span>
+        </span>
         <div class="card-icon">📝</div>
         <div class="card-label">Utility</div>
         <div class="card-title">Text Counter</div>
@@ -419,6 +551,10 @@ html, body {
 
       <!-- Icon Gallery -->
       <a class="card" href="icons/index.html">
+        <span class="card-version beta">
+          <span class="card-version-stage">beta</span>
+          <span class="card-version-num">v0.8</span>
+        </span>
         <div class="card-icon" id="icon-gallery-icon"></div>
         <div class="card-label">Design</div>
         <div class="card-title">Icon Gallery</div>
@@ -436,6 +572,45 @@ html, body {
       </a>
 
     </div>
+
+    <!-- ===== Coming Soon: 構想中・メモ ============================ -->
+    <!-- 追加するときはこの .soon-grid の中に .soon-card を増やすだけ -->
+    <section class="soon-section" aria-label="Coming soon">
+      <div class="soon-heading">
+        <span class="soon-heading-label">// coming soon · ideas</span>
+        <span class="soon-heading-line"></span>
+      </div>
+      <div class="soon-grid">
+
+        <div class="soon-card">
+          <div class="soon-card-head">
+            <div class="soon-card-icon" data-icon="braces"></div>
+            <span class="soon-card-badge">idea</span>
+          </div>
+          <div class="soon-card-title">JSON Formatter</div>
+          <div class="soon-card-desc">JSONの整形・検証・ツリー表示・圧縮。</div>
+        </div>
+
+        <div class="soon-card">
+          <div class="soon-card-head">
+            <div class="soon-card-icon" data-icon="regex"></div>
+            <span class="soon-card-badge">idea</span>
+          </div>
+          <div class="soon-card-title">Regex Tester</div>
+          <div class="soon-card-desc">正規表現のマッチ・キャプチャを可視化。</div>
+        </div>
+
+        <div class="soon-card">
+          <div class="soon-card-head">
+            <div class="soon-card-icon" data-icon="palette"></div>
+            <span class="soon-card-badge">idea</span>
+          </div>
+          <div class="soon-card-title">Color Palette</div>
+          <div class="soon-card-desc">配色生成・コントラスト比チェック。</div>
+        </div>
+
+      </div>
+    </section>
 
     <div class="github-link">
       <a href="https://github.com/yuto1201" target="_blank" rel="noopener noreferrer">
@@ -486,6 +661,13 @@ document.addEventListener('DOMContentLoaded', function () {
   if (window.yutoIcons) {
     var igIcon = document.getElementById('icon-gallery-icon');
     if (igIcon) igIcon.innerHTML = window.yutoIcons.toSVG('grid-3x3', {size:26});
+
+    // Coming soon カードの data-icon 属性を SVG に展開
+    document.querySelectorAll('.soon-card-icon[data-icon]').forEach(function (el) {
+      var name = el.getAttribute('data-icon');
+      var svg = window.yutoIcons.toSVG(name, {size:18});
+      if (svg) el.innerHTML = svg;
+    });
   }
 });
 </script>
