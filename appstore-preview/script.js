@@ -302,16 +302,6 @@ function drawPhone(ctx,x,y,w,h,s,forceIphone){
   }
   ctx.restore();
 
-  if(ipad){
-    // iPad: front camera (small circle, top center)
-    const camR=w*.012;
-    ctx.beginPath();ctx.arc(x+w/2,y+bw+camR*2.5,camR,0,Math.PI*2);ctx.fillStyle='#0a0a18';ctx.fill();
-    ctx.beginPath();ctx.arc(x+w/2,y+bw+camR*2.5,camR*.5,0,Math.PI*2);ctx.fillStyle='#1a1a2a';ctx.fill();
-  }else{
-    // iPhone: Dynamic Island
-    const diW=w*.3,diH=w*.037;rr(ctx,x+w/2-diW/2,y+bw+h*.013,diW,diH,diH/2);ctx.fillStyle='#000';ctx.fill();
-  }
-
   // Home bar
   const bW=w*(ipad?.25:.33),bH=Math.max(h*.004,1.5);
   rr(ctx,x+w/2-bW/2,y+h-bw-bH-h*.013,bW,bH,bH/2);
