@@ -1793,6 +1793,20 @@ function showSaveStatus(text,type){
 }
 function useDrive(){return !!(window.driveSync&&window.driveSync.isSignedIn());}
 
+var _driveProgressCount=0;
+function driveProgressStart(){
+  _driveProgressCount++;
+  var el=document.getElementById('drive-progress');
+  if(el)el.hidden=false;
+}
+function driveProgressEnd(){
+  _driveProgressCount=Math.max(0,_driveProgressCount-1);
+  if(_driveProgressCount===0){
+    var el=document.getElementById('drive-progress');
+    if(el)el.hidden=true;
+  }
+}
+
 function autoSave(){
   clearTimeout(autoSaveTimer);
   autoSaveTimer=setTimeout(function(){autoSaveNow();},500);
@@ -1887,7 +1901,9 @@ async function switchProject(id,isNew){
 async function autoSaveNow(){
   clearTimeout(autoSaveTimer);
   if(!currentProjectId)return;
-  showSaveStatus(useDrive()?'Drive に保存中...':'保存中...');
+  var drive=useDrive();
+  showSaveStatus(drive?'Drive に保存中...':'保存中...');
+  if(drive)driveProgressStart();
   try{
     projectList[currentProjectId].updatedAt=new Date().toISOString();
     projectList[currentProjectId].tableCount=Object.keys(tables).length;
@@ -1895,6 +1911,7 @@ async function autoSaveNow(){
     await saveProjectList();
     showSaveStatus('✓ 保存済み','success');
   }catch(e){console.warn('autoSave failed:',e);showSaveStatus('保存エラー','error');}
+  finally{if(drive)driveProgressEnd();}
 }
 
 async function renameProject(id){
@@ -2149,7 +2166,9 @@ function renderPSSList(){
 async function pssOpenProject(id){
   currentProjectId=id;
   localStorage.setItem(LS_CURRENT,id);
+  if(useDrive())driveProgressStart();
   var data=await loadProjectData(id);
+  if(useDrive())driveProgressEnd();
   if(data){loadERState(data);}else{clearERState();}
   updateProjectUI();
   showEditor();

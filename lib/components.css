@@ -191,6 +191,10 @@ body[data-view="editor"] .app-view-editor { display: block; }
 }
 
 
+/* ---- Drive 同期プログレスバー ---- */
+.drive-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 9999; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 200% 100%; animation: driveBar .9s ease-in-out infinite; }
+@keyframes driveBar { 0% { background-position: 100% 0 } 100% { background-position: -100% 0 } }
+
 /* ---- 保存ステータス ---- */
 .save-status { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 11px; font-weight: 600; color: var(--text-dim); white-space: nowrap; animation: fadeIn .15s; }
 .save-status .spinner-sm { width: 14px; height: 14px; border-width: 2px; }
