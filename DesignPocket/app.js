@@ -1,983 +1,724 @@
 /* ============================================================
-   DesignPocket — app.js
-   バニラJS / localStorage / 一方向データフロー
+   DesignPocket — Theme Catalog v2
+   - 1 レコード = 1 UI テーマ（トークン + custom CSS）
+   - 左ペイン = フォーム、右ペイン = iframe ライブプレビュー
+   - 永続化: localStorage + Google Drive 同期
    ============================================================ */
 
-(() => {
-  'use strict';
+'use strict';
 
-  // ── 定数 ──
-  const STORAGE_KEY_APPS = 'designpocket_apps';
-  const STORAGE_KEY_IDEAS = 'designpocket_ideas';
-  const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB（Base64化前のファイルサイズ上限）
-  const VIEWS = ['gallery', 'apps'];
-  // SVGはスクリプト埋め込み可能のため除外（XSS対策）
-  const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
-  const ALLOWED_DATA_URL_RE = /^data:image\/(png|jpe?g|webp|gif);/i;
-  const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+// ═══════════════════════════════════════════════════════════
+// Constants
+// ═══════════════════════════════════════════════════════════
 
-  // ── グローバルステート ──
-  const state = {
-    apps: [],   // AppProject[]
-    ideas: [],  // DesignIdea[]
-    filter: {
-      appId: null,
-      tag: null
-    },
-    view: 'gallery',
-    pendingImage: null // 追加フォーム用の一時 DataURL
+const LS_KEY = 'designpocket_themes';
+const LEGACY_KEYS = ['designpocket_apps', 'designpocket_ideas'];
+
+const COLOR_TOKENS = [
+  { var: '--bg',           label: 'bg' },
+  { var: '--text',         label: 'text' },
+  { var: '--text-dim',     label: 'text-dim' },
+  { var: '--muted',        label: 'muted' },
+  { var: '--accent',       label: 'accent' },
+  { var: '--accent-hover', label: 'accent-hover' },
+  { var: '--success',      label: 'success' },
+  { var: '--danger',       label: 'danger' },
+  { var: '--warning',      label: 'warning' },
+  { var: '--info',         label: 'info' },
+  { var: '--purple',       label: 'purple' },
+  { var: '--pink',         label: 'pink' },
+  { var: '--orange',       label: 'orange' },
+  { var: '--teal',         label: 'teal' },
+  { var: '--indigo',       label: 'indigo' },
+];
+
+const RADIUS_TOKENS = [
+  { var: '--radius-sm',   label: 'radius-sm' },
+  { var: '--radius',      label: 'radius' },
+  { var: '--radius-lg',   label: 'radius-lg' },
+  { var: '--radius-full', label: 'radius-full' },
+];
+
+const SPACING_TOKENS = [
+  { var: '--space-1',  label: 'space-1' },
+  { var: '--space-2',  label: 'space-2' },
+  { var: '--space-3',  label: 'space-3' },
+  { var: '--space-4',  label: 'space-4' },
+  { var: '--space-5',  label: 'space-5' },
+  { var: '--space-6',  label: 'space-6' },
+  { var: '--space-8',  label: 'space-8' },
+  { var: '--space-10', label: 'space-10' },
+];
+
+const FONT_TOKENS = [
+  { var: '--font-sans', label: 'font-sans' },
+  { var: '--font-mono', label: 'font-mono' },
+];
+
+const NEUMORPHISM_TOKENS = {
+  '--bg': '#E9EDF0',
+  '--text': '#343434',
+  '--text-dim': '#6B7280',
+  '--muted': '#A1AEBF',
+  '--accent': '#489CC1',
+  '--accent-hover': '#3A8DB5',
+  '--success': '#21A87D',
+  '--danger': '#FF7272',
+  '--warning': '#FFBB0D',
+  '--info': '#5B9BD5',
+  '--purple': '#8B5CF6',
+  '--pink': '#EC4899',
+  '--orange': '#F97316',
+  '--teal': '#14B8A6',
+  '--indigo': '#6366F1',
+  '--radius-sm': '10px',
+  '--radius': '16px',
+  '--radius-lg': '24px',
+  '--radius-full': '999px',
+  '--space-1': '4px',
+  '--space-2': '8px',
+  '--space-3': '12px',
+  '--space-4': '16px',
+  '--space-5': '20px',
+  '--space-6': '24px',
+  '--space-8': '32px',
+  '--space-10': '40px',
+  '--font-sans': "'Inter', -apple-system, sans-serif",
+  '--font-mono': "'JetBrains Mono', ui-monospace, Menlo, monospace",
+};
+
+const NEUMORPHISM_CUSTOM_CSS = `/* Neumorphism 二重シャドウ（lib/theme.css と同じ） */
+:root {
+  --shadow-light: #FFFFFF;
+  --shadow-dark: rgba(163, 177, 198, 0.5);
+  --shadow-out:    -8px -8px 16px var(--shadow-light),  8px  8px 16px var(--shadow-dark);
+  --shadow-out-sm: -3px -3px 6px var(--shadow-light),   3px  3px 6px var(--shadow-dark);
+  --shadow-out-lg: -16px -16px 32px var(--shadow-light), 16px 16px 32px var(--shadow-dark);
+  --shadow-in:     inset 4px 4px 8px var(--shadow-dark),   inset -4px -4px 8px var(--shadow-light);
+  --shadow-in-sm:  inset 2px 2px 4px var(--shadow-dark),   inset -2px -2px 4px var(--shadow-light);
+  --border:        rgba(163, 177, 198, 0.18);
+  --border-strong: rgba(163, 177, 198, 0.32);
+}`;
+
+// ═══════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════
+
+const state = {
+  themes: [],
+  currentId: null,
+  previewReady: false,
+  actionTargetId: null,
+};
+
+// ═══════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════
+
+function uid() {
+  return 'theme_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+function nowIso() { return new Date().toISOString(); }
+
+function byId(id) { return document.getElementById(id); }
+
+function debounce(fn, ms) {
+  let t;
+  return function () {
+    const args = arguments;
+    const self = this;
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(self, args), ms);
   };
+}
 
-  // ============================================================
-  // ユーティリティ
-  // ============================================================
+function formatDate(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  } catch (e) {
+    return '—';
+  }
+}
 
-  const $ = (sel) => document.querySelector(sel);
+function toHexSafe(value) {
+  if (typeof value !== 'string') return '#000000';
+  const v = value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) return v;
+  const m3 = v.match(/^#([0-9a-fA-F]{3})$/);
+  if (m3) {
+    const [r, g, b] = m3[1].split('');
+    return '#' + r + r + g + g + b + b;
+  }
+  return '#000000';
+}
 
-  /** crypto.randomUUID() を優先、未対応環境はフォールバック */
-  const uuid = () => {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      return crypto.randomUUID();
+// ═══════════════════════════════════════════════════════════
+// Storage
+// ═══════════════════════════════════════════════════════════
+
+function cleanupLegacyData() {
+  LEGACY_KEYS.forEach((k) => {
+    if (localStorage.getItem(k) !== null) {
+      localStorage.removeItem(k);
     }
-    // フォールバック: RFC4122 v4 風
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
-  };
+  });
+}
 
-  /** URLが安全（http/https）かどうか */
-  const isSafeUrl = (url) => {
-    if (!url) return false;
-    try {
-      const u = new URL(url);
-      return u.protocol === 'http:' || u.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  };
+function _useDrive() {
+  return !!(window.driveSync && window.driveSync.isSignedIn && window.driveSync.isSignedIn());
+}
 
-  /** 簡易トースト */
-  let toastTimer = null;
-  const toast = (message, type = 'info') => {
-    const el = $('#toast');
-    if (!el) return;
-    el.textContent = message;
-    el.className = 'toast show ' + (type === 'error' ? 'error' : type === 'success' ? 'success' : '');
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => {
-      el.classList.remove('show');
-    }, 2600);
-  };
+let _driveProgressCount = 0;
+function driveProgressStart() {
+  _driveProgressCount++;
+  const el = byId('drive-progress');
+  if (el) el.hidden = false;
+}
+function driveProgressEnd() {
+  _driveProgressCount = Math.max(0, _driveProgressCount - 1);
+  if (_driveProgressCount === 0) {
+    const el = byId('drive-progress');
+    if (el) el.hidden = true;
+  }
+}
 
-  /** タグ文字列 → 配列に正規化（重複・空文字除去） */
-  const parseTags = (raw) => {
-    if (!raw) return [];
-    const seen = new Set();
-    const result = [];
-    raw.split(',').forEach((t) => {
-      const trimmed = t.trim();
-      if (!trimmed) return;
-      const key = trimmed.toLowerCase();
-      if (seen.has(key)) return;
-      seen.add(key);
-      result.push(trimmed);
-    });
-    return result;
-  };
-
-  // ============================================================
-  // 永続化
-  // ============================================================
-
-  /** 既存データの imageDataUrl をホワイトリスト形式で検証（SVG等を弾く） */
-  const sanitizeIdea = (idea) => {
-    if (!idea || typeof idea !== 'object') return null;
-    const safeImage =
-      typeof idea.imageDataUrl === 'string' && ALLOWED_DATA_URL_RE.test(idea.imageDataUrl)
-        ? idea.imageDataUrl
-        : '';
-    return {
-      id: typeof idea.id === 'string' ? idea.id : uuid(),
-      title: typeof idea.title === 'string' ? idea.title : '',
-      imageDataUrl: safeImage,
-      referenceUrl: typeof idea.referenceUrl === 'string' ? idea.referenceUrl : '',
-      tags: Array.isArray(idea.tags) ? idea.tags.filter((t) => typeof t === 'string') : [],
-      appId: typeof idea.appId === 'string' ? idea.appId : null,
-      screenName: typeof idea.screenName === 'string' ? idea.screenName : '',
-      note: typeof idea.note === 'string' ? idea.note : '',
-      createdAt: typeof idea.createdAt === 'string' ? idea.createdAt : new Date().toISOString()
-    };
-  };
-
-  const loadState = () => {
-    try {
-      const appsRaw = localStorage.getItem(STORAGE_KEY_APPS);
-      const ideasRaw = localStorage.getItem(STORAGE_KEY_IDEAS);
-      const apps = appsRaw ? JSON.parse(appsRaw) : [];
-      const ideas = ideasRaw ? JSON.parse(ideasRaw) : [];
-      state.apps = Array.isArray(apps)
-        ? apps.filter((a) => a && typeof a === 'object' && typeof a.id === 'string')
-        : [];
-      state.ideas = Array.isArray(ideas)
-        ? ideas.map(sanitizeIdea).filter((i) => i && i.title)
-        : [];
-    } catch (err) {
-      console.error('localStorage の読み込みに失敗:', err);
-      state.apps = [];
-      state.ideas = [];
-      toast('保存データの読み込みに失敗しました', 'error');
-    }
-  };
-
-  /**
-   * localStorageへの書き込みは必ずこの関数経由で。
-   * 2キーへの書き込みを擬似的に原子化する：
-   * 1) 旧値をスナップショット
-   * 2) 順次書き込み
-   * 3) 失敗時は旧値で復元（旧値が無ければキーを削除）
-   */
-  const saveState = () => {
-    let appsJson;
-    let ideasJson;
-    try {
-      appsJson = JSON.stringify(state.apps);
-      ideasJson = JSON.stringify(state.ideas);
-    } catch (err) {
-      console.error('state のシリアライズに失敗:', err);
-      toast('保存に失敗しました', 'error');
-      return false;
-    }
-    // Safari プライベートモード等では getItem 自体が例外を投げ得る
-    let prevApps = null;
-    let prevIdeas = null;
-    try {
-      prevApps = localStorage.getItem(STORAGE_KEY_APPS);
-      prevIdeas = localStorage.getItem(STORAGE_KEY_IDEAS);
-    } catch (err) {
-      console.error('localStorage の読み出しに失敗:', err);
-      toast('保存に失敗しました（ストレージにアクセスできません）', 'error');
-      return false;
-    }
-    try {
-      localStorage.setItem(STORAGE_KEY_APPS, appsJson);
-      localStorage.setItem(STORAGE_KEY_IDEAS, ideasJson);
-      // Drive 同期: ログイン中なら fire-and-forget でアップロード
-      if (window.driveSync) {
-        window.driveSync.markDirty(STORAGE_KEY_APPS);
-        window.driveSync.markDirty(STORAGE_KEY_IDEAS);
-      }
-      return true;
-    } catch (err) {
-      console.error('localStorage の書き込みに失敗:', err);
-      // 旧値で復元
-      try {
-        if (prevApps !== null) {
-          localStorage.setItem(STORAGE_KEY_APPS, prevApps);
-        } else {
-          localStorage.removeItem(STORAGE_KEY_APPS);
-        }
-        if (prevIdeas !== null) {
-          localStorage.setItem(STORAGE_KEY_IDEAS, prevIdeas);
-        } else {
-          localStorage.removeItem(STORAGE_KEY_IDEAS);
-        }
-      } catch (rollbackErr) {
-        console.error('ロールバック失敗:', rollbackErr);
-      }
-      if (err && err.name === 'QuotaExceededError') {
-        toast('ストレージ容量上限です。古いアイデアを削除してください', 'error');
-      } else {
-        toast('保存に失敗しました', 'error');
-      }
-      return false;
-    }
-  };
-
-  // ============================================================
-  // データ操作
-  // ============================================================
-
-  const addApp = ({ name, emoji }) => {
-    const app = {
-      id: uuid(),
-      name: name.trim(),
-      emoji: (emoji || '').trim() || '📦',
-      createdAt: new Date().toISOString()
-    };
-    state.apps.push(app);
-    if (!saveState()) {
-      state.apps.pop();
-      return null;
-    }
-    return app;
-  };
-
-  const deleteApp = (appId) => {
-    const beforeApps = state.apps.slice();
-    const beforeIdeas = state.ideas.slice();
-    state.apps = state.apps.filter((a) => a.id !== appId);
-    // 紐づくアイデアの appId をクリア（削除はしない）
-    state.ideas = state.ideas.map((idea) =>
-      idea.appId === appId ? { ...idea, appId: null } : idea
-    );
-    if (!saveState()) {
-      state.apps = beforeApps;
-      state.ideas = beforeIdeas;
-      return false;
-    }
-    // フィルタが該当アプリを参照していたら解除
-    if (state.filter.appId === appId) state.filter.appId = null;
-    return true;
-  };
-
-  const addIdea = (data) => {
-    const idea = {
-      id: uuid(),
-      title: data.title.trim(),
-      imageDataUrl: data.imageDataUrl || '',
-      referenceUrl: data.referenceUrl ? data.referenceUrl.trim() : '',
-      tags: parseTags(data.tags),
-      appId: data.appId || null,
-      screenName: data.screenName ? data.screenName.trim() : '',
-      note: data.note ? data.note.trim() : '',
-      createdAt: new Date().toISOString()
-    };
-    state.ideas.unshift(idea);
-    if (!saveState()) {
-      state.ideas.shift();
-      return null;
-    }
-    return idea;
-  };
-
-  const deleteIdea = (ideaId) => {
-    const before = state.ideas.slice();
-    state.ideas = state.ideas.filter((i) => i.id !== ideaId);
-    if (!saveState()) {
-      state.ideas = before;
-      return false;
-    }
-    return true;
-  };
-
-  // ============================================================
-  // フィルタリング
-  // ============================================================
-
-  const getFilteredIdeas = () => {
-    const { appId, tag } = state.filter;
-    return state.ideas.filter((idea) => {
-      if (appId && idea.appId !== appId) return false;
-      if (tag && !idea.tags.some((t) => t.toLowerCase() === tag.toLowerCase())) return false;
-      return true;
-    });
-  };
-
-  const getAllTags = () => {
-    const set = new Set();
-    state.ideas.forEach((idea) => {
-      idea.tags.forEach((t) => set.add(t));
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  };
-
-  const getAppById = (appId) =>
-    state.apps.find((a) => a.id === appId) || null;
-
-  const countIdeasInApp = (appId) =>
-    state.ideas.filter((i) => i.appId === appId).length;
-
-  // ============================================================
-  // 描画
-  // ============================================================
-
-  /** 安全な属性付きで要素を作るヘルパー */
-  const el = (tag, options = {}, children = []) => {
-    const node = document.createElement(tag);
-    if (options.class) node.className = options.class;
-    if (options.text != null) node.textContent = options.text;
-    if (options.attrs) {
-      Object.entries(options.attrs).forEach(([k, v]) => {
-        if (v != null) node.setAttribute(k, String(v));
-      });
-    }
-    if (options.dataset) {
-      Object.entries(options.dataset).forEach(([k, v]) => {
-        if (v != null) node.dataset[k] = String(v);
-      });
-    }
-    if (options.on) {
-      Object.entries(options.on).forEach(([evt, handler]) => {
-        node.addEventListener(evt, handler);
-      });
-    }
-    children.forEach((child) => {
-      if (child) node.appendChild(child);
-    });
-    return node;
-  };
-
-  const renderTabs = () => {
-    document.querySelectorAll('.tab[data-view]').forEach((btn) => {
-      const active = btn.dataset.view === state.view;
-      btn.classList.toggle('active', active);
-      btn.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
-    VIEWS.forEach((v) => {
-      const section = document.getElementById('view-' + v);
-      if (section) section.hidden = state.view !== v;
-    });
-  };
-
-  const renderFilters = () => {
-    const appSelect = $('#filter-app');
-    const tagSelect = $('#filter-tag');
-    if (!appSelect || !tagSelect) return;
-
-    // アプリ：選択中のIDがアプリ一覧から消えていればフィルタを解除
-    if (state.filter.appId && !state.apps.some((a) => a.id === state.filter.appId)) {
-      state.filter.appId = null;
-    }
-    appSelect.textContent = '';
-    appSelect.appendChild(el('option', { text: 'すべて', attrs: { value: '' } }));
-    state.apps.forEach((app) => {
-      appSelect.appendChild(
-        el('option', {
-          text: `${app.emoji} ${app.name}`,
-          attrs: { value: app.id }
-        })
-      );
-    });
-    appSelect.value = state.filter.appId || '';
-
-    // タグ：選択中のタグが現存しなければフィルタを解除（UI/state 同期保証）
-    const allTags = getAllTags();
-    if (
-      state.filter.tag &&
-      !allTags.some((t) => t.toLowerCase() === state.filter.tag.toLowerCase())
-    ) {
-      state.filter.tag = null;
-    }
-    tagSelect.textContent = '';
-    tagSelect.appendChild(el('option', { text: 'すべて', attrs: { value: '' } }));
-    allTags.forEach((t) => {
-      tagSelect.appendChild(el('option', { text: t, attrs: { value: t } }));
-    });
-    tagSelect.value = state.filter.tag || '';
-  };
-
-  const buildIdeaCard = (idea) => {
-    const card = el('button', {
-      class: 'idea-card',
-      attrs: { type: 'button', 'aria-label': `アイデア詳細: ${idea.title}` },
-      dataset: { ideaId: idea.id },
-      on: { click: () => openDetailModal(idea.id) }
-    });
-
-    if (idea.imageDataUrl) {
-      const img = el('img', {
-        class: 'idea-card-image',
-        attrs: { src: idea.imageDataUrl, alt: idea.title, loading: 'lazy' }
-      });
-      img.addEventListener('error', () => {
-        img.replaceWith(buildUrlThumb());
-      });
-      card.appendChild(img);
+async function loadThemes() {
+  let raw;
+  try {
+    if (_useDrive()) {
+      raw = await window.driveSync.loadItem(LS_KEY);
     } else {
-      card.appendChild(buildUrlThumb());
+      raw = localStorage.getItem(LS_KEY);
     }
+  } catch (e) {
+    raw = localStorage.getItem(LS_KEY);
+  }
+  try {
+    state.themes = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    state.themes = [];
+  }
+}
 
-    const body = el('div', { class: 'idea-card-body' });
-    body.appendChild(el('div', { class: 'idea-card-title', text: idea.title }));
-
-    const app = idea.appId ? getAppById(idea.appId) : null;
-    const metaParts = [];
-    if (app) metaParts.push(`${app.emoji} ${app.name}`);
-    if (idea.screenName) metaParts.push(idea.screenName);
-    if (metaParts.length > 0) {
-      body.appendChild(el('div', { class: 'idea-card-meta', text: metaParts.join('  ·  ') }));
+async function saveThemes() {
+  const json = JSON.stringify(state.themes);
+  const drive = _useDrive();
+  if (drive) driveProgressStart();
+  try {
+    if (drive) {
+      await window.driveSync.saveItem(LS_KEY, json);
+    } else {
+      localStorage.setItem(LS_KEY, json);
     }
+  } finally {
+    if (drive) driveProgressEnd();
+  }
+}
 
-    if (idea.tags.length > 0) {
-      const tagsWrap = el('div', { class: 'idea-card-tags' });
-      idea.tags.forEach((t) => {
-        tagsWrap.appendChild(el('span', { class: 'tag-chip', text: '#' + t }));
-      });
-      body.appendChild(tagsWrap);
-    }
+// ═══════════════════════════════════════════════════════════
+// Theme factory
+// ═══════════════════════════════════════════════════════════
 
-    card.appendChild(body);
-    return card;
+function createNeumorphismTheme() {
+  return {
+    id: uid(),
+    name: 'Neumorphism (default)',
+    description: '白ベースのニューモフィズム。yuto\'s dev tools の現行デフォルト。二重 shadow で柔らかい立体感を作る。',
+    tokens: Object.assign({}, NEUMORPHISM_TOKENS),
+    customCss: NEUMORPHISM_CUSTOM_CSS,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
   };
+}
 
-  const buildUrlThumb = () =>
-    el('div', { class: 'idea-card-url-thumb', text: '🔗' });
-
-  const renderGallery = () => {
-    const grid = $('#gallery-grid');
-    const empty = $('#gallery-empty');
-    const countBadge = $('#gallery-count');
-    if (!grid) return;
-
-    const filtered = getFilteredIdeas();
-    grid.textContent = '';
-    filtered.forEach((idea) => {
-      grid.appendChild(buildIdeaCard(idea));
-    });
-
-    if (countBadge) countBadge.textContent = `${filtered.length} 件`;
-    const isEmpty = filtered.length === 0;
-    if (empty) empty.hidden = !isEmpty;
-    grid.hidden = isEmpty;
+function createNewTheme(name, description, base) {
+  const theme = {
+    id: uid(),
+    name: name || 'New Theme',
+    description: description || '',
+    tokens: Object.assign({}, NEUMORPHISM_TOKENS),
+    customCss: base === 'blank' ? '' : NEUMORPHISM_CUSTOM_CSS,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
   };
+  return theme;
+}
 
-  const renderApps = () => {
-    const grid = $('#apps-grid');
-    const empty = $('#apps-empty');
-    if (!grid) return;
+// ═══════════════════════════════════════════════════════════
+// List view
+// ═══════════════════════════════════════════════════════════
 
-    grid.textContent = '';
-    state.apps.forEach((app) => {
-      const selectApp = () => {
-        state.filter.appId = app.id;
-        state.filter.tag = null;
-        state.view = 'gallery';
-        render();
-      };
-      // <button>ネスト回避のため article + role=button にする
-      const card = el('article', {
-        class: 'dp-app-card',
-        attrs: {
-          role: 'button',
-          tabindex: '0',
-          'aria-label': `${app.name} のアイデアを表示`
-        },
-        on: {
-          click: (ev) => {
-            // 削除ボタン上のクリックは無視
-            if (ev.target.closest('.dp-app-card-delete')) return;
-            selectApp();
-          },
-          keydown: (ev) => {
-            if (ev.target.closest('.dp-app-card-delete')) return;
-            if (ev.key === 'Enter' || ev.key === ' ') {
-              ev.preventDefault();
-              selectApp();
-            }
-          }
-        }
-      });
-      card.appendChild(el('div', { class: 'dp-app-card-emoji', text: app.emoji || '📦' }));
-      card.appendChild(el('div', { class: 'dp-app-card-name', text: app.name }));
-      card.appendChild(
-        el('div', { class: 'dp-app-card-count', text: `${countIdeasInApp(app.id)} ideas` })
-      );
+function renderList() {
+  const grid = byId('theme-grid');
+  const empty = byId('theme-empty');
+  grid.innerHTML = '';
 
-      const delBtn = el('button', {
-        class: 'dp-app-card-delete',
-        attrs: { type: 'button', 'aria-label': `${app.name} を削除`, title: '削除' },
-        text: '×',
-        on: {
-          click: (ev) => {
-            ev.stopPropagation();
-            const count = countIdeasInApp(app.id);
-            const msg = count > 0
-              ? `「${app.name}」を削除しますか？\n紐づく ${count} 件のアイデアはアプリ未設定になります。`
-              : `「${app.name}」を削除しますか？`;
-            if (window.confirm(msg)) {
-              if (deleteApp(app.id)) {
-                toast('アプリを削除しました', 'success');
-                render();
-              }
-            }
-          }
-        }
-      });
-      card.appendChild(delBtn);
-      grid.appendChild(card);
-    });
+  if (state.themes.length === 0) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
 
-    const isEmpty = state.apps.length === 0;
-    if (empty) empty.hidden = !isEmpty;
-    grid.hidden = isEmpty;
-  };
+  const sorted = state.themes.slice().sort((a, b) =>
+    (b.updatedAt || '').localeCompare(a.updatedAt || '')
+  );
 
-  /** 追加フォームのアプリ選択肢を更新 */
-  const renderIdeaAppOptions = () => {
-    const sel = $('#idea-app');
-    if (!sel) return;
-    const current = sel.value;
-    sel.textContent = '';
-    sel.appendChild(el('option', { text: '（未設定）', attrs: { value: '' } }));
-    state.apps.forEach((app) => {
-      sel.appendChild(
-        el('option', { text: `${app.emoji} ${app.name}`, attrs: { value: app.id } })
-      );
-    });
-    if (current && state.apps.some((a) => a.id === current)) {
-      sel.value = current;
-    }
-  };
-
-  /** 一括再描画 */
-  const render = () => {
-    renderTabs();
-    renderFilters();
-    renderGallery();
-    renderApps();
-    renderIdeaAppOptions();
-  };
-
-  // ============================================================
-  // モーダル制御
-  // ============================================================
-
-  // モーダルごとに「直前のフォーカス要素」と「TABハンドラ」を保持
-  const modalState = new Map();
-
-  const trapFocus = (overlay) => (ev) => {
-    if (ev.key !== 'Tab') return;
-    const focusables = Array.from(overlay.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
-      (n) => !n.hasAttribute('hidden') && n.offsetParent !== null
-    );
-    if (focusables.length === 0) {
-      ev.preventDefault();
-      return;
-    }
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (ev.shiftKey && document.activeElement === first) {
-      ev.preventDefault();
-      last.focus();
-    } else if (!ev.shiftKey && document.activeElement === last) {
-      ev.preventDefault();
-      first.focus();
-    }
-  };
-
-  const openModal = (id) => {
-    const overlay = document.getElementById(id);
-    if (!overlay || !overlay.hidden) return;
-    const handler = trapFocus(overlay);
-    modalState.set(id, {
-      lastFocus: document.activeElement,
-      handler
-    });
-    overlay.hidden = false;
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', handler);
-    const focusable = overlay.querySelector(FOCUSABLE_SELECTOR);
-    if (focusable) focusable.focus();
-  };
-
-  const closeModal = (id) => {
-    const overlay = document.getElementById(id);
-    if (!overlay || overlay.hidden) return;
-    overlay.hidden = true;
-    const ms = modalState.get(id);
-    if (ms) {
-      if (ms.handler) document.removeEventListener('keydown', ms.handler);
-      if (ms.lastFocus && typeof ms.lastFocus.focus === 'function') {
-        ms.lastFocus.focus();
-      }
-      modalState.delete(id);
-    }
-    // 他に開いているモーダルが無ければ body スクロールを戻す
-    const stillOpen = document.querySelector('.modal-overlay:not([hidden])');
-    if (!stillOpen) document.body.style.overflow = '';
-  };
-
-  const closeTopmostModal = () => {
-    const open = Array.from(document.querySelectorAll('.modal-overlay:not([hidden])'));
-    if (open.length === 0) return;
-    closeModal(open[open.length - 1].id);
-  };
-
-  // ============================================================
-  // 詳細モーダル
-  // ============================================================
-
-  const openDetailModal = (ideaId) => {
-    const idea = state.ideas.find((i) => i.id === ideaId);
-    if (!idea) return;
-    const body = $('#detailBody');
-    if (!body) return;
-    body.textContent = '';
-
-    if (idea.imageDataUrl) {
-      const img = el('img', {
-        class: 'detail-image',
-        attrs: { src: idea.imageDataUrl, alt: idea.title }
-      });
-      body.appendChild(img);
-    }
-
-    const sections = [];
-    sections.push(['タイトル', idea.title]);
-
-    const app = idea.appId ? getAppById(idea.appId) : null;
-    if (app) sections.push(['アプリ', `${app.emoji} ${app.name}`]);
-    if (idea.screenName) sections.push(['画面', idea.screenName]);
-    if (idea.note) sections.push(['メモ', idea.note]);
-    sections.push(['登録日', formatDate(idea.createdAt)]);
-
-    sections.forEach(([label, value]) => {
-      const sec = el('div', { class: 'detail-section' });
-      sec.appendChild(el('div', { class: 'detail-label', text: label }));
-      sec.appendChild(el('div', { class: 'detail-value', text: value }));
-      body.appendChild(sec);
-    });
-
-    // 参考URL（リンク化、ただし http/https のみ）
-    if (idea.referenceUrl) {
-      const sec = el('div', { class: 'detail-section' });
-      sec.appendChild(el('div', { class: 'detail-label', text: '参考URL' }));
-      const valueWrap = el('div', { class: 'detail-value' });
-      if (isSafeUrl(idea.referenceUrl)) {
-        const a = el('a', {
-          text: idea.referenceUrl,
-          attrs: {
-            href: idea.referenceUrl,
-            target: '_blank',
-            rel: 'noopener noreferrer'
-          }
-        });
-        valueWrap.appendChild(a);
-      } else {
-        valueWrap.textContent = idea.referenceUrl;
-      }
-      sec.appendChild(valueWrap);
-      body.appendChild(sec);
-    }
-
-    if (idea.tags.length > 0) {
-      const sec = el('div', { class: 'detail-section' });
-      sec.appendChild(el('div', { class: 'detail-label', text: 'タグ' }));
-      const tagsWrap = el('div', { class: 'detail-tags' });
-      idea.tags.forEach((t) => {
-        tagsWrap.appendChild(el('span', { class: 'tag-chip', text: '#' + t }));
-      });
-      sec.appendChild(tagsWrap);
-      body.appendChild(sec);
-    }
-
-    // アクション
-    const actions = el('div', { class: 'detail-actions' });
-    const delBtn = el('button', {
-      class: 'btn-danger',
-      text: '削除',
-      attrs: { type: 'button' },
-      on: {
-        click: () => {
-          if (window.confirm('このアイデアを削除しますか？')) {
-            if (deleteIdea(idea.id)) {
-              toast('削除しました', 'success');
-              closeModal('detailOverlay');
-              render();
-            }
-          }
-        }
+  sorted.forEach((theme) => {
+    const card = document.createElement('div');
+    card.className = 'dp-theme-card';
+    card.setAttribute('role', 'button');
+    card.tabIndex = 0;
+    card.addEventListener('click', () => enterEditor(theme.id));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        enterEditor(theme.id);
       }
     });
-    const closeBtn = el('button', {
-      class: 'btn-ghost',
-      text: '閉じる',
-      attrs: { type: 'button' },
-      on: { click: () => closeModal('detailOverlay') }
-    });
-    actions.appendChild(delBtn);
-    actions.appendChild(closeBtn);
-    body.appendChild(actions);
 
-    openModal('detailOverlay');
-  };
-
-  const formatDate = (iso) => {
-    try {
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) return iso;
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    } catch {
-      return iso;
-    }
-  };
-
-  // ============================================================
-  // 画像アップロード
-  // ============================================================
-
-  const handleImageFile = (file) => {
-    if (!file) return;
-    // SVGはスクリプト埋め込み可能なので明示的に拒否
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      toast('PNG / JPEG / WebP / GIF のみアップロードできます', 'error');
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      toast(`画像サイズは ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)}MB 以下にしてください`, 'error');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
-      // DataURL のMIMEを再検証（拡張子偽装対策）
-      if (!ALLOWED_DATA_URL_RE.test(dataUrl)) {
-        toast('画像形式の判定に失敗しました', 'error');
-        return;
-      }
-      state.pendingImage = dataUrl;
-      const preview = $('#upload-preview');
-      const hint = $('#upload-hint');
-      const clear = $('#upload-clear');
-      const zone = $('#upload-zone');
-      if (preview) {
-        preview.src = dataUrl;
-        preview.hidden = false;
-      }
-      if (hint) hint.hidden = true;
-      if (clear) clear.hidden = false;
-      if (zone) zone.classList.add('has-image');
-    };
-    reader.onerror = () => {
-      toast('画像の読み込みに失敗しました', 'error');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const clearPendingImage = () => {
-    state.pendingImage = null;
-    const preview = $('#upload-preview');
-    const hint = $('#upload-hint');
-    const clear = $('#upload-clear');
-    const zone = $('#upload-zone');
-    const fileInput = $('#idea-image');
-    if (preview) {
-      preview.src = '';
-      preview.hidden = true;
-    }
-    if (hint) hint.hidden = false;
-    if (clear) clear.hidden = true;
-    if (zone) zone.classList.remove('has-image');
-    if (fileInput) fileInput.value = '';
-  };
-
-  // ============================================================
-  // フォームのリセット
-  // ============================================================
-
-  const resetIdeaForm = () => {
-    const form = $('#addIdeaForm');
-    if (form && typeof form.reset === 'function') form.reset();
-    clearPendingImage();
-  };
-
-  const resetAppForm = () => {
-    const form = $('#addAppForm');
-    if (form && typeof form.reset === 'function') form.reset();
-  };
-
-  // ============================================================
-  // イベント登録
-  // ============================================================
-
-  const bindEvents = () => {
-    // タブ切り替え
-    document.querySelectorAll('.tab[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        state.view = btn.dataset.view;
-        renderTabs();
-      });
+    const thumb = document.createElement('div');
+    thumb.className = 'dp-theme-card-thumb';
+    thumb.style.background = theme.tokens['--bg'] || '#E9EDF0';
+    ['--accent', '--success', '--warning', '--danger', '--purple'].forEach((v) => {
+      const sw = document.createElement('div');
+      sw.className = 'dp-theme-card-swatch';
+      sw.style.background = theme.tokens[v] || '#ccc';
+      thumb.appendChild(sw);
     });
 
-    // 追加ボタン
-    const openAddBtn = $('#openAddBtn');
-    if (openAddBtn) {
-      openAddBtn.addEventListener('click', () => {
-        resetIdeaForm();
-        renderIdeaAppOptions();
-        openModal('addIdeaOverlay');
-      });
-    }
+    const name = document.createElement('div');
+    name.className = 'dp-theme-card-name';
+    name.textContent = theme.name;
 
-    const openAddAppBtn = $('#openAddAppBtn');
-    if (openAddAppBtn) {
-      openAddAppBtn.addEventListener('click', () => {
-        resetAppForm();
-        openModal('addAppOverlay');
-      });
-    }
+    const desc = document.createElement('div');
+    desc.className = 'dp-theme-card-desc';
+    desc.textContent = theme.description || '説明なし';
 
-    // モーダルクローズ（×ボタン・キャンセルボタン）
-    document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        closeModal(btn.dataset.closeModal);
-      });
+    const meta = document.createElement('div');
+    meta.className = 'dp-theme-card-meta';
+    const left = document.createElement('span');
+    left.textContent = formatDate(theme.updatedAt);
+    const right = document.createElement('span');
+    right.textContent = 'edit →';
+    meta.append(left, right);
+
+    const actions = document.createElement('div');
+    actions.className = 'app-card-actions';
+
+    const exportBtn = document.createElement('button');
+    exportBtn.type = 'button';
+    exportBtn.className = 'app-card-btn';
+    exportBtn.title = 'CSS 書出';
+    exportBtn.textContent = '⇩';
+    exportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openExportModalFor(theme.id);
     });
 
-    // オーバーレイクリックで閉じる（closeModal経由でフォーカス復帰させる）
-    document.querySelectorAll('.modal-overlay').forEach((overlay) => {
-      overlay.addEventListener('click', (ev) => {
-        if (ev.target === overlay) closeModal(overlay.id);
-      });
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'app-card-btn danger';
+    deleteBtn.title = '削除';
+    deleteBtn.textContent = '×';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openDeleteModalFor(theme.id);
     });
 
-    // ESCで一番上のモーダルを閉じる
-    document.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape') closeTopmostModal();
-    });
+    actions.append(exportBtn, deleteBtn);
+    card.append(thumb, name, desc, meta, actions);
+    grid.appendChild(card);
+  });
+}
 
-    // フィルタ
-    const filterApp = $('#filter-app');
-    if (filterApp) {
-      filterApp.addEventListener('change', () => {
-        state.filter.appId = filterApp.value || null;
-        renderGallery();
+// ═══════════════════════════════════════════════════════════
+// Editor view
+// ═══════════════════════════════════════════════════════════
+
+function getCurrentTheme() {
+  return state.themes.find((t) => t.id === state.currentId);
+}
+
+function enterEditor(id) {
+  state.currentId = id;
+  document.body.dataset.view = 'editor';
+  renderEditor();
+  if (window.theme) {
+    const m = byId('theme-mount-editor');
+    if (m && !m.firstChild) window.theme.mountUI(m);
+  }
+  window.scrollTo(0, 0);
+}
+
+function exitEditor() {
+  state.currentId = null;
+  document.body.dataset.view = 'list';
+  renderList();
+  window.scrollTo(0, 0);
+}
+
+function renderEditor() {
+  const theme = getCurrentTheme();
+  if (!theme) { exitEditor(); return; }
+
+  byId('editor-title').textContent = theme.name;
+  byId('field-name').value = theme.name;
+  byId('field-description').value = theme.description || '';
+  byId('field-custom-css').value = theme.customCss || '';
+
+  renderTokenForm('form-colors', COLOR_TOKENS, theme.tokens, 'color');
+  renderTokenForm('form-radius', RADIUS_TOKENS, theme.tokens, 'text');
+  renderTokenForm('form-spacing', SPACING_TOKENS, theme.tokens, 'text');
+  renderTokenForm('form-fonts', FONT_TOKENS, theme.tokens, 'text');
+
+  updatePreview();
+}
+
+function renderTokenForm(containerId, tokens, values, inputType) {
+  const container = byId(containerId);
+  container.innerHTML = '';
+
+  tokens.forEach((tok) => {
+    const row = document.createElement('div');
+    row.className = 'dp-token-row';
+
+    const label = document.createElement('label');
+    label.className = 'dp-token-label';
+    label.textContent = tok.label;
+    row.appendChild(label);
+
+    const val = values[tok.var] || '';
+
+    if (inputType === 'color') {
+      const field = document.createElement('div');
+      field.className = 'color-field';
+
+      const swatch = document.createElement('input');
+      swatch.type = 'color';
+      swatch.className = 'color-field-swatch';
+      swatch.value = toHexSafe(val);
+
+      const hex = document.createElement('input');
+      hex.type = 'text';
+      hex.className = 'color-field-hex';
+      hex.value = val;
+      hex.maxLength = 9;
+
+      swatch.addEventListener('input', () => {
+        hex.value = swatch.value;
+        onTokenChange(tok.var, swatch.value);
       });
-    }
-    const filterTag = $('#filter-tag');
-    if (filterTag) {
-      filterTag.addEventListener('change', () => {
-        state.filter.tag = filterTag.value || null;
-        renderGallery();
+      hex.addEventListener('input', () => {
+        const v = hex.value.trim();
+        onTokenChange(tok.var, v);
+        if (/^#[0-9a-fA-F]{6}$/.test(v)) swatch.value = v;
       });
-    }
-    const clearFilters = $('#clear-filters');
-    if (clearFilters) {
-      clearFilters.addEventListener('click', () => {
-        state.filter.appId = null;
-        state.filter.tag = null;
-        renderFilters();
-        renderGallery();
+
+      field.append(swatch, hex);
+      row.appendChild(field);
+    } else {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-input dp-token-input';
+      input.value = val;
+      input.addEventListener('input', () => {
+        onTokenChange(tok.var, input.value);
       });
+      row.appendChild(input);
     }
 
-    // 画像アップロード
-    const fileInput = $('#idea-image');
-    if (fileInput) {
-      fileInput.addEventListener('change', () => {
-        const file = fileInput.files && fileInput.files[0];
-        if (file) handleImageFile(file);
-      });
-    }
-    const uploadClear = $('#upload-clear');
-    if (uploadClear) {
-      uploadClear.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        clearPendingImage();
-      });
-    }
-    const zone = $('#upload-zone');
-    if (zone) {
-      zone.addEventListener('dragover', (ev) => {
-        ev.preventDefault();
-        zone.classList.add('drag-over');
-      });
-      zone.addEventListener('dragleave', () => {
-        zone.classList.remove('drag-over');
-      });
-      zone.addEventListener('drop', (ev) => {
-        ev.preventDefault();
-        zone.classList.remove('drag-over');
-        const file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
-        if (file) handleImageFile(file);
-      });
-    }
+    container.appendChild(row);
+  });
+}
 
-    // アイデア追加フォーム送信
-    const ideaForm = $('#addIdeaForm');
-    if (ideaForm) {
-      ideaForm.addEventListener('submit', (ev) => {
-        ev.preventDefault();
-        const title = $('#idea-title').value.trim();
-        if (!title) {
-          toast('タイトルを入力してください', 'error');
-          return;
-        }
-        const url = $('#idea-url').value.trim();
-        if (url && !isSafeUrl(url)) {
-          toast('URLは http:// または https:// で始めてください', 'error');
-          return;
-        }
-        const idea = addIdea({
-          title,
-          imageDataUrl: state.pendingImage || '',
-          referenceUrl: url,
-          tags: $('#idea-tags').value,
-          appId: $('#idea-app').value || null,
-          screenName: $('#idea-screen').value,
-          note: $('#idea-note').value
-        });
-        if (idea) {
-          toast('アイデアを追加しました', 'success');
-          closeModal('addIdeaOverlay');
-          state.view = 'gallery';
-          render();
-        }
-      });
-    }
+// ═══════════════════════════════════════════════════════════
+// Edit handlers
+// ═══════════════════════════════════════════════════════════
 
-    // アプリ追加フォーム送信
-    const appForm = $('#addAppForm');
-    if (appForm) {
-      appForm.addEventListener('submit', (ev) => {
-        ev.preventDefault();
-        const name = $('#app-name').value.trim();
-        if (!name) {
-          toast('アプリ名を入力してください', 'error');
-          return;
-        }
-        const emoji = $('#app-emoji').value;
-        const app = addApp({ name, emoji });
-        if (app) {
-          toast('アプリを追加しました', 'success');
-          closeModal('addAppOverlay');
-          render();
-        }
-      });
-    }
-  };
+const schedulePreviewUpdate = debounce(updatePreview, 120);
 
-  // ============================================================
-  // 起動
-  // ============================================================
+const autoSave = debounce(async () => {
+  const theme = getCurrentTheme();
+  if (!theme) return;
+  theme.updatedAt = nowIso();
+  try {
+    await saveThemes();
+  } catch (e) {
+    showToast('保存エラー', 'error');
+  }
+}, 400);
 
-  // ============================================================
-  // Drive 同期 (drive-sync.js が読み込まれていれば有効)
-  // ============================================================
-  const initDriveSync = () => {
-    if (!window.driveSync) return;
+function onTokenChange(varName, value) {
+  const theme = getCurrentTheme();
+  if (!theme) return;
+  theme.tokens[varName] = value;
+  schedulePreviewUpdate();
+  autoSave();
+}
+
+function onFieldChange(field, value) {
+  const theme = getCurrentTheme();
+  if (!theme) return;
+  if (field === 'name') {
+    theme.name = value;
+    byId('editor-title').textContent = value;
+  } else if (field === 'description') {
+    theme.description = value;
+  } else if (field === 'customCss') {
+    theme.customCss = value;
+    schedulePreviewUpdate();
+  }
+  autoSave();
+}
+
+// ═══════════════════════════════════════════════════════════
+// Live preview
+// ═══════════════════════════════════════════════════════════
+
+function updatePreview() {
+  const theme = getCurrentTheme();
+  if (!theme || !state.previewReady) return;
+  const css = buildThemeCss(theme);
+  const frame = byId('preview-frame');
+  if (frame && frame.contentWindow) {
+    frame.contentWindow.postMessage({ type: 'updateTheme', css }, '*');
+  }
+}
+
+function buildThemeCss(theme) {
+  const tokenLines = Object.entries(theme.tokens)
+    .map(([k, v]) => `  ${k}: ${v};`)
+    .join('\n');
+  let css = `:root {\n${tokenLines}\n}\n`;
+  if (theme.customCss && theme.customCss.trim()) {
+    css += '\n' + theme.customCss;
+  }
+  return css;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CRUD
+// ═══════════════════════════════════════════════════════════
+
+async function handleCreateTheme(name, description, base) {
+  const theme = createNewTheme(name, description, base);
+  state.themes.push(theme);
+  await saveThemes();
+  closeModal('modal-new');
+  enterEditor(theme.id);
+  showToast('テーマを作成しました', 'success');
+}
+
+async function deleteTargetTheme() {
+  const id = state.actionTargetId;
+  if (!id) return;
+  const wasEditing = state.currentId === id;
+  state.themes = state.themes.filter((t) => t.id !== id);
+  await saveThemes();
+  closeModal('modal-delete');
+  state.actionTargetId = null;
+  if (wasEditing) {
+    exitEditor();
+  } else {
+    renderList();
+  }
+  showToast('削除しました', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════
+// Export
+// ═══════════════════════════════════════════════════════════
+
+function openExportModalFor(id) {
+  const theme = state.themes.find((t) => t.id === id);
+  if (!theme) return;
+  state.actionTargetId = id;
+  byId('export-textarea').value = buildExportCss(theme);
+  openModal('modal-export');
+}
+
+function openDeleteModalFor(id) {
+  const theme = state.themes.find((t) => t.id === id);
+  if (!theme) return;
+  state.actionTargetId = id;
+  byId('delete-target-name').textContent = theme.name;
+  openModal('modal-delete');
+}
+
+function buildExportCss(theme) {
+  const header =
+`/* ============================================================
+   ${theme.name}
+   ${theme.description || ''}
+   Exported: ${nowIso()}
+   ============================================================ */
+
+`;
+  return header + buildThemeCss(theme);
+}
+
+async function copyExport() {
+  const text = byId('export-textarea').value;
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('コピーしました', 'success');
+  } catch (e) {
+    showToast('コピーに失敗しました', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Modal helpers
+// ═══════════════════════════════════════════════════════════
+
+function openModal(id) {
+  const el = byId(id);
+  if (el) el.hidden = false;
+}
+function closeModal(id) {
+  const el = byId(id);
+  if (el) el.hidden = true;
+}
+
+// ═══════════════════════════════════════════════════════════
+// Toast
+// ═══════════════════════════════════════════════════════════
+
+let _toastTimer = null;
+function showToast(msg, variant) {
+  const toast = byId('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.className = 'toast show' + (variant ? ' ' + variant : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+// ═══════════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════════
+
+async function init() {
+  cleanupLegacyData();
+
+  if (window.yutoIcons) {
+    const ic = byId('app-icon');
+    if (ic) ic.innerHTML = window.yutoIcons.toSVG('palette', { size: 20 });
+  }
+
+  if (window.theme) {
+    const m = byId('theme-mount');
+    if (m) window.theme.mountUI(m);
+  }
+
+  if (window.driveSync) {
     window.driveSync.register({
       toolId: 'designpocket',
-      keys: [STORAGE_KEY_APPS, STORAGE_KEY_IDEAS],
-      keyPatterns: [],
-      // Drive 側からデータが降ってきたら state を再ロード→再描画
-      onSyncedFromRemote: () => {
-        loadState();
-        render();
-        toast('別の端末から更新を取り込みました', 'success');
+      keys: [LS_KEY],
+      onSyncedFromRemote: async () => {
+        await loadThemes();
+        if (document.body.dataset.view === 'editor' && state.currentId) {
+          renderEditor();
+        } else {
+          renderList();
+        }
       },
     });
-    const mount = document.getElementById('sync-mount');
+    const mount = byId('sync-mount');
     if (mount) window.driveSync.mountUI(mount);
     window.driveSync.init();
-  };
+  }
 
-  const initTheme = () => {
-    if (!window.theme) return;
-    const m = document.getElementById('theme-mount');
-    if (m) window.theme.mountUI(m);
-  };
+  await loadThemes();
 
-  document.addEventListener('DOMContentLoaded', () => {
-    loadState();
-    bindEvents();
-    render();
-    initTheme();
-    initDriveSync();
+  // Seed: first-run user gets the neumorphism theme as a reference
+  if (state.themes.length === 0) {
+    state.themes.push(createNeumorphismTheme());
+    await saveThemes();
+  }
+
+  renderList();
+  bindEvents();
+
+  // Deep link: #edit → 最初のテーマを開く、#edit=<id> → 指定 ID を開く
+  const hash = location.hash;
+  if (hash && hash.startsWith('#edit')) {
+    const id = hash.includes('=') ? hash.split('=')[1] : null;
+    const target = id ? state.themes.find(t => t.id === id) : state.themes[0];
+    if (target) enterEditor(target.id);
+  }
+}
+
+function bindEvents() {
+  byId('btn-create-theme').addEventListener('click', () => {
+    byId('new-name').value = '';
+    byId('new-description').value = '';
+    byId('new-base').value = 'neumorphism';
+    openModal('modal-new');
+    setTimeout(() => byId('new-name').focus(), 50);
   });
-})();
+
+  byId('form-new').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = byId('new-name').value.trim();
+    const desc = byId('new-description').value.trim();
+    const base = byId('new-base').value;
+    if (!name) return;
+    handleCreateTheme(name, desc, base);
+  });
+
+  byId('back-to-list').addEventListener('click', (e) => {
+    e.preventDefault();
+    exitEditor();
+  });
+
+  byId('btn-copy-export').addEventListener('click', copyExport);
+  byId('btn-confirm-delete').addEventListener('click', deleteTargetTheme);
+
+  byId('field-name').addEventListener('input', (e) => onFieldChange('name', e.target.value));
+  byId('field-description').addEventListener('input', (e) => onFieldChange('description', e.target.value));
+  byId('field-custom-css').addEventListener('input', (e) => onFieldChange('customCss', e.target.value));
+
+  // Click on editor title focuses the name field
+  byId('editor-title').addEventListener('click', () => {
+    byId('field-name').focus();
+    byId('field-name').select();
+  });
+
+  // Modal close buttons
+  document.querySelectorAll('[data-close]').forEach((btn) => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+
+  // Click overlay to close
+  document.querySelectorAll('.modal-overlay').forEach((overlay) => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.hidden = true;
+    });
+  });
+
+  // Esc to close modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay').forEach((m) => m.hidden = true);
+    }
+  });
+
+  // Iframe ready
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'previewReady') {
+      state.previewReady = true;
+      const status = byId('preview-status');
+      if (status) status.textContent = 'live';
+      if (state.currentId) updatePreview();
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);

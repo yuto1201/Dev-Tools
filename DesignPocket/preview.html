@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Theme Preview</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../lib/theme.css">
+<link rel="stylesheet" href="../lib/components.css">
+<link rel="stylesheet" href="../lib/drive-sync.css">
+
+<!-- 親 (index.html) から postMessage で更新される -->
+<style id="theme-style"></style>
+
+<style>
+/* ===========================================================
+   preview 専用の最小レイアウト CSS。
+   トークンと標準コンポーネントだけを使い、
+   独自コンポーネントのスタイルは書かない。
+   =========================================================== */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+body {
+  padding: var(--space-5);
+}
+
+.pv-section { margin-bottom: var(--space-8); }
+.pv-section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.pv-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: var(--space-3);
+  line-height: 1.6;
+}
+.pv-sub {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+/* Color swatches */
+.pv-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+.pv-swatch {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-out-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.pv-swatch-color {
+  width: 100%;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-in-sm);
+}
+.pv-swatch-name { font-size: 11px; font-weight: 700; color: var(--text); }
+.pv-swatch-var { font-size: 9px; color: var(--text-dim); font-family: var(--font-mono); }
+
+/* Surfaces */
+.pv-surfaces {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-5);
+}
+.pv-surface {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.pv-surface-label { font-size: 11px; font-weight: 700; color: var(--text); }
+.pv-surface-var { font-size: 9px; color: var(--text-dim); font-family: var(--font-mono); }
+
+/* Typography */
+.pv-typo { display: flex; flex-direction: column; gap: var(--space-3); }
+.pv-typo-row { display: flex; align-items: baseline; gap: var(--space-4); }
+.pv-typo-label {
+  font-size: 9px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  width: 70px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+.pv-h1 { font-size: 28px; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+.pv-h2 { font-size: 22px; font-weight: 700; color: var(--text); }
+.pv-h3 { font-size: 17px; font-weight: 700; color: var(--text); }
+.pv-body { font-size: 14px; color: var(--text); }
+.pv-small { font-size: 12px; color: var(--text-dim); }
+.pv-mono { font-size: 12px; font-family: var(--font-mono); color: var(--text-dim); }
+
+/* Row / stack layouts */
+.pv-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.pv-stack { display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* Forms */
+.pv-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  max-width: 600px;
+}
+
+/* Card sample */
+.pv-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+.pv-card-sample {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-out);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.pv-card-sample-thumb {
+  width: 100%;
+  height: 80px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-in-sm);
+}
+.pv-card-sample-title { font-size: 13px; font-weight: 800; color: var(--text); }
+.pv-card-sample-meta { font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); }
+
+/* Radii samples */
+.pv-radii { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
+.pv-radii-box {
+  width: 70px;
+  height: 70px;
+  background: var(--bg);
+  box-shadow: var(--shadow-out-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+/* Header sample */
+.pv-header-sample {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-out);
+}
+
+/* Sync mock */
+.pv-sync-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.pv-sync-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.pv-sync-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  width: 170px;
+  flex-shrink: 0;
+}
+
+/* Skeleton panel */
+.pv-skel-card {
+  width: 240px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-out);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Scrollbar demo */
+.pv-scroll-demo {
+  width: 260px;
+  height: 140px;
+  overflow-y: auto;
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-in-sm);
+  padding: var(--space-4);
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+
+/* Range control values */
+.range-control-values {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+/* Badges layout */
+.pv-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- ============ 0. Header ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 0. header</div>
+  <div class="pv-header-sample">
+    <span class="app-back-btn" style="pointer-events:none">←</span>
+    <span class="app-title-icon">✦</span>
+    <span class="app-title" style="font-size:18px">Sample Tool</span>
+  </div>
+</section>
+
+<!-- ============ 1. Colors ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 1. colors</div>
+  <div class="pv-sub">Surface / Text</div>
+  <div class="pv-swatches" id="swatches-surface"></div>
+  <div class="pv-sub">Semantic</div>
+  <div class="pv-swatches" id="swatches-semantic"></div>
+  <div class="pv-sub">Utility Palette</div>
+  <div class="pv-swatches" id="swatches-utility"></div>
+</section>
+
+<!-- ============ 2. Surfaces / Shadows ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 2. surfaces · shadows</div>
+  <div class="pv-surfaces">
+    <div class="pv-surface" style="box-shadow: var(--shadow-out-sm)">
+      <div class="pv-surface-label">out-sm</div>
+      <div class="pv-surface-var">--shadow-out-sm</div>
+    </div>
+    <div class="pv-surface" style="box-shadow: var(--shadow-out)">
+      <div class="pv-surface-label">out</div>
+      <div class="pv-surface-var">--shadow-out</div>
+    </div>
+    <div class="pv-surface" style="box-shadow: var(--shadow-out-lg)">
+      <div class="pv-surface-label">out-lg</div>
+      <div class="pv-surface-var">--shadow-out-lg</div>
+    </div>
+    <div class="pv-surface" style="box-shadow: var(--shadow-in-sm)">
+      <div class="pv-surface-label">in-sm</div>
+      <div class="pv-surface-var">--shadow-in-sm</div>
+    </div>
+    <div class="pv-surface" style="box-shadow: var(--shadow-in)">
+      <div class="pv-surface-label">in</div>
+      <div class="pv-surface-var">--shadow-in</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. Buttons ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 3. buttons</div>
+  <div class="pv-row">
+    <button type="button" class="btn">Default</button>
+    <button type="button" class="btn btn-primary">Primary</button>
+    <button type="button" class="btn btn-ghost">Ghost</button>
+    <button type="button" class="btn btn-danger">Danger</button>
+    <button type="button" class="btn" disabled>Disabled</button>
+  </div>
+</section>
+
+<!-- ============ 4. Form inputs ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 4. form inputs</div>
+  <div class="pv-form">
+    <div class="form-row">
+      <label class="form-label">名前</label>
+      <input class="form-input" type="text" placeholder="例: Hello">
+    </div>
+    <div class="form-row">
+      <label class="form-label">メール</label>
+      <input class="form-input" type="email" placeholder="you@example.com">
+    </div>
+    <div class="form-row" style="grid-column:1/-1">
+      <label class="form-label">メモ</label>
+      <textarea class="form-input" rows="2" placeholder="複数行テキスト"></textarea>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. Cards ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 5. cards</div>
+  <div class="pv-card-grid">
+    <div class="pv-card-sample">
+      <div class="pv-card-sample-thumb"></div>
+      <div class="pv-card-sample-title">Sample A</div>
+      <div class="pv-card-sample-meta">2026-04-12</div>
+    </div>
+    <div class="pv-card-sample">
+      <div class="pv-card-sample-thumb"></div>
+      <div class="pv-card-sample-title">Sample B</div>
+      <div class="pv-card-sample-meta">2026-04-12</div>
+    </div>
+    <div class="pv-card-sample">
+      <div class="pv-card-sample-thumb"></div>
+      <div class="pv-card-sample-title">Sample C</div>
+      <div class="pv-card-sample-meta">2026-04-12</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. Empty state ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 6. empty state</div>
+  <div style="background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-in-sm);padding:var(--space-4);">
+    <div class="app-empty" style="grid-column:auto;padding:40px var(--space-5);">
+      <div class="app-empty-icon">✦</div>
+      <div class="app-empty-text">アイテムがありません</div>
+      <div class="app-empty-sub">「＋ 新規作成」から最初のアイテムを追加</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7. Modal ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 7. modal</div>
+  <div class="pv-row">
+    <button type="button" class="btn btn-primary" id="pv-modal-open">Open modal</button>
+  </div>
+  <div class="modal-overlay" id="pv-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <h3 class="modal-title">Sample Modal</h3>
+        <button type="button" class="modal-close" id="pv-modal-close" aria-label="閉じる">×</button>
+      </header>
+      <div class="modal-body">
+        <div class="form-row">
+          <label class="form-label">名前</label>
+          <input class="form-input" type="text" placeholder="例: Hello">
+        </div>
+        <div class="form-row">
+          <label class="form-label">メモ</label>
+          <textarea class="form-input" rows="3" placeholder="自由記入"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="pv-modal-cancel">キャンセル</button>
+          <button type="button" class="btn btn-primary" id="pv-modal-ok">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8. Toast ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 8. toast</div>
+  <div class="pv-row">
+    <button type="button" class="btn" data-toast="通知メッセージ">Show</button>
+    <button type="button" class="btn" data-toast="保存しました" data-toast-type="success">Success</button>
+    <button type="button" class="btn" data-toast="保存に失敗しました" data-toast-type="error">Error</button>
+  </div>
+</section>
+
+<!-- ============ 9. Drive sync mock ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 9. drive sync ui</div>
+  <div class="pv-sync-list">
+    <div class="pv-sync-row">
+      <span class="pv-sync-label">signed-out</span>
+      <div class="ds-sync-mount" data-signed-in="0">
+        <button type="button" class="ds-sync-signin">
+          <span class="ds-sync-g-icon">G</span>
+          <span class="ds-sync-label">Google でサインイン</span>
+        </button>
+        <div class="ds-sync-info">
+          <div class="ds-sync-status-dot"></div>
+          <span class="ds-sync-email">user@example.com</span>
+          <button type="button" class="ds-sync-signout" aria-label="signout">×</button>
+        </div>
+      </div>
+    </div>
+    <div class="pv-sync-row">
+      <span class="pv-sync-label">synced</span>
+      <div class="ds-sync-mount" data-signed-in="1" data-status="synced">
+        <button type="button" class="ds-sync-signin">
+          <span class="ds-sync-g-icon">G</span>
+          <span class="ds-sync-label">Google でサインイン</span>
+        </button>
+        <div class="ds-sync-info">
+          <div class="ds-sync-status-dot"></div>
+          <span class="ds-sync-email">user@example.com</span>
+          <button type="button" class="ds-sync-signout" aria-label="signout">×</button>
+        </div>
+      </div>
+    </div>
+    <div class="pv-sync-row">
+      <span class="pv-sync-label">syncing</span>
+      <div class="ds-sync-mount" data-signed-in="1" data-status="syncing">
+        <button type="button" class="ds-sync-signin">
+          <span class="ds-sync-g-icon">G</span>
+          <span class="ds-sync-label">Google でサインイン</span>
+        </button>
+        <div class="ds-sync-info">
+          <div class="ds-sync-status-dot"></div>
+          <span class="ds-sync-email">user@example.com</span>
+          <button type="button" class="ds-sync-signout" aria-label="signout">×</button>
+        </div>
+      </div>
+    </div>
+    <div class="pv-sync-row">
+      <span class="pv-sync-label">error</span>
+      <div class="ds-sync-mount" data-signed-in="1" data-status="error">
+        <button type="button" class="ds-sync-signin">
+          <span class="ds-sync-g-icon">G</span>
+          <span class="ds-sync-label">Google でサインイン</span>
+        </button>
+        <div class="ds-sync-info">
+          <div class="ds-sync-status-dot"></div>
+          <span class="ds-sync-email">user@example.com</span>
+          <button type="button" class="ds-sync-signout" aria-label="signout">×</button>
+        </div>
+      </div>
+    </div>
+    <div class="pv-sync-row">
+      <span class="pv-sync-label">offline</span>
+      <div class="ds-sync-mount" data-signed-in="1" data-status="offline">
+        <button type="button" class="ds-sync-signin">
+          <span class="ds-sync-g-icon">G</span>
+          <span class="ds-sync-label">Google でサインイン</span>
+        </button>
+        <div class="ds-sync-info">
+          <div class="ds-sync-status-dot"></div>
+          <span class="ds-sync-email">user@example.com</span>
+          <button type="button" class="ds-sync-signout" aria-label="signout">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10. Radio ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 10. radio</div>
+  <div style="display:flex;flex-direction:column;gap:var(--space-3);max-width:360px;background:var(--bg);border-radius:var(--radius);padding:var(--space-4);box-shadow:var(--shadow-in-sm);">
+    <label class="radio"><input type="radio" name="pv-radio" checked>Option A</label>
+    <label class="radio"><input type="radio" name="pv-radio">Option B</label>
+    <label class="radio"><input type="radio" name="pv-radio">Option C</label>
+    <label class="radio"><input type="radio" name="pv-radio" disabled>Option D (disabled)</label>
+  </div>
+</section>
+
+<!-- ============ 11. Checkbox ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 11. checkbox</div>
+  <div style="display:flex;flex-direction:column;gap:var(--space-3);max-width:360px;background:var(--bg);border-radius:var(--radius);padding:var(--space-4);box-shadow:var(--shadow-in-sm);">
+    <label class="checkbox"><input type="checkbox" checked>利用規約に同意する</label>
+    <label class="checkbox"><input type="checkbox">通知を受け取る</label>
+    <label class="checkbox"><input type="checkbox">ベータ機能を有効にする</label>
+    <label class="checkbox"><input type="checkbox" disabled>管理者のみ (disabled)</label>
+  </div>
+</section>
+
+<!-- ============ 12. Select ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 12. select</div>
+  <div style="max-width:360px;display:flex;flex-direction:column;gap:var(--space-3);">
+    <select class="select">
+      <option>選択してください</option>
+      <option>Option A</option>
+      <option>Option B</option>
+      <option>Option C</option>
+    </select>
+    <select class="select" disabled>
+      <option>Disabled select</option>
+    </select>
+  </div>
+</section>
+
+<!-- ============ 13. Switch ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 13. switch</div>
+  <div class="pv-stack">
+    <div class="pv-row">
+      <label class="switch"><input type="checkbox" checked><span class="switch-track"><span class="switch-thumb"></span></span></label>
+      <span style="font-size:13px;">通知を受け取る (ON)</span>
+    </div>
+    <div class="pv-row">
+      <label class="switch"><input type="checkbox"><span class="switch-track"><span class="switch-thumb"></span></span></label>
+      <span style="font-size:13px;">ダークモード (OFF)</span>
+    </div>
+    <div class="pv-row">
+      <label class="switch"><input type="checkbox" disabled><span class="switch-track"><span class="switch-thumb"></span></span></label>
+      <span style="font-size:13px;color:var(--muted);">disabled</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 14. Slider ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 14. slider</div>
+  <div style="max-width:480px;display:flex;flex-direction:column;gap:var(--space-4);">
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;">
+        <span>音量</span><span id="pv-slider-value">50</span>
+      </div>
+      <input type="range" class="slider" min="0" max="100" value="50" id="pv-slider">
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;">
+        <span>明るさ</span><span>75</span>
+      </div>
+      <input type="range" class="slider" min="0" max="100" value="75">
+    </div>
+  </div>
+</section>
+
+<!-- ============ 15. Tab Bar ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 15. tab bar</div>
+  <div class="tab-bar" id="pv-tab-bar">
+    <button type="button" class="tab active">Overview</button>
+    <button type="button" class="tab">Details</button>
+    <button type="button" class="tab">History</button>
+    <button type="button" class="tab">Settings</button>
+  </div>
+</section>
+
+<!-- ============ 16. Segmented ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 16. segmented control</div>
+  <div class="segmented" id="pv-segmented">
+    <button type="button" class="segmented-item">Day</button>
+    <button type="button" class="segmented-item active">Week</button>
+    <button type="button" class="segmented-item">Month</button>
+    <button type="button" class="segmented-item">Year</button>
+  </div>
+</section>
+
+<!-- ============ 17. Badge ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 17. badge</div>
+  <div class="pv-sub">Semantic</div>
+  <div class="pv-badges" style="margin-bottom:var(--space-3);">
+    <span class="badge">Default</span>
+    <span class="badge badge-primary">Primary</span>
+    <span class="badge badge-success">Success</span>
+    <span class="badge badge-danger">Danger</span>
+    <span class="badge badge-warning">Warning</span>
+    <span class="badge badge-info">Info</span>
+  </div>
+  <div class="pv-sub">Utility Palette</div>
+  <div class="pv-badges">
+    <span class="badge badge-purple">Purple</span>
+    <span class="badge badge-pink">Pink</span>
+    <span class="badge badge-orange">Orange</span>
+    <span class="badge badge-teal">Teal</span>
+    <span class="badge badge-indigo">Indigo</span>
+  </div>
+</section>
+
+<!-- ============ 18. Progress ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 18. progress</div>
+  <div style="max-width:480px;display:flex;flex-direction:column;gap:var(--space-3);">
+    <div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">30%</div>
+      <div class="progress"><div class="progress-bar" style="width:30%"></div></div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">70% success</div>
+      <div class="progress"><div class="progress-bar success" style="width:70%"></div></div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">45% danger</div>
+      <div class="progress"><div class="progress-bar danger" style="width:45%"></div></div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">indeterminate</div>
+      <div class="progress indeterminate"><div class="progress-bar"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 19. Spinner ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 19. spinner</div>
+  <div class="pv-row" style="gap:var(--space-5);">
+    <div class="pv-stack" style="align-items:center;">
+      <div class="spinner spinner-sm"></div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">sm</span>
+    </div>
+    <div class="pv-stack" style="align-items:center;">
+      <div class="spinner"></div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">default</span>
+    </div>
+    <div class="pv-stack" style="align-items:center;">
+      <div class="spinner spinner-lg"></div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">lg</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 20. Dropdown ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 20. dropdown</div>
+  <div class="pv-row" style="gap:var(--space-4);align-items:flex-start;">
+    <div class="dropdown" id="pv-dd1">
+      <button type="button" class="dropdown-trigger">ファイル ▾</button>
+      <div class="dropdown-menu">
+        <button type="button" class="dropdown-item">開く</button>
+        <button type="button" class="dropdown-item active">保存</button>
+        <button type="button" class="dropdown-item">エクスポート</button>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item danger">削除</button>
+      </div>
+    </div>
+    <div class="dropdown" id="pv-dd2">
+      <button type="button" class="dropdown-trigger">表示 ▾</button>
+      <div class="dropdown-menu">
+        <button type="button" class="dropdown-item">リスト</button>
+        <button type="button" class="dropdown-item active">グリッド</button>
+        <button type="button" class="dropdown-item">テーブル</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 21. Picker ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 21. picker</div>
+  <div class="pv-row" style="align-items:flex-end;gap:var(--space-4);">
+    <div class="form-row" style="margin-bottom:0;width:auto;">
+      <label class="form-label">カラー</label>
+      <input type="color" class="picker" value="#489CC1">
+    </div>
+    <div class="form-row" style="margin-bottom:0;width:auto;">
+      <label class="form-label">カラー (hex 連動)</label>
+      <div class="color-field">
+        <input type="color" class="color-field-swatch" value="#489CC1">
+        <input type="text" class="color-field-hex" value="#489CC1" maxlength="7" spellcheck="false">
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:0;width:auto;">
+      <label class="form-label">日付</label>
+      <input type="date" class="picker" value="2026-04-12">
+    </div>
+    <div class="form-row" style="margin-bottom:0;width:auto;">
+      <label class="form-label">時刻</label>
+      <input type="time" class="picker" value="14:30">
+    </div>
+  </div>
+</section>
+
+<!-- ============ 22. Knob ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 22. knob</div>
+  <div class="pv-row" style="gap:var(--space-5);">
+    <div class="pv-stack" style="align-items:center;">
+      <div class="knob knob-sm">
+        <div class="knob-track"></div>
+        <div class="knob-indicator" style="--knob-angle:-90deg"></div>
+        <div class="knob-label">25</div>
+      </div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">sm</span>
+    </div>
+    <div class="pv-stack" style="align-items:center;">
+      <div class="knob">
+        <div class="knob-track"></div>
+        <div class="knob-indicator" style="--knob-angle:0deg"></div>
+        <div class="knob-label">50</div>
+      </div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">default</span>
+    </div>
+    <div class="pv-stack" style="align-items:center;">
+      <div class="knob knob-lg">
+        <div class="knob-track"></div>
+        <div class="knob-indicator" style="--knob-angle:135deg"></div>
+        <div class="knob-label">88</div>
+      </div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">lg</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 23. Range Control ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 23. range control</div>
+  <div style="max-width:480px;">
+    <div class="range-control" id="pv-range">
+      <div class="range-control-track">
+        <div class="range-control-fill" id="pv-range-fill" style="left:25%;right:30%"></div>
+      </div>
+      <div class="range-control-thumb" id="pv-range-min" style="left:25%"></div>
+      <div class="range-control-thumb" id="pv-range-max" style="left:70%"></div>
+    </div>
+    <div class="range-control-values">
+      <span id="pv-range-min-val">25</span>
+      <span id="pv-range-max-val">70</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 24. Divider ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 24. divider</div>
+  <div style="max-width:480px;">
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 var(--space-2);">水平区切り線</p>
+    <hr class="divider">
+    <p style="font-size:12px;color:var(--text-dim);margin:var(--space-4) 0 var(--space-3);">ラベル付き</p>
+    <div class="divider-label">or</div>
+    <div class="pv-row" style="margin-top:var(--space-4);">
+      <span style="font-size:12px;color:var(--text-dim);">左</span>
+      <span class="divider-vertical" style="min-height:40px;"></span>
+      <span style="font-size:12px;color:var(--text-dim);">右 (divider-vertical)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 25. Alert ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 25. alert</div>
+  <div class="pv-stack" style="max-width:560px;">
+    <div class="alert alert-success">
+      <span class="alert-icon">✓</span>
+      <div class="alert-body"><div class="alert-title">保存完了</div><div class="alert-text">プロジェクトが正常に保存されました。</div></div>
+      <button type="button" class="alert-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="alert alert-danger">
+      <span class="alert-icon">✕</span>
+      <div class="alert-body"><div class="alert-title">同期エラー</div><div class="alert-text">Google Drive との接続に失敗しました。</div></div>
+      <button type="button" class="alert-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-body"><div class="alert-title">未保存の変更</div><div class="alert-text">編集内容がまだ保存されていません。</div></div>
+    </div>
+    <div class="alert alert-info">
+      <span class="alert-icon">ℹ</span>
+      <div class="alert-body"><div class="alert-title">ヒント</div><div class="alert-text">Ctrl+S でいつでも保存できます。</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 26. Tooltip ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 26. tooltip</div>
+  <div class="pv-row" style="padding-top:var(--space-6);gap:var(--space-4);">
+    <button type="button" class="btn tooltip-parent" data-tooltip="新しいアイテムを作成">＋ 新規作成</button>
+    <button type="button" class="app-card-btn tooltip-parent" data-tooltip="名前を変更">✏</button>
+    <button type="button" class="app-card-btn danger tooltip-parent" data-tooltip="削除する">🗑</button>
+    <button type="button" class="btn btn-ghost tooltip-parent tooltip-bottom" data-tooltip="下方向">↓ bottom</button>
+  </div>
+</section>
+
+<!-- ============ 27. Scrollbar ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 27. scrollbar</div>
+  <div class="pv-scroll-demo">
+    縦スクロール<br>このボックスの中を<br>スクロールしてカスタム<br>スクロールバーを確認。<br>
+    neumorphism bg に<br>馴染む細いバーが<br>表示される。<br>hover でバーが<br>少し濃くなる。<br>end.
+  </div>
+</section>
+
+<!-- ============ 28. Skeleton ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 28. skeleton</div>
+  <div class="pv-row" style="gap:var(--space-5);align-items:flex-start;">
+    <div class="pv-skel-card">
+      <div class="skeleton skeleton-thumb"></div>
+      <div style="padding:0 var(--space-1);">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text"></div>
+      </div>
+    </div>
+    <div style="width:280px;">
+      <div class="pv-row" style="gap:var(--space-3);margin-bottom:var(--space-4);">
+        <div class="skeleton skeleton-avatar"></div>
+        <div style="flex:1;">
+          <div class="skeleton skeleton-title" style="width:70%;margin-bottom:var(--space-2);"></div>
+          <div class="skeleton skeleton-text" style="width:50%;"></div>
+        </div>
+      </div>
+      <div class="skeleton skeleton-text"></div>
+      <div class="skeleton skeleton-text"></div>
+      <div class="skeleton skeleton-text" style="width:80%"></div>
+      <div style="margin-top:var(--space-3);"><div class="skeleton skeleton-btn"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 29. Avatar ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 29. avatar</div>
+  <div class="pv-row" style="gap:var(--space-4);">
+    <div class="pv-stack" style="align-items:center;">
+      <div class="avatar avatar-sm">Y</div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">sm</span>
+    </div>
+    <div class="pv-stack" style="align-items:center;">
+      <div class="avatar">Y</div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">default</span>
+    </div>
+    <div class="pv-stack" style="align-items:center;">
+      <div class="avatar avatar-lg">Y</div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">lg</span>
+    </div>
+    <div class="pv-stack" style="align-items:center;">
+      <div class="avatar avatar-xl">Y</div>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">xl</span>
+    </div>
+    <span class="divider-vertical" style="min-height:48px;"></span>
+    <div class="avatar avatar-purple">A</div>
+    <div class="avatar avatar-pink">B</div>
+    <div class="avatar avatar-orange">C</div>
+    <div class="avatar avatar-teal">D</div>
+    <div class="avatar avatar-success">E</div>
+  </div>
+</section>
+
+<!-- ============ 30. Chip ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 30. chip</div>
+  <div class="pv-row">
+    <span class="chip">React <button type="button" class="chip-remove">×</button></span>
+    <span class="chip">TypeScript <button type="button" class="chip-remove">×</button></span>
+    <span class="chip chip-primary">Figma <button type="button" class="chip-remove">×</button></span>
+    <span class="chip chip-success">Active <button type="button" class="chip-remove">×</button></span>
+    <span class="chip chip-danger">Blocked <button type="button" class="chip-remove">×</button></span>
+  </div>
+</section>
+
+<!-- ============ 31. Table ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 31. table</div>
+  <div class="table-card" style="max-width:560px;">
+    <table class="table">
+      <thead>
+        <tr><th>名前</th><th>タイプ</th><th>ステータス</th><th>更新日</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>users</td><td>Table</td><td><span class="badge badge-success">Active</span></td><td>2026/04/09</td></tr>
+        <tr><td>orders</td><td>Table</td><td><span class="badge badge-success">Active</span></td><td>2026/04/08</td></tr>
+        <tr><td>products</td><td>View</td><td><span class="badge badge-warning">Draft</span></td><td>2026/04/07</td></tr>
+        <tr><td>sessions</td><td>Table</td><td><span class="badge badge-danger">Error</span></td><td>2026/04/06</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 32. Accordion ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 32. accordion</div>
+  <div class="accordion" id="pv-accordion" style="max-width:480px;">
+    <div class="accordion-item open">
+      <button type="button" class="accordion-trigger">基本設定</button>
+      <div class="accordion-body">プロジェクト名、言語、タイムゾーンなどの基本設定。.open で初期展開。</div>
+    </div>
+    <div class="accordion-item">
+      <button type="button" class="accordion-trigger">詳細設定</button>
+      <div class="accordion-body">キャッシュ、パフォーマンス、デバッグなど上級者向け。</div>
+    </div>
+    <div class="accordion-item">
+      <button type="button" class="accordion-trigger">危険な操作</button>
+      <div class="accordion-body">プロジェクトの削除、データのリセットなど取り消し不可の操作。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 33. Typography ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 33. typography</div>
+  <div class="pv-typo">
+    <div class="pv-typo-row"><span class="pv-typo-label">h1</span><span class="pv-h1">Heading One</span></div>
+    <div class="pv-typo-row"><span class="pv-typo-label">h2</span><span class="pv-h2">Heading Two</span></div>
+    <div class="pv-typo-row"><span class="pv-typo-label">h3</span><span class="pv-h3">Heading Three</span></div>
+    <div class="pv-typo-row"><span class="pv-typo-label">body</span><span class="pv-body">The quick brown fox jumps over the lazy dog.</span></div>
+    <div class="pv-typo-row"><span class="pv-typo-label">small</span><span class="pv-small">補助テキスト・キャプション</span></div>
+    <div class="pv-typo-row"><span class="pv-typo-label">mono</span><span class="pv-mono">--font-mono 0123</span></div>
+  </div>
+</section>
+
+<!-- ============ 34. Radii ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 34. radii</div>
+  <div class="pv-radii">
+    <div class="pv-radii-box" style="border-radius:var(--radius-sm)">radius-sm</div>
+    <div class="pv-radii-box" style="border-radius:var(--radius)">radius</div>
+    <div class="pv-radii-box" style="border-radius:var(--radius-lg)">radius-lg</div>
+    <div class="pv-radii-box" style="border-radius:var(--radius-full)">full</div>
+  </div>
+</section>
+
+<!-- ============ 35. List Chip ============ -->
+<section class="pv-section">
+  <div class="pv-section-title">// 35. list chip</div>
+  <div class="list-chip-group" id="pv-list-chips" style="max-width:360px">
+    <button type="button" class="list-chip active">
+      <span class="list-chip-icon">✨</span>
+      <span class="list-chip-text">
+        <span class="list-chip-name">グロウ</span>
+        <span class="list-chip-desc">テキストに光る発光エフェクト</span>
+      </span>
+      <span class="list-chip-check">✓</span>
+    </button>
+    <button type="button" class="list-chip">
+      <span class="list-chip-icon">🎭</span>
+      <span class="list-chip-text">
+        <span class="list-chip-name">デコシェイプ</span>
+        <span class="list-chip-desc">背景に装飾の丸や図形を追加</span>
+      </span>
+      <span class="list-chip-check">✓</span>
+    </button>
+    <button type="button" class="list-chip">
+      <span class="list-chip-icon">🌟</span>
+      <span class="list-chip-text">
+        <span class="list-chip-name">パーティクル</span>
+        <span class="list-chip-desc">キラキラ光る粒子を背景に散らす</span>
+      </span>
+      <span class="list-chip-check">✓</span>
+    </button>
+  </div>
+</section>
+
+<!-- Toast 実体 -->
+<div class="toast" id="pv-toast" role="status" aria-live="polite"></div>
+
+<script>
+// ==================== Colors render ====================
+const COLOR_GROUPS = {
+  surface: [
+    { name: 'bg',       var: '--bg' },
+    { name: 'text',     var: '--text' },
+    { name: 'text-dim', var: '--text-dim' },
+    { name: 'muted',    var: '--muted' },
+  ],
+  semantic: [
+    { name: 'accent',       var: '--accent' },
+    { name: 'accent-hover', var: '--accent-hover' },
+    { name: 'success',      var: '--success' },
+    { name: 'danger',       var: '--danger' },
+    { name: 'warning',      var: '--warning' },
+    { name: 'info',         var: '--info' },
+  ],
+  utility: [
+    { name: 'purple', var: '--purple' },
+    { name: 'pink',   var: '--pink' },
+    { name: 'orange', var: '--orange' },
+    { name: 'teal',   var: '--teal' },
+    { name: 'indigo', var: '--indigo' },
+  ],
+};
+function renderSwatches(rootId, group) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  group.forEach((c) => {
+    const el = document.createElement('div');
+    el.className = 'pv-swatch';
+    const color = document.createElement('div');
+    color.className = 'pv-swatch-color';
+    color.style.background = `var(${c.var})`;
+    const name = document.createElement('div');
+    name.className = 'pv-swatch-name';
+    name.textContent = c.name;
+    const varName = document.createElement('div');
+    varName.className = 'pv-swatch-var';
+    varName.textContent = c.var;
+    el.append(color, name, varName);
+    root.appendChild(el);
+  });
+}
+renderSwatches('swatches-surface', COLOR_GROUPS.surface);
+renderSwatches('swatches-semantic', COLOR_GROUPS.semantic);
+renderSwatches('swatches-utility', COLOR_GROUPS.utility);
+
+// ==================== Modal ====================
+(function(){
+  const overlay = document.getElementById('pv-modal');
+  const open  = document.getElementById('pv-modal-open');
+  const close = document.getElementById('pv-modal-close');
+  const cancel = document.getElementById('pv-modal-cancel');
+  const ok     = document.getElementById('pv-modal-ok');
+  const hide = () => overlay.hidden = true;
+  open.addEventListener('click', () => overlay.hidden = false);
+  [close, cancel, ok].forEach(b => b && b.addEventListener('click', hide));
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) hide(); });
+})();
+
+// ==================== Toast ====================
+document.querySelectorAll('[data-toast]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = document.getElementById('pv-toast');
+    const type = btn.getAttribute('data-toast-type') || '';
+    t.textContent = btn.getAttribute('data-toast');
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(() => { t.className = 'toast'; }, 2200);
+  });
+});
+
+// ==================== Color field swatch ↔ hex ====================
+document.querySelectorAll('.color-field').forEach(field => {
+  const swatch = field.querySelector('.color-field-swatch');
+  const hex = field.querySelector('.color-field-hex');
+  if (!swatch || !hex) return;
+  swatch.addEventListener('input', () => { hex.value = swatch.value.toUpperCase(); });
+  hex.addEventListener('input', () => {
+    const v = hex.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) swatch.value = v;
+  });
+});
+
+// ==================== Slider fill ====================
+document.querySelectorAll('.slider').forEach(s => {
+  function update() {
+    const min = parseFloat(s.min) || 0;
+    const max = parseFloat(s.max) || 100;
+    const pct = ((s.value - min) / (max - min)) * 100;
+    s.style.setProperty('--slider-fill', pct + '%');
+    const label = document.getElementById('pv-slider-value');
+    if (s.id === 'pv-slider' && label) label.textContent = s.value;
+  }
+  s.addEventListener('input', update);
+  update();
+});
+
+// ==================== Tab bar ====================
+(function(){
+  const bar = document.getElementById('pv-tab-bar');
+  if (!bar) return;
+  bar.addEventListener('click', (e) => {
+    if (e.target.classList.contains('tab')) {
+      bar.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+    }
+  });
+})();
+
+// ==================== Segmented ====================
+(function(){
+  const seg = document.getElementById('pv-segmented');
+  if (!seg) return;
+  seg.addEventListener('click', (e) => {
+    if (e.target.classList.contains('segmented-item')) {
+      seg.querySelectorAll('.segmented-item').forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+    }
+  });
+})();
+
+// ==================== Dropdown ====================
+function toggleDD(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const wasOpen = el.classList.contains('open');
+  closeAllDD();
+  if (!wasOpen) el.classList.add('open');
+}
+function closeAllDD() {
+  document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+}
+document.querySelectorAll('.dropdown-trigger').forEach(trig => {
+  trig.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleDD(trig.closest('.dropdown').id);
+  });
+});
+document.querySelectorAll('.dropdown-item').forEach(item => {
+  item.addEventListener('click', closeAllDD);
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.dropdown')) closeAllDD();
+});
+
+// ==================== Accordion ====================
+(function(){
+  const acc = document.getElementById('pv-accordion');
+  if (!acc) return;
+  acc.addEventListener('click', (e) => {
+    const trigger = e.target.closest('.accordion-trigger');
+    if (!trigger) return;
+    trigger.closest('.accordion-item').classList.toggle('open');
+  });
+})();
+
+// ==================== List chip ====================
+(function(){
+  const group = document.getElementById('pv-list-chips');
+  if (!group) return;
+  group.addEventListener('click', (e) => {
+    const chip = e.target.closest('.list-chip');
+    if (chip) chip.classList.toggle('active');
+  });
+})();
+
+// ==================== Range control (2-handle) ====================
+(function(){
+  const range = document.getElementById('pv-range');
+  if (!range) return;
+  const fill = document.getElementById('pv-range-fill');
+  const minT = document.getElementById('pv-range-min');
+  const maxT = document.getElementById('pv-range-max');
+  const minV = document.getElementById('pv-range-min-val');
+  const maxV = document.getElementById('pv-range-max-val');
+  let minPct = 25, maxPct = 70;
+  function updateUI() {
+    fill.style.left = minPct + '%';
+    fill.style.right = (100 - maxPct) + '%';
+    minT.style.left = minPct + '%';
+    maxT.style.left = maxPct + '%';
+    if (minV) minV.textContent = Math.round(minPct);
+    if (maxV) maxV.textContent = Math.round(maxPct);
+  }
+  function startDrag(thumb, isMin) {
+    function onMove(e) {
+      const rect = range.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX);
+      const pct = Math.max(0, Math.min(100, ((x - rect.left) / rect.width) * 100));
+      if (isMin) minPct = Math.min(pct, maxPct - 2);
+      else maxPct = Math.max(pct, minPct + 2);
+      updateUI();
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove);
+    document.addEventListener('touchend', onUp);
+  }
+  minT.addEventListener('mousedown', (e) => { e.preventDefault(); startDrag(minT, true); });
+  maxT.addEventListener('mousedown', (e) => { e.preventDefault(); startDrag(maxT, false); });
+  minT.addEventListener('touchstart', () => startDrag(minT, true), { passive: true });
+  maxT.addEventListener('touchstart', () => startDrag(maxT, false), { passive: true });
+  updateUI();
+})();
+
+// ==================== postMessage bridge ====================
+window.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'updateTheme') return;
+  const styleEl = document.getElementById('theme-style');
+  styleEl.textContent = e.data.css || '';
+});
+if (window.parent && window.parent !== window) {
+  window.parent.postMessage({ type: 'previewReady' }, '*');
+}
+</script>
+</body>
+</html>

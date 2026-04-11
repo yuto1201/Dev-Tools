@@ -1,22 +1,21 @@
-# CLAUDE
-
-# CLAUDE.md - DesignPocket
+# CLAUDE.md — DesignPocket（Theme Catalog モード）
 
 ## プロジェクト概要
 
-開発者のためのUIインスピレーション管理Webアプリ。
-HTML / CSS / JavaScript（バニラ）のみで構成し、ブラウザで開くだけで動作する。
-詳細仕様は `spec.md` を参照すること。
+UI テーマ（CSS トークン + カスタム CSS + コンポーネント見た目）を複数記録するカタログ。
+`_theme-preview/index.html` のような視覚プレビューを **1 レコードごとに持てる**ようにした版。
+詳細仕様は `spec.md` を参照。
+
+v1（画像アイデア管理）は完全廃止。v2 は別物として作り直す。
 
 ---
 
 ## 技術スタック
 
-- HTML5
-- CSS3（フレームワークなし）
-- JavaScript（ES6+、フレームワーク・ライブラリなし）
-- データ永続化：localStorage
-- ビルドツール：不使用
+- HTML / CSS / バニラ JavaScript（ES6+）
+- 永続化: localStorage + Google Drive 同期（`lib/drive-sync.js`）
+- ライブプレビュー: `<iframe src="preview.html">` + `postMessage`
+- ビルドツール不使用
 
 ---
 
@@ -26,137 +25,81 @@ HTML / CSS / JavaScript（バニラ）のみで構成し、ブラウザで開く
 DesignPocket/
 ├── CLAUDE.md
 ├── spec.md
-├── index.html   // 構造
-├── style.css    // スタイル
-└── app.js       // ロジック・状態管理
+├── index.html    # 一覧 + 編集（2 ペイン）
+├── preview.html  # iframe 内に読み込まれる視覚カタログ
+├── style.css     # ツール固有レイアウト
+└── app.js        # 状態管理・CRUD・drive sync
 ```
 
-3ファイル完結とする。ファイルを増やさない。
-
----
-
-## コーディング規則
-
-### JavaScript
-
-- `const` / `let` のみ使用（`var` 禁止）
-- 関数は役割ごとに分割（1関数1責務）
-- DOM操作はapp.js内にまとめる
-- イベントリスナーはDOMContentLoaded以降に登録する
-- `innerHTML` へのユーザー入力の直接挿入は禁止（XSS対策）
-
-### CSS
-
-- クラス名はケバブケース（例：`.idea-card`）
-- IDセレクタはJS用途のみ（スタイルにIDを使わない）
-- CSSカスタムプロパティ（変数）をカラー・サイズに使う
-
-### HTML
-
-- セマンティクスを意識する（`section` / `article` / `nav` 等を適切に使用）
-- 画像には必ず `alt` 属性を設定する
+6 ファイル構成。ロジックは 1 ファイル（app.js）に集約する。
 
 ---
 
 ## 状態管理方針
 
 ```javascript
-// グローバルステートは1つのオブジェクトにまとめる
 const state = {
-  apps: [],       // AppProject[]
-  ideas: [],      // DesignIdea[]
-  filter: {
-    appId: null,
-    tag: null
-  }
+  themes: [],       // Theme[]
+  currentId: null,  // 編集中のテーマ ID
 };
 ```
 
-- DOMを直接参照して状態を読み取らない
-- 状態変更 → renderXxx()で再描画 の一方向フローを守る
+- DOM を読み取らず、常に state → render の一方向
+- 保存は `saveThemes()` に一元化
+- 編集中のトークンは `state.themes[i].tokens` を直接書き換え（編集中専用コピーは持たない）
+- プレビューは編集のたび（input イベント）に postMessage で再描画（debounce 120ms）
 
 ---
 
-## 開発ワークフロー
+## Drive 同期
 
-### 基本フロー
-
+```javascript
+driveSync.register({
+  toolId: 'designpocket',
+  keys: ['designpocket_themes'],
+  onSyncedFromRemote: (changedKeys) => {
+    loadThemes(); renderList();
+    // 編集中ならエディタも再描画
+  },
+});
 ```
-実装（Claude Code）→ Codexスキルで評価 → 修正（Claude Code）→ 完了
-```
 
-### フェーズ管理
-
-1. **実装フェーズ**：機能単位で実装する
-2. **評価フェーズ**：機能単位の実装完了後にCodexスキルを呼び出す
-3. **修正フェーズ**：Codex評価結果をもとに修正する
-4. **完了条件**：Criticalな指摘がなくなったら次の機能へ進む
-
-### 実装順序
-
-1. index.html の骨格・ナビゲーション
-2. style.css の基本スタイル・カード・グリッド
-3. app.js のデータ管理（localStorage 読み書き）
-4. アイデア登録フォーム
-5. ギャラリー表示・フィルタリング
-6. アプリ別管理画面
-7. アイデア詳細モーダル
-
-各ステップ完了ごとにCodexスキルで評価を実施すること。
+register → mountUI → init の順で呼ぶ。
 
 ---
 
-## Codexスキルの使い方
+## 起動時の v1 データクリーンアップ
 
-### 呼び出しタイミング
+v1 で使っていた以下の localStorage キーは v2 起動時に自動削除する:
 
-以下をすべて満たしたときに呼び出す：
-
-- 機能単位の実装が完了している
-- ブラウザで基本動作確認済み
-- コンソールエラーがない
-
-### 評価依頼フォーマット
-
-```
-## 評価対象
-[対象ファイル名・機能名]
-
-## 仕様（期待する動作）
-[spec.mdから該当部分を抜粋]
-
-## 評価観点
-1. localStorageの読み書きに問題はないか
-2. フィルタリングロジックは正確か
-3. XSS等のセキュリティリスクはないか
-4. DOMの更新に副作用・バグはないか
-5. エラーハンドリングの考慮漏れはないか
-
-## コード
-[対象コードを貼り付け]
+```javascript
+localStorage.removeItem('designpocket_apps');
+localStorage.removeItem('designpocket_ideas');
 ```
 
-### やり取りの上限
-
-- 1機能あたり**最大3往復**まで
-- 3往復で解決しない場合は設計レベルの問題として Claude Code単体で再設計する
-- 軽微な指摘（命名・コメント・インデント）は往復回数を消費せずそのまま修正する
-
-### 指摘の分類と対応
-
-| 重要度         | 内容                 | 対応               |
-| ----------- | ------------------ | ---------------- |
-| 🔴 Critical | バグ・データ損失・セキュリティリスク | 必ず修正してから次へ       |
-| 🟡 Warning  | 設計上の懸念・パフォーマンス     | 修正推奨、理由があればスキップ可 |
-| 🟢 Info     | 命名・スタイル・コメント       | 任意対応             |
+Drive 上にも旧キーが残っている可能性があるが、driveSync 側の通常削除は触らない方針
+（ユーザーが自分で Drive UI から消す）。
 
 ---
 
 ## やってはいけないこと
 
-- jQueryや外部ライブラリの追加（バニラJSで完結させる）
-- `innerHTML` にユーザー入力を直接埋め込む（XSS）
-- localStorageへの書き込みをバラバラなタイミングで行う（saveState()関数に一元化する）
-- Codexの評価を飛ばして次の機能に進む
-- ファイルを4つ以上に分割する
+- `innerHTML` にユーザー入力（テーマ名・説明・custom CSS）を直接代入
+  - 名前/説明 → `textContent` or エスケープ
+  - custom CSS → `<style>.textContent` で OK（HTML としては解釈されない）
+- `_theme-preview` を直接参照する（共有資産なので触らない）
+- iframe に相対パスで `../lib/theme.css` を読み込む際、`file://` 配信時の挙動を確認
+  - `http://localhost:5500` 配信を前提、`file://` での完全動作は保証外
 
+---
+
+## UI 変更時のフロー
+
+`IMPLEMENTATION_RULES.md` の「必須フロー」に従うこと:
+
+1. 実装
+2. `lib/screenshot.sh` で light/dark 両方撮影
+3. Read で目視確認
+4. 必要なら修正して 2 に戻る
+5. バージョン判定（`.card-version` 更新）
+6. `open` でユーザー確認

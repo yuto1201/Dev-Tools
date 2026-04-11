@@ -3,184 +3,211 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DesignPocket — yuto's dev tools</title>
+<title>DesignPocket — Theme Catalog</title>
 
-<!-- ===== 共通テーマ ===== -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../lib/theme.css">
 <link rel="stylesheet" href="../lib/components.css">
 <script src="../lib/theme.js"></script>
+<script src="../lib/icons.js"></script>
 
-<!-- ===== Drive sync ===== -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="../lib/drive-sync.css">
 
-<!-- ===== ツール固有 ===== -->
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-view="list">
+<div id="drive-progress" class="drive-progress" hidden></div>
 
-<div class="app-inner">
+<!-- ============================================================ -->
+<!-- LIST VIEW — テーマ一覧                                         -->
+<!-- ============================================================ -->
+<section class="app-view app-view-list">
+  <div class="app-inner">
+    <header class="app-header">
+      <div class="app-header-left">
+        <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
+        <span class="app-title-icon" id="app-icon"></span>
+        <h1 class="app-title">DesignPocket</h1>
+      </div>
+      <div class="app-header-right">
+        <div id="theme-mount"></div>
+        <div id="sync-mount"></div>
+      </div>
+    </header>
 
-  <!-- ===== Standard header ===== -->
-  <header class="app-header">
-    <div class="app-header-left">
-      <a href="../index.html" class="app-back-btn" title="Back to Toolbox">← 戻る</a>
-      <span class="app-title-icon">🎨</span>
-      <h1 class="app-title">DesignPocket</h1>
+    <div class="app-toolbar">
+      <h2 class="app-section-title">テーマ一覧</h2>
+      <button type="button" class="btn btn-primary" id="btn-create-theme">＋ 新規テーマ</button>
     </div>
-    <div class="app-header-right">
-      <div id="theme-mount"></div>
-      <div id="sync-mount"></div>
-    </div>
-  </header>
 
-  <!-- ===== Navigation tabs + action ===== -->
-  <div class="app-toolbar">
-    <nav class="tab-bar" aria-label="メインナビゲーション" role="tablist">
-      <button type="button" class="tab" data-view="gallery" role="tab" aria-controls="view-gallery" aria-selected="false">ギャラリー</button>
-      <button type="button" class="tab" data-view="apps" role="tab" aria-controls="view-apps" aria-selected="false">アプリ別</button>
-    </nav>
-    <button type="button" class="btn btn-primary" id="openAddBtn" aria-label="新しいアイデアを追加">＋ 追加</button>
+    <div class="dp-theme-grid" id="theme-grid"></div>
+
+    <div class="app-empty" id="theme-empty" style="display:none;">
+      <div class="app-empty-icon">✦</div>
+      <div class="app-empty-text">まだテーマが登録されていません</div>
+      <div class="app-empty-sub">右上の「＋ 新規テーマ」から最初のテーマを追加してください</div>
+    </div>
   </div>
+</section>
 
-  <main class="dp-main">
+<!-- ============================================================ -->
+<!-- EDITOR VIEW — テーマ編集                                       -->
+<!-- ============================================================ -->
+<section class="app-view app-view-editor">
+  <div class="app-inner">
+    <header class="app-header">
+      <div class="app-header-left">
+        <a href="#" class="app-back-btn" id="back-to-list" title="一覧に戻る">← 一覧</a>
+        <h1 class="app-title app-title-editable" id="editor-title" title="クリックで名前を変更">テーマ名</h1>
+      </div>
+      <div class="app-header-right">
+        <div id="theme-mount-editor"></div>
+        <span class="sync-dot" id="syncDot" title="未ログイン"></span>
+      </div>
+    </header>
 
-    <!-- ===== Gallery view ===== -->
-    <section class="view view-gallery" id="view-gallery" aria-label="ギャラリー">
-      <div class="dp-filter-bar">
-        <div class="dp-filter-group">
-          <label class="form-label" for="filter-app">アプリ</label>
-          <select id="filter-app" class="select">
-            <option value="">すべて</option>
-          </select>
+    <div class="app-editor-body dp-editor-body">
+
+      <!-- ===== LEFT PANE: form ===== -->
+      <aside class="dp-form-pane">
+
+        <!-- Meta -->
+        <section class="dp-form-section">
+          <h3 class="dp-form-section-title">// meta</h3>
+          <div class="form-row">
+            <label class="form-label" for="field-name">名前</label>
+            <input class="form-input" id="field-name" type="text" maxlength="80" placeholder="例: Glassmorphism">
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="field-description">説明</label>
+            <textarea class="form-input" id="field-description" rows="2" maxlength="300" placeholder="このテーマの特徴・用途メモ"></textarea>
+          </div>
+        </section>
+
+        <!-- Colors -->
+        <section class="dp-form-section">
+          <h3 class="dp-form-section-title">// colors</h3>
+          <div class="dp-token-grid" id="form-colors"></div>
+        </section>
+
+        <!-- Radius -->
+        <section class="dp-form-section">
+          <h3 class="dp-form-section-title">// radius</h3>
+          <div class="dp-token-grid dp-token-grid-2" id="form-radius"></div>
+        </section>
+
+        <!-- Spacing -->
+        <section class="dp-form-section">
+          <h3 class="dp-form-section-title">// spacing</h3>
+          <div class="dp-token-grid dp-token-grid-2" id="form-spacing"></div>
+        </section>
+
+        <!-- Fonts -->
+        <section class="dp-form-section">
+          <h3 class="dp-form-section-title">// fonts</h3>
+          <div class="dp-token-grid dp-token-grid-1" id="form-fonts"></div>
+        </section>
+
+        <!-- Custom CSS -->
+        <section class="dp-form-section">
+          <h3 class="dp-form-section-title">// custom css</h3>
+          <p class="dp-form-hint">shadow の重ね合わせ、<code>.btn</code> 等コンポーネント上書き、<code>backdrop-filter</code> など自由 CSS。ここに書いた内容は <code>:root</code> の後に挿入される。</p>
+          <textarea class="form-input dp-custom-css" id="field-custom-css" rows="14" spellcheck="false" placeholder="/* 例: 二重シャドウ */
+:root {
+  --shadow-out: -8px -8px 16px #fff, 8px 8px 16px rgba(163,177,198,.5);
+}
+.btn {
+  backdrop-filter: blur(10px);
+}"></textarea>
+        </section>
+
+      </aside>
+
+      <!-- ===== RIGHT PANE: live preview ===== -->
+      <div class="dp-preview-pane">
+        <div class="dp-preview-head">
+          <span class="dp-preview-label">// live preview</span>
+          <span class="dp-preview-hint" id="preview-status">ready</span>
         </div>
-        <div class="dp-filter-group">
-          <label class="form-label" for="filter-tag">タグ</label>
-          <select id="filter-tag" class="select">
-            <option value="">すべて</option>
-          </select>
+        <div class="dp-preview-frame-wrap">
+          <iframe id="preview-frame" src="preview.html" title="Theme preview"></iframe>
         </div>
-        <button type="button" class="btn btn-ghost" id="clear-filters">クリア</button>
-        <span class="badge badge-primary dp-count-badge" id="gallery-count">0 件</span>
       </div>
 
-      <div class="dp-masonry" id="gallery-grid"></div>
-      <div class="app-empty" id="gallery-empty" hidden>
-        <div class="app-empty-icon">✦</div>
-        <div class="app-empty-text">まだアイデアがありません</div>
-        <div class="app-empty-sub">右上の「＋ 追加」から最初のインスピレーションを登録しよう</div>
-      </div>
-    </section>
-
-    <!-- ===== Apps view ===== -->
-    <section class="view view-apps" id="view-apps" aria-label="アプリ別" hidden>
-      <div class="dp-apps-toolbar">
-        <h2 class="app-section-title"></h2>
-        <button type="button" class="btn btn-primary" id="openAddAppBtn">＋ 新しいアプリ</button>
-      </div>
-      <div class="dp-apps-grid" id="apps-grid"></div>
-      <div class="app-empty" id="apps-empty" hidden>
-        <div class="app-empty-icon">◬</div>
-        <div class="app-empty-text">アプリ未登録</div>
-        <div class="app-empty-sub">アプリを作成すると、アイデアをプロジェクト単位で整理できます</div>
-      </div>
-    </section>
-
-  </main>
-</div>
-
-<!-- ===== Add Idea Modal ===== -->
-<div class="modal-overlay" id="addIdeaOverlay" role="dialog" aria-modal="true" aria-labelledby="addIdeaTitle" hidden>
-  <div class="modal dp-modal-wide">
-    <div class="modal-header">
-      <h3 class="modal-title" id="addIdeaTitle">アイデアを追加</h3>
-      <button type="button" class="modal-close" data-close-modal="addIdeaOverlay" aria-label="閉じる">×</button>
     </div>
-    <form class="modal-body" id="addIdeaForm" autocomplete="off">
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- MODAL: 新規テーマ                                              -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="modal-new" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-new-title">
+    <header class="modal-header">
+      <h3 class="modal-title" id="modal-new-title">新しいテーマ</h3>
+      <button type="button" class="modal-close" data-close="modal-new" aria-label="閉じる">×</button>
+    </header>
+    <form class="modal-body" id="form-new" autocomplete="off">
       <div class="form-row">
-        <label class="form-label" for="idea-title">タイトル <span class="required">*</span></label>
-        <input class="form-input" id="idea-title" name="title" type="text" required maxlength="120" placeholder="例：ログイン画面のグラデーション">
+        <label class="form-label" for="new-name">名前 <span class="required">*</span></label>
+        <input class="form-input" id="new-name" type="text" required maxlength="80" placeholder="例: Glassmorphism">
       </div>
-
       <div class="form-row">
-        <label class="form-label" for="idea-image">画像</label>
-        <div class="dp-upload-zone" id="upload-zone">
-          <input class="dp-upload-input" id="idea-image" name="image" type="file" accept="image/*">
-          <div class="dp-upload-hint" id="upload-hint">クリックして画像を選択 / ドラッグ＆ドロップ</div>
-          <img class="dp-upload-preview" id="upload-preview" alt="プレビュー" hidden>
-          <button type="button" class="dp-upload-clear" id="upload-clear" hidden>画像を削除</button>
-        </div>
+        <label class="form-label" for="new-description">説明</label>
+        <textarea class="form-input" id="new-description" rows="2" maxlength="300" placeholder="このテーマの特徴・用途メモ"></textarea>
       </div>
-
       <div class="form-row">
-        <label class="form-label" for="idea-url">参考URL</label>
-        <input class="form-input" id="idea-url" name="url" type="url" placeholder="https://...">
+        <label class="form-label" for="new-base">ベース</label>
+        <select class="select" id="new-base">
+          <option value="neumorphism">Neumorphism（デフォルト）から作成</option>
+          <option value="blank">空から作成</option>
+        </select>
       </div>
-
-      <div class="form-row dp-form-2col">
-        <div>
-          <label class="form-label" for="idea-app">紐づけるアプリ</label>
-          <select class="select" id="idea-app" name="appId">
-            <option value="">（未設定）</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label" for="idea-screen">画面名</label>
-          <input class="form-input" id="idea-screen" name="screen" type="text" maxlength="80" placeholder="例：オンボーディング">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <label class="form-label" for="idea-tags">タグ <span class="dp-hint">(カンマ区切り)</span></label>
-        <input class="form-input" id="idea-tags" name="tags" type="text" placeholder="例：dark, gradient, glass">
-      </div>
-
-      <div class="form-row">
-        <label class="form-label" for="idea-note">実装メモ</label>
-        <textarea class="form-input" id="idea-note" name="note" rows="3" maxlength="1000" placeholder="ポイント・参考にしたい部分など"></textarea>
-      </div>
-
       <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" data-close-modal="addIdeaOverlay">キャンセル</button>
-        <button type="submit" class="btn btn-primary">保存する</button>
+        <button type="button" class="btn btn-ghost" data-close="modal-new">キャンセル</button>
+        <button type="submit" class="btn btn-primary">作成</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- ===== Add App Modal ===== -->
-<div class="modal-overlay" id="addAppOverlay" role="dialog" aria-modal="true" aria-labelledby="addAppTitle" hidden>
-  <div class="modal">
-    <div class="modal-header">
-      <h3 class="modal-title" id="addAppTitle">アプリを追加</h3>
-      <button type="button" class="modal-close" data-close-modal="addAppOverlay" aria-label="閉じる">×</button>
-    </div>
-    <form class="modal-body" id="addAppForm" autocomplete="off">
-      <div class="form-row">
-        <label class="form-label" for="app-name">アプリ名 <span class="required">*</span></label>
-        <input class="form-input" id="app-name" name="name" type="text" required maxlength="60" placeholder="例：MyAwesomeApp">
-      </div>
-      <div class="form-row">
-        <label class="form-label" for="app-emoji">絵文字アイコン</label>
-        <input class="form-input" id="app-emoji" name="emoji" type="text" maxlength="4" placeholder="🚀">
-      </div>
+<!-- ============================================================ -->
+<!-- MODAL: CSS エクスポート                                        -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="modal-export" hidden>
+  <div class="modal dp-modal-wide" role="dialog" aria-modal="true" aria-labelledby="modal-export-title">
+    <header class="modal-header">
+      <h3 class="modal-title" id="modal-export-title">CSS エクスポート</h3>
+      <button type="button" class="modal-close" data-close="modal-export" aria-label="閉じる">×</button>
+    </header>
+    <div class="modal-body">
+      <p class="dp-form-hint">下の CSS を <code>lib/theme.css</code> にコピーすれば、このテーマがプロジェクト全体に適用されます。</p>
+      <textarea class="form-input dp-export-textarea" id="export-textarea" rows="18" readonly></textarea>
       <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" data-close-modal="addAppOverlay">キャンセル</button>
-        <button type="submit" class="btn btn-primary">追加する</button>
+        <button type="button" class="btn btn-ghost" data-close="modal-export">閉じる</button>
+        <button type="button" class="btn btn-primary" id="btn-copy-export">コピー</button>
       </div>
-    </form>
+    </div>
   </div>
 </div>
 
-<!-- ===== Idea Detail Modal ===== -->
-<div class="modal-overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
-  <div class="modal dp-modal-lg">
-    <div class="modal-header">
-      <h3 class="modal-title" id="detailTitle">アイデア詳細</h3>
-      <button type="button" class="modal-close" data-close-modal="detailOverlay" aria-label="閉じる">×</button>
+<!-- ============================================================ -->
+<!-- MODAL: 削除確認                                                -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="modal-delete" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-delete-title">
+    <header class="modal-header">
+      <h3 class="modal-title" id="modal-delete-title">テーマを削除</h3>
+      <button type="button" class="modal-close" data-close="modal-delete" aria-label="閉じる">×</button>
+    </header>
+    <div class="modal-body">
+      <p>「<span id="delete-target-name"></span>」を削除します。この操作は元に戻せません。</p>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close="modal-delete">キャンセル</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete">削除する</button>
+      </div>
     </div>
-    <div class="modal-body" id="detailBody"></div>
   </div>
 </div>
 
