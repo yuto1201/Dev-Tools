@@ -11,14 +11,6 @@
 // Token definitions
 // ═══════════════════════════════════════════════════════════
 
-<<<<<<< Updated upstream
-=======
-const LS_KEY = 'designpocket_themes';
-const LEGACY_KEYS = ['designpocket_apps', 'designpocket_ideas'];
-const RAMS_SEEDED_FLAG = 'designpocket_rams_seeded';
-const RAMS_CSS_VERSION_FLAG = 'designpocket_rams_css_v6';
-
->>>>>>> Stashed changes
 const COLOR_TOKENS = [
   { var: '--bg',           label: 'bg' },
   { var: '--text',         label: 'text' },
@@ -381,123 +373,6 @@ function toHexSafe(value) {
 }
 
 // ═══════════════════════════════════════════════════════════
-<<<<<<< Updated upstream
-=======
-// Storage
-// ═══════════════════════════════════════════════════════════
-
-function cleanupLegacyData() {
-  LEGACY_KEYS.forEach((k) => {
-    if (localStorage.getItem(k) !== null) {
-      localStorage.removeItem(k);
-    }
-  });
-}
-
-function _useDrive() {
-  return !!(window.driveSync && window.driveSync.isSignedIn && window.driveSync.isSignedIn());
-}
-
-let _driveProgressCount = 0;
-function driveProgressStart() {
-  _driveProgressCount++;
-  const el = byId('drive-progress');
-  if (el) el.hidden = false;
-}
-function driveProgressEnd() {
-  _driveProgressCount = Math.max(0, _driveProgressCount - 1);
-  if (_driveProgressCount === 0) {
-    const el = byId('drive-progress');
-    if (el) el.hidden = true;
-  }
-}
-
-async function loadThemes() {
-  let raw;
-  try {
-    if (_useDrive()) {
-      raw = await window.driveSync.loadItem(LS_KEY);
-    } else {
-      raw = localStorage.getItem(LS_KEY);
-    }
-  } catch (e) {
-    raw = localStorage.getItem(LS_KEY);
-  }
-  try {
-    state.themes = raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    state.themes = [];
-  }
-}
-
-async function saveThemes() {
-  const json = JSON.stringify(state.themes);
-  const drive = _useDrive();
-  if (drive) driveProgressStart();
-  try {
-    if (drive) {
-      await window.driveSync.saveItem(LS_KEY, json);
-    } else {
-      localStorage.setItem(LS_KEY, json);
-    }
-  } finally {
-    if (drive) driveProgressEnd();
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Theme factory
-// ═══════════════════════════════════════════════════════════
-
-function createNeumorphismTheme() {
-  return {
-    id: uid(),
-    name: 'Neumorphism (default)',
-    description: '白ベースのニューモフィズム。yuto\'s dev tools の現行デフォルト。二重 shadow で柔らかい立体感を作る。',
-    tokens: Object.assign({}, NEUMORPHISM_TOKENS),
-    customCss: NEUMORPHISM_CUSTOM_CSS,
-    createdAt: nowIso(),
-    updatedAt: nowIso(),
-  };
-}
-
-function createDieterRamsTheme() {
-  return {
-    id: uid(),
-    name: 'Dieter Rams',
-    description: 'Less, but better — 暖かいオフホワイト + Braun オレンジ。フラット設計、ハイライン境界、シャープな階調。',
-    tokens: Object.assign({}, DIETER_RAMS_TOKENS),
-    customCss: DIETER_RAMS_CUSTOM_CSS,
-    createdAt: nowIso(),
-    updatedAt: nowIso(),
-  };
-}
-
-function createNewTheme(name, description, base) {
-  let tokens, customCss;
-  if (base === 'dieter-rams') {
-    tokens = Object.assign({}, DIETER_RAMS_TOKENS);
-    customCss = DIETER_RAMS_CUSTOM_CSS;
-  } else if (base === 'blank') {
-    tokens = Object.assign({}, NEUMORPHISM_TOKENS);
-    customCss = '';
-  } else {
-    tokens = Object.assign({}, NEUMORPHISM_TOKENS);
-    customCss = NEUMORPHISM_CUSTOM_CSS;
-  }
-  return {
-    id: uid(),
-    name: name || 'New Theme',
-    description: description || '',
-    tokens,
-    customCss,
-    createdAt: nowIso(),
-    updatedAt: nowIso(),
-  };
-}
-
-// ═══════════════════════════════════════════════════════════
->>>>>>> Stashed changes
 // List view
 // ═══════════════════════════════════════════════════════════
 
@@ -825,62 +700,10 @@ async function init() {
     if (m) window.theme.mountUI(m);
   }
 
-<<<<<<< Updated upstream
   renderList();
   bindEvents();
 
   // ディープリンク
-=======
-  if (window.driveSync) {
-    window.driveSync.register({
-      toolId: 'designpocket',
-      keys: [LS_KEY],
-      onSyncedFromRemote: async () => {
-        await loadThemes();
-        if (document.body.dataset.view === 'editor' && state.currentId) {
-          renderEditor();
-        } else {
-          renderList();
-        }
-      },
-    });
-    const mount = byId('sync-mount');
-    if (mount) window.driveSync.mountUI(mount);
-    window.driveSync.init();
-  }
-
-  await loadThemes();
-
-  // Seed: first-run user gets both preset themes as references
-  if (state.themes.length === 0) {
-    state.themes.push(createNeumorphismTheme());
-    state.themes.push(createDieterRamsTheme());
-    localStorage.setItem(RAMS_SEEDED_FLAG, '1');
-    localStorage.setItem(RAMS_CSS_VERSION_FLAG, '1');
-    await saveThemes();
-  } else if (!localStorage.getItem(RAMS_SEEDED_FLAG)) {
-    // Existing users: seed Dieter Rams once
-    state.themes.push(createDieterRamsTheme());
-    localStorage.setItem(RAMS_SEEDED_FLAG, '1');
-    localStorage.setItem(RAMS_CSS_VERSION_FLAG, '1');
-    await saveThemes();
-  } else if (!localStorage.getItem(RAMS_CSS_VERSION_FLAG)) {
-    // Existing users with old Rams customCss: upgrade to v2 (dot grid + mono caps)
-    const existing = state.themes.find((t) => t.name === 'Dieter Rams');
-    if (existing) {
-      existing.customCss = DIETER_RAMS_CUSTOM_CSS;
-      existing.description = 'Less, but better — 暖かいオフホワイト + Braun オレンジ。フラット設計、ハイライン境界、シャープな階調。';
-      existing.updatedAt = nowIso();
-      await saveThemes();
-    }
-    localStorage.setItem(RAMS_CSS_VERSION_FLAG, '1');
-  }
-
-  renderList();
-  bindEvents();
-
-  // Deep link: #edit → 最初のテーマを開く、#edit=<id|name> → ID または名前で指定
->>>>>>> Stashed changes
   const hash = location.hash;
   if (hash && hash.startsWith('#edit')) {
     const key = hash.includes('=') ? decodeURIComponent(hash.split('=')[1]) : null;
