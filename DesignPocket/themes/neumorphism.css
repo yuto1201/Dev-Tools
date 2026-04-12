@@ -1,0 +1,12 @@
+/* Neumorphism 二重シャドウ */
+:root {
+  --shadow-light: #FFFFFF;
+  --shadow-dark: rgba(163, 177, 198, 0.5);
+  --shadow-out:    -8px -8px 16px var(--shadow-light),  8px  8px 16px var(--shadow-dark);
+  --shadow-out-sm: -3px -3px 6px var(--shadow-light),   3px  3px 6px var(--shadow-dark);
+  --shadow-out-lg: -16px -16px 32px var(--shadow-light), 16px 16px 32px var(--shadow-dark);
+  --shadow-in:     inset 4px 4px 8px var(--shadow-dark),   inset -4px -4px 8px var(--shadow-light);
+  --shadow-in-sm:  inset 2px 2px 4px var(--shadow-dark),   inset -2px -2px 4px var(--shadow-light);
+  --border:        rgba(163, 177, 198, 0.18);
+  --border-strong: rgba(163, 177, 198, 0.32);
+}

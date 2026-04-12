@@ -1,18 +1,15 @@
 /* ============================================================
-   DesignPocket — Theme Catalog v2
-   - 1 レコード = 1 UI テーマ（トークン + custom CSS）
-   - 左ペイン = フォーム、右ペイン = iframe ライブプレビュー
-   - 永続化: localStorage + Google Drive 同期
+   DesignPocket — Theme Catalog v3
+   - プリセット閲覧専用カタログ
+   - テーマはコード内に定義、ユーザー CRUD なし
+   - 左ペイン = トークン閲覧、右ペイン = iframe ライブプレビュー
    ============================================================ */
 
 'use strict';
 
 // ═══════════════════════════════════════════════════════════
-// Constants
+// Token definitions
 // ═══════════════════════════════════════════════════════════
-
-const LS_KEY = 'designpocket_themes';
-const LEGACY_KEYS = ['designpocket_apps', 'designpocket_ideas'];
 
 const COLOR_TOKENS = [
   { var: '--bg',           label: 'bg' },
@@ -55,50 +52,128 @@ const FONT_TOKENS = [
   { var: '--font-mono', label: 'font-mono' },
 ];
 
-const NEUMORPHISM_TOKENS = {
-  '--bg': '#E9EDF0',
-  '--text': '#343434',
-  '--text-dim': '#6B7280',
-  '--muted': '#A1AEBF',
-  '--accent': '#489CC1',
-  '--accent-hover': '#3A8DB5',
-  '--success': '#21A87D',
-  '--danger': '#FF7272',
-  '--warning': '#FFBB0D',
-  '--info': '#5B9BD5',
-  '--purple': '#8B5CF6',
-  '--pink': '#EC4899',
-  '--orange': '#F97316',
-  '--teal': '#14B8A6',
-  '--indigo': '#6366F1',
-  '--radius-sm': '10px',
-  '--radius': '16px',
-  '--radius-lg': '24px',
-  '--radius-full': '999px',
-  '--space-1': '4px',
-  '--space-2': '8px',
-  '--space-3': '12px',
-  '--space-4': '16px',
-  '--space-5': '20px',
-  '--space-6': '24px',
-  '--space-8': '32px',
-  '--space-10': '40px',
-  '--font-sans': "'Inter', -apple-system, sans-serif",
-  '--font-mono': "'JetBrains Mono', ui-monospace, Menlo, monospace",
-};
+// ═══════════════════════════════════════════════════════════
+// Preset themes
+// ═══════════════════════════════════════════════════════════
 
-const NEUMORPHISM_CUSTOM_CSS = `/* Neumorphism 二重シャドウ（lib/theme.css と同じ） */
-:root {
-  --shadow-light: #FFFFFF;
-  --shadow-dark: rgba(163, 177, 198, 0.5);
-  --shadow-out:    -8px -8px 16px var(--shadow-light),  8px  8px 16px var(--shadow-dark);
-  --shadow-out-sm: -3px -3px 6px var(--shadow-light),   3px  3px 6px var(--shadow-dark);
-  --shadow-out-lg: -16px -16px 32px var(--shadow-light), 16px 16px 32px var(--shadow-dark);
-  --shadow-in:     inset 4px 4px 8px var(--shadow-dark),   inset -4px -4px 8px var(--shadow-light);
-  --shadow-in-sm:  inset 2px 2px 4px var(--shadow-dark),   inset -2px -2px 4px var(--shadow-light);
-  --border:        rgba(163, 177, 198, 0.18);
-  --border-strong: rgba(163, 177, 198, 0.32);
-}`;
+const PRESET_THEMES = [
+  {
+    id: 'preset_neumorphism',
+    name: 'Neumorphism',
+    description: '白ベースのニューモフィズム。二重 shadow で柔らかい立体感を作る。yuto\'s dev tools の現行デフォルト。',
+    tokens: {
+      '--bg': '#E9EDF0',
+      '--text': '#343434',
+      '--text-dim': '#6B7280',
+      '--muted': '#A1AEBF',
+      '--accent': '#489CC1',
+      '--accent-hover': '#3A8DB5',
+      '--success': '#21A87D',
+      '--danger': '#FF7272',
+      '--warning': '#FFBB0D',
+      '--info': '#5B9BD5',
+      '--purple': '#8B5CF6',
+      '--pink': '#EC4899',
+      '--orange': '#F97316',
+      '--teal': '#14B8A6',
+      '--indigo': '#6366F1',
+      '--radius-sm': '10px',
+      '--radius': '16px',
+      '--radius-lg': '24px',
+      '--radius-full': '999px',
+      '--space-1': '4px',
+      '--space-2': '8px',
+      '--space-3': '12px',
+      '--space-4': '16px',
+      '--space-5': '20px',
+      '--space-6': '24px',
+      '--space-8': '32px',
+      '--space-10': '40px',
+      '--font-sans': "'Inter', -apple-system, sans-serif",
+      '--font-mono': "'JetBrains Mono', ui-monospace, Menlo, monospace",
+    },
+    cssFile: 'themes/neumorphism.css',
+    customCss: '',
+  },
+
+  {
+    id: 'preset_cyberpunk',
+    name: 'Cyberpunk Neon',
+    description: 'ダーク背景にネオンカラーが光るサイバーパンク。シアンのグロウシャドウで近未来感を演出。',
+    tokens: {
+      '--bg': '#0B0B1A',
+      '--text': '#E0E0FF',
+      '--text-dim': '#8888AA',
+      '--muted': '#555577',
+      '--accent': '#00F0FF',
+      '--accent-hover': '#00C8D8',
+      '--success': '#00FF88',
+      '--danger': '#FF3366',
+      '--warning': '#FFD600',
+      '--info': '#7B68EE',
+      '--purple': '#BF5FFF',
+      '--pink': '#FF69B4',
+      '--orange': '#FF8C00',
+      '--teal': '#00CED1',
+      '--indigo': '#5B5FFF',
+      '--radius-sm': '6px',
+      '--radius': '12px',
+      '--radius-lg': '20px',
+      '--radius-full': '999px',
+      '--space-1': '4px',
+      '--space-2': '8px',
+      '--space-3': '12px',
+      '--space-4': '16px',
+      '--space-5': '20px',
+      '--space-6': '24px',
+      '--space-8': '32px',
+      '--space-10': '40px',
+      '--font-sans': "'Inter', -apple-system, sans-serif",
+      '--font-mono': "'JetBrains Mono', ui-monospace, Menlo, monospace",
+    },
+    cssFile: 'themes/cyberpunk-neon.css',
+    customCss: '',
+  },
+
+  {
+    id: 'preset_liquid_glass',
+    name: 'Liquid Glass',
+    description: 'Apple風リキッドグラス。半透明フロストガラス + backdrop-filter blur + 虹色リフレクション。',
+    tokens: {
+      '--bg': '#E8EDF4',
+      '--text': '#1A1A2E',
+      '--text-dim': '#5A5E78',
+      '--muted': '#9498B0',
+      '--accent': '#007AFF',
+      '--accent-hover': '#0066DD',
+      '--success': '#30D158',
+      '--danger': '#FF453A',
+      '--warning': '#FFD60A',
+      '--info': '#5AC8FA',
+      '--purple': '#BF5AF2',
+      '--pink': '#FF6482',
+      '--orange': '#FF9F0A',
+      '--teal': '#64D2B1',
+      '--indigo': '#5856D6',
+      '--radius-sm': '12px',
+      '--radius': '20px',
+      '--radius-lg': '28px',
+      '--radius-full': '999px',
+      '--space-1': '4px',
+      '--space-2': '8px',
+      '--space-3': '12px',
+      '--space-4': '16px',
+      '--space-5': '20px',
+      '--space-6': '24px',
+      '--space-8': '32px',
+      '--space-10': '40px',
+      '--font-sans': "'Inter', -apple-system, sans-serif",
+      '--font-mono': "'JetBrains Mono', ui-monospace, Menlo, monospace",
+    },
+    cssFile: 'themes/liquid-glass.css',
+    customCss: '',
+  },
+];
 
 // ═══════════════════════════════════════════════════════════
 // State
@@ -108,18 +183,11 @@ const state = {
   themes: [],
   currentId: null,
   previewReady: false,
-  actionTargetId: null,
 };
 
 // ═══════════════════════════════════════════════════════════
 // Utilities
 // ═══════════════════════════════════════════════════════════
-
-function uid() {
-  return 'theme_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
-}
-
-function nowIso() { return new Date().toISOString(); }
 
 function byId(id) { return document.getElementById(id); }
 
@@ -133,19 +201,6 @@ function debounce(fn, ms) {
   };
 }
 
-function formatDate(iso) {
-  if (!iso) return '—';
-  try {
-    const d = new Date(iso);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  } catch (e) {
-    return '—';
-  }
-}
-
 function toHexSafe(value) {
   if (typeof value !== 'string') return '#000000';
   const v = value.trim();
@@ -156,98 +211,6 @@ function toHexSafe(value) {
     return '#' + r + r + g + g + b + b;
   }
   return '#000000';
-}
-
-// ═══════════════════════════════════════════════════════════
-// Storage
-// ═══════════════════════════════════════════════════════════
-
-function cleanupLegacyData() {
-  LEGACY_KEYS.forEach((k) => {
-    if (localStorage.getItem(k) !== null) {
-      localStorage.removeItem(k);
-    }
-  });
-}
-
-function _useDrive() {
-  return !!(window.driveSync && window.driveSync.isSignedIn && window.driveSync.isSignedIn());
-}
-
-let _driveProgressCount = 0;
-function driveProgressStart() {
-  _driveProgressCount++;
-  const el = byId('drive-progress');
-  if (el) el.hidden = false;
-}
-function driveProgressEnd() {
-  _driveProgressCount = Math.max(0, _driveProgressCount - 1);
-  if (_driveProgressCount === 0) {
-    const el = byId('drive-progress');
-    if (el) el.hidden = true;
-  }
-}
-
-async function loadThemes() {
-  let raw;
-  try {
-    if (_useDrive()) {
-      raw = await window.driveSync.loadItem(LS_KEY);
-    } else {
-      raw = localStorage.getItem(LS_KEY);
-    }
-  } catch (e) {
-    raw = localStorage.getItem(LS_KEY);
-  }
-  try {
-    state.themes = raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    state.themes = [];
-  }
-}
-
-async function saveThemes() {
-  const json = JSON.stringify(state.themes);
-  const drive = _useDrive();
-  if (drive) driveProgressStart();
-  try {
-    if (drive) {
-      await window.driveSync.saveItem(LS_KEY, json);
-    } else {
-      localStorage.setItem(LS_KEY, json);
-    }
-  } finally {
-    if (drive) driveProgressEnd();
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Theme factory
-// ═══════════════════════════════════════════════════════════
-
-function createNeumorphismTheme() {
-  return {
-    id: uid(),
-    name: 'Neumorphism (default)',
-    description: '白ベースのニューモフィズム。yuto\'s dev tools の現行デフォルト。二重 shadow で柔らかい立体感を作る。',
-    tokens: Object.assign({}, NEUMORPHISM_TOKENS),
-    customCss: NEUMORPHISM_CUSTOM_CSS,
-    createdAt: nowIso(),
-    updatedAt: nowIso(),
-  };
-}
-
-function createNewTheme(name, description, base) {
-  const theme = {
-    id: uid(),
-    name: name || 'New Theme',
-    description: description || '',
-    tokens: Object.assign({}, NEUMORPHISM_TOKENS),
-    customCss: base === 'blank' ? '' : NEUMORPHISM_CUSTOM_CSS,
-    createdAt: nowIso(),
-    updatedAt: nowIso(),
-  };
-  return theme;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -265,11 +228,7 @@ function renderList() {
   }
   empty.style.display = 'none';
 
-  const sorted = state.themes.slice().sort((a, b) =>
-    (b.updatedAt || '').localeCompare(a.updatedAt || '')
-  );
-
-  sorted.forEach((theme) => {
+  state.themes.forEach((theme) => {
     const card = document.createElement('div');
     card.className = 'dp-theme-card';
     card.setAttribute('role', 'button');
@@ -282,6 +241,7 @@ function renderList() {
       }
     });
 
+    // サムネイル: 背景色 + カラースウォッチ
     const thumb = document.createElement('div');
     thumb.className = 'dp-theme-card-thumb';
     thumb.style.background = theme.tokens['--bg'] || '#E9EDF0';
@@ -298,47 +258,23 @@ function renderList() {
 
     const desc = document.createElement('div');
     desc.className = 'dp-theme-card-desc';
-    desc.textContent = theme.description || '説明なし';
+    desc.textContent = theme.description || '';
 
     const meta = document.createElement('div');
     meta.className = 'dp-theme-card-meta';
     const left = document.createElement('span');
-    left.textContent = formatDate(theme.updatedAt);
+    left.textContent = Object.keys(theme.tokens).length + ' tokens';
     const right = document.createElement('span');
-    right.textContent = 'edit →';
+    right.textContent = 'preview →';
     meta.append(left, right);
 
-    const actions = document.createElement('div');
-    actions.className = 'app-card-actions';
-
-    const exportBtn = document.createElement('button');
-    exportBtn.type = 'button';
-    exportBtn.className = 'app-card-btn';
-    exportBtn.title = 'CSS 書出';
-    exportBtn.textContent = '⇩';
-    exportBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openExportModalFor(theme.id);
-    });
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'app-card-btn danger';
-    deleteBtn.title = '削除';
-    deleteBtn.textContent = '×';
-    deleteBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openDeleteModalFor(theme.id);
-    });
-
-    actions.append(exportBtn, deleteBtn);
-    card.append(thumb, name, desc, meta, actions);
+    card.append(thumb, name, desc, meta);
     grid.appendChild(card);
   });
 }
 
 // ═══════════════════════════════════════════════════════════
-// Editor view
+// Editor view (read-only preview + live tweak)
 // ═══════════════════════════════════════════════════════════
 
 function getCurrentTheme() {
@@ -357,6 +293,13 @@ function enterEditor(id) {
 }
 
 function exitEditor() {
+  // プリセットに戻す（エディタでの一時変更を破棄）
+  const original = PRESET_THEMES.find((t) => t.id === state.currentId);
+  const current = getCurrentTheme();
+  if (original && current) {
+    current.tokens = JSON.parse(JSON.stringify(original.tokens));
+    current.customCss = current._originalCss || '';
+  }
   state.currentId = null;
   document.body.dataset.view = 'list';
   renderList();
@@ -369,7 +312,9 @@ function renderEditor() {
 
   byId('editor-title').textContent = theme.name;
   byId('field-name').value = theme.name;
+  byId('field-name').readOnly = true;
   byId('field-description').value = theme.description || '';
+  byId('field-description').readOnly = true;
   byId('field-custom-css').value = theme.customCss || '';
 
   renderTokenForm('form-colors', COLOR_TOKENS, theme.tokens, 'color');
@@ -410,6 +355,7 @@ function renderTokenForm(containerId, tokens, values, inputType) {
       hex.value = val;
       hex.maxLength = 9;
 
+      // ライブプレビューのみ（保存なし）
       swatch.addEventListener('input', () => {
         hex.value = swatch.value;
         onTokenChange(tok.var, swatch.value);
@@ -438,43 +384,25 @@ function renderTokenForm(containerId, tokens, values, inputType) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Edit handlers
+// Edit handlers (ライブプレビュー用、保存なし)
 // ═══════════════════════════════════════════════════════════
 
 const schedulePreviewUpdate = debounce(updatePreview, 120);
-
-const autoSave = debounce(async () => {
-  const theme = getCurrentTheme();
-  if (!theme) return;
-  theme.updatedAt = nowIso();
-  try {
-    await saveThemes();
-  } catch (e) {
-    showToast('保存エラー', 'error');
-  }
-}, 400);
 
 function onTokenChange(varName, value) {
   const theme = getCurrentTheme();
   if (!theme) return;
   theme.tokens[varName] = value;
   schedulePreviewUpdate();
-  autoSave();
 }
 
 function onFieldChange(field, value) {
   const theme = getCurrentTheme();
   if (!theme) return;
-  if (field === 'name') {
-    theme.name = value;
-    byId('editor-title').textContent = value;
-  } else if (field === 'description') {
-    theme.description = value;
-  } else if (field === 'customCss') {
+  if (field === 'customCss') {
     theme.customCss = value;
     schedulePreviewUpdate();
   }
-  autoSave();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -503,52 +431,14 @@ function buildThemeCss(theme) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// CRUD
-// ═══════════════════════════════════════════════════════════
-
-async function handleCreateTheme(name, description, base) {
-  const theme = createNewTheme(name, description, base);
-  state.themes.push(theme);
-  await saveThemes();
-  closeModal('modal-new');
-  enterEditor(theme.id);
-  showToast('テーマを作成しました', 'success');
-}
-
-async function deleteTargetTheme() {
-  const id = state.actionTargetId;
-  if (!id) return;
-  const wasEditing = state.currentId === id;
-  state.themes = state.themes.filter((t) => t.id !== id);
-  await saveThemes();
-  closeModal('modal-delete');
-  state.actionTargetId = null;
-  if (wasEditing) {
-    exitEditor();
-  } else {
-    renderList();
-  }
-  showToast('削除しました', 'success');
-}
-
-// ═══════════════════════════════════════════════════════════
 // Export
 // ═══════════════════════════════════════════════════════════
 
 function openExportModalFor(id) {
   const theme = state.themes.find((t) => t.id === id);
   if (!theme) return;
-  state.actionTargetId = id;
   byId('export-textarea').value = buildExportCss(theme);
   openModal('modal-export');
-}
-
-function openDeleteModalFor(id) {
-  const theme = state.themes.find((t) => t.id === id);
-  if (!theme) return;
-  state.actionTargetId = id;
-  byId('delete-target-name').textContent = theme.name;
-  openModal('modal-delete');
 }
 
 function buildExportCss(theme) {
@@ -556,7 +446,6 @@ function buildExportCss(theme) {
 `/* ============================================================
    ${theme.name}
    ${theme.description || ''}
-   Exported: ${nowIso()}
    ============================================================ */
 
 `;
@@ -605,48 +494,41 @@ function showToast(msg, variant) {
 // ═══════════════════════════════════════════════════════════
 
 async function init() {
-  cleanupLegacyData();
+  // v1 の残骸を掃除
+  ['designpocket_apps', 'designpocket_ideas', 'designpocket_themes'].forEach((k) => {
+    localStorage.removeItem(k);
+  });
 
+  // プリセットからテーマを読み込み（ディープコピー）+ CSS ファイルを fetch
+  state.themes = await Promise.all(PRESET_THEMES.map(async (t) => {
+    let css = t.customCss || '';
+    if (t.cssFile) {
+      try {
+        const resp = await fetch(t.cssFile);
+        if (resp.ok) css = await resp.text();
+      } catch (e) {
+        console.warn(`CSS 読み込み失敗: ${t.cssFile}`, e);
+      }
+    }
+    return { ...t, tokens: { ...t.tokens }, customCss: css, _originalCss: css };
+  }));
+
+  // アイコン
   if (window.yutoIcons) {
     const ic = byId('app-icon');
     if (ic) ic.innerHTML = window.yutoIcons.toSVG('palette', { size: 20 });
   }
 
+  // テーマ切替
   if (window.theme) {
     const m = byId('theme-mount');
     if (m) window.theme.mountUI(m);
   }
 
-  if (window.driveSync) {
-    window.driveSync.register({
-      toolId: 'designpocket',
-      keys: [LS_KEY],
-      onSyncedFromRemote: async () => {
-        await loadThemes();
-        if (document.body.dataset.view === 'editor' && state.currentId) {
-          renderEditor();
-        } else {
-          renderList();
-        }
-      },
-    });
-    const mount = byId('sync-mount');
-    if (mount) window.driveSync.mountUI(mount);
-    window.driveSync.init();
-  }
-
-  await loadThemes();
-
-  // Seed: first-run user gets the neumorphism theme as a reference
-  if (state.themes.length === 0) {
-    state.themes.push(createNeumorphismTheme());
-    await saveThemes();
-  }
-
   renderList();
   bindEvents();
 
-  // Deep link: #edit → 最初のテーマを開く、#edit=<id> → 指定 ID を開く
+  // ディープリンク
   const hash = location.hash;
   if (hash && hash.startsWith('#edit')) {
     const id = hash.includes('=') ? hash.split('=')[1] : null;
@@ -656,61 +538,35 @@ async function init() {
 }
 
 function bindEvents() {
-  byId('btn-create-theme').addEventListener('click', () => {
-    byId('new-name').value = '';
-    byId('new-description').value = '';
-    byId('new-base').value = 'neumorphism';
-    openModal('modal-new');
-    setTimeout(() => byId('new-name').focus(), 50);
-  });
-
-  byId('form-new').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = byId('new-name').value.trim();
-    const desc = byId('new-description').value.trim();
-    const base = byId('new-base').value;
-    if (!name) return;
-    handleCreateTheme(name, desc, base);
-  });
-
+  // 一覧に戻る
   byId('back-to-list').addEventListener('click', (e) => {
     e.preventDefault();
     exitEditor();
   });
 
-  byId('btn-copy-export').addEventListener('click', copyExport);
-  byId('btn-confirm-delete').addEventListener('click', deleteTargetTheme);
+  // エクスポート
+  const copyBtn = byId('btn-copy-export');
+  if (copyBtn) copyBtn.addEventListener('click', copyExport);
 
-  byId('field-name').addEventListener('input', (e) => onFieldChange('name', e.target.value));
-  byId('field-description').addEventListener('input', (e) => onFieldChange('description', e.target.value));
+  // エディタ内フィールド
   byId('field-custom-css').addEventListener('input', (e) => onFieldChange('customCss', e.target.value));
 
-  // Click on editor title focuses the name field
-  byId('editor-title').addEventListener('click', () => {
-    byId('field-name').focus();
-    byId('field-name').select();
-  });
-
-  // Modal close buttons
+  // モーダル閉じる
   document.querySelectorAll('[data-close]').forEach((btn) => {
     btn.addEventListener('click', () => closeModal(btn.dataset.close));
   });
-
-  // Click overlay to close
   document.querySelectorAll('.modal-overlay').forEach((overlay) => {
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) overlay.hidden = true;
     });
   });
-
-  // Esc to close modals
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       document.querySelectorAll('.modal-overlay').forEach((m) => m.hidden = true);
     }
   });
 
-  // Iframe ready
+  // iframe ready
   window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'previewReady') {
       state.previewReady = true;

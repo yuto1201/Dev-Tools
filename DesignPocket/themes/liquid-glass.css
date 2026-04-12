@@ -1,0 +1,717 @@
+/* ============================================================
+   Liquid Glass — Apple-style frosted glass UI
+   ============================================================ */
+
+/* --- Core tokens --- */
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.18);
+  --glass-bg-strong: rgba(255, 255, 255, 0.30);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-border-subtle: rgba(255, 255, 255, 0.25);
+  --glass-blur: 28px;
+  --glass-highlight: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.08) 35%,
+    rgba(255, 255, 255, 0.0) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  --rainbow-subtle: linear-gradient(
+    135deg,
+    rgba(255, 100, 130, 0.08),
+    rgba(191, 90, 242, 0.08),
+    rgba(0, 122, 255, 0.08),
+    rgba(48, 209, 88, 0.08)
+  );
+
+  --shadow-dark: rgba(0, 0, 0, 0.08);
+  --shadow-light: rgba(255, 255, 255, 0.9);
+  --shadow-out:    0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-out-sm: 0 2px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-out-lg: 0 8px 40px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-in:     inset 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-in-sm:  inset 0 1px 3px rgba(0, 0, 0, 0.04);
+  --border:        rgba(255, 255, 255, 0.35);
+  --border-strong: rgba(255, 255, 255, 0.55);
+}
+
+/* --- Animations --- */
+@keyframes glass-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes rainbow-drift {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+@keyframes float-up {
+  0%   { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+/* --- Background: 斜めに流れるグラデーション --- */
+body {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(191, 90, 242, 0.50),
+      rgba(0, 122, 255, 0.40),
+      rgba(90, 200, 250, 0.35),
+      rgba(245, 230, 255, 0.15),
+      rgba(255, 100, 130, 0.38),
+      rgba(48, 209, 88, 0.40),
+      rgba(191, 90, 242, 0.50)
+    ) !important;
+  background-size: 400% 400% !important;
+  animation: bg-slide 10s ease-in-out infinite !important;
+}
+@keyframes bg-slide {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* --- Section titles --- */
+.pv-section-title {
+  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+  color: var(--muted) !important;
+}
+
+/* --- Glass mixin: 全パネル系に適用 --- */
+.pv-surface,
+.pv-card-sample,
+.pv-header-sample,
+.pv-swatch,
+.pv-skel-card,
+.modal {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -0.5px 0 rgba(255, 255, 255, 0.08) !important;
+  position: relative;
+}
+/* ガラスの虹色リフレクション（疑似要素） */
+.pv-card-sample::before,
+.pv-surface::before,
+.pv-header-sample::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--glass-highlight);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* --- Cards --- */
+.pv-card-sample {
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+}
+.pv-card-sample:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-out-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.5) !important;
+}
+.pv-card-sample-thumb {
+  background: var(--rainbow-subtle) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: var(--shadow-in-sm) !important;
+}
+
+/* --- Buttons: ガラスボタン --- */
+.btn {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  color: var(--text);
+}
+.btn:hover {
+  background: var(--glass-bg-strong) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 1px rgba(255, 255, 255, 0.4) !important;
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-in-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+.btn-primary {
+  background: linear-gradient(135deg,
+    rgba(0, 122, 255, 0.75),
+    rgba(90, 200, 250, 0.65)) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 2px 12px rgba(0, 122, 255, 0.15) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg,
+    rgba(0, 122, 255, 0.85),
+    rgba(90, 200, 250, 0.75)) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 4px 20px rgba(0, 122, 255, 0.2) !important;
+}
+.btn-ghost {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: none !important;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+}
+.btn-danger {
+  color: var(--danger) !important;
+  border-color: rgba(255, 69, 58, 0.15) !important;
+}
+.btn-danger:hover {
+  background: rgba(255, 69, 58, 0.08) !important;
+  border-color: rgba(255, 69, 58, 0.3) !important;
+}
+
+/* --- Form inputs: ガラスインセット --- */
+.form-input {
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: var(--shadow-in-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  transition: all 0.3s ease;
+}
+.form-input:focus {
+  border-color: rgba(0, 122, 255, 0.4) !important;
+  box-shadow: var(--shadow-in-sm),
+    0 0 0 3px rgba(0, 122, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  outline: none;
+}
+
+/* --- Swatches: ガラスカード --- */
+.pv-swatch {
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+}
+.pv-swatch:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+.pv-swatch-color {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-in-sm) !important;
+}
+
+/* --- Header: ガラスバー --- */
+.pv-header-sample {
+  overflow: hidden;
+}
+.app-back-btn {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+.app-title-icon {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+/* --- Tab bar / Segmented: ガラスタブ --- */
+.tab-bar, .segmented {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: var(--shadow-in-sm) !important;
+}
+.tab, .segmented-item {
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tab.active, .segmented-item.active {
+  background: var(--glass-bg-strong) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+/* --- Badges: ガラスピル --- */
+.badge {
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+.badge-primary { background: rgba(0, 122, 255, 0.12) !important; border-color: rgba(0, 122, 255, 0.2) !important; }
+.badge-success { background: rgba(48, 209, 88, 0.12) !important; border-color: rgba(48, 209, 88, 0.2) !important; }
+.badge-danger  { background: rgba(255, 69, 58, 0.12) !important; border-color: rgba(255, 69, 58, 0.2) !important; }
+.badge-warning { background: rgba(255, 214, 10, 0.15) !important; border-color: rgba(255, 214, 10, 0.25) !important; }
+.badge-info    { background: rgba(90, 200, 250, 0.12) !important; border-color: rgba(90, 200, 250, 0.2) !important; }
+.badge-purple  { background: rgba(191, 90, 242, 0.12) !important; border-color: rgba(191, 90, 242, 0.2) !important; }
+.badge-pink    { background: rgba(255, 100, 130, 0.12) !important; border-color: rgba(255, 100, 130, 0.2) !important; }
+.badge-orange  { background: rgba(255, 159, 10, 0.12) !important; border-color: rgba(255, 159, 10, 0.2) !important; }
+.badge-teal    { background: rgba(100, 210, 177, 0.12) !important; border-color: rgba(100, 210, 177, 0.2) !important; }
+.badge-indigo  { background: rgba(88, 86, 214, 0.12) !important; border-color: rgba(88, 86, 214, 0.2) !important; }
+
+/* --- Progress bar: グラデーション + シマー --- */
+.progress {
+  background: rgba(255, 255, 255, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-in-sm) !important;
+}
+.progress-bar {
+  background: linear-gradient(90deg, #007AFF, #5AC8FA) !important;
+  border-radius: inherit;
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: glass-shimmer 2s ease-in-out infinite;
+}
+.progress-bar.success {
+  background: linear-gradient(90deg, #30D158, #64D2B1) !important;
+}
+.progress-bar.danger {
+  background: linear-gradient(90deg, #FF453A, #FF6482) !important;
+}
+
+/* --- Switch: ガラストラック --- */
+.switch input + .switch-track {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.switch input:checked + .switch-track {
+  background: rgba(0, 122, 255, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-in-sm), 0 2px 8px rgba(0, 122, 255, 0.15);
+}
+.switch-thumb {
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+/* --- Slider: ガラストラック + サム --- */
+.slider {
+  background: linear-gradient(to right,
+    rgba(0, 122, 255, 0.35) 0%,
+    rgba(0, 122, 255, 0.35) var(--slider-fill, 0%),
+    rgba(255, 255, 255, 0.25) var(--slider-fill, 0%)) !important;
+  box-shadow: var(--shadow-in-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+}
+.slider::-webkit-slider-thumb {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: var(--shadow-out-sm),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* --- Modal: ガラスオーバーレイ --- */
+.modal-overlay {
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+.modal {
+  overflow: hidden;
+}
+.modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--glass-highlight);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* --- Spinner: アクセントカラー --- */
+.spinner {
+  border-color: rgba(0, 122, 255, 0.15) !important;
+  border-top-color: var(--accent) !important;
+}
+
+/* --- Scrollbar: 半透明 --- */
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12) !important;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* --- Empty state --- */
+.app-empty {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+}
+
+/* --- Select: ガラス --- */
+.select {
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  transition: all 0.3s ease;
+}
+.select:focus {
+  border-color: rgba(0, 122, 255, 0.3) !important;
+  box-shadow: var(--shadow-out-sm),
+    0 0 0 3px rgba(0, 122, 255, 0.08) !important;
+}
+
+/* --- Radio / Checkbox: ガラス --- */
+.radio, .checkbox {
+  transition: all 0.2s ease;
+}
+
+/* --- Scroll demo: ガラス枠 --- */
+.pv-scroll-demo {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+/* --- Card action buttons: ガラス丸ボタン --- */
+.app-card-btn {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+.app-card-btn:hover {
+  background: var(--glass-bg-strong) !important;
+}
+.app-card-btn:active {
+  box-shadow: var(--shadow-in-sm) !important;
+}
+
+/* --- Surfaces: ラベルの位置調整 --- */
+.pv-surface-label, .pv-surface-var {
+  position: relative;
+  z-index: 2;
+}
+.pv-card-sample > *, .pv-header-sample > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* --- Radio / Checkbox コンテナ: ガラスパネル --- */
+.pv-section > div:has(.radio),
+.pv-section > div:has(.checkbox) {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+/* --- Empty state ラッパー: ガラス化 --- */
+.pv-section > div:has(.app-empty) {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+.app-empty {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* --- Toast: ガラス通知 --- */
+.toast {
+  background: var(--glass-bg-strong) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+.toast.success {
+  border-color: rgba(48, 209, 88, 0.35) !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+.toast.error {
+  border-color: rgba(255, 69, 58, 0.35) !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* --- Drive sync UI: ガラス化 --- */
+.ds-sync-signin {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+.ds-sync-info {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  border-radius: var(--radius-full);
+}
+
+/* --- Dropdown: ガラスメニュー --- */
+.dropdown-menu {
+  background: var(--glass-bg-strong) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+.dropdown-divider {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* --- Alert: ガラスアラート --- */
+.alert {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+.alert-success { border-left: 3px solid rgba(48, 209, 88, 0.6) !important; }
+.alert-danger  { border-left: 3px solid rgba(255, 69, 58, 0.6) !important; }
+.alert-warning { border-left: 3px solid rgba(255, 214, 10, 0.6) !important; }
+.alert-info    { border-left: 3px solid rgba(90, 200, 250, 0.6) !important; }
+
+/* --- Tooltip: ガラス吹き出し --- */
+.tooltip-parent[data-tooltip]::after {
+  background: var(--glass-bg-strong) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-sm) !important;
+  color: var(--text) !important;
+}
+
+/* --- Avatar: ガラスアバター --- */
+.avatar {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  color: var(--text) !important;
+}
+.avatar-purple { border-color: rgba(191, 90, 242, 0.4) !important; color: var(--purple) !important; }
+.avatar-pink   { border-color: rgba(255, 100, 130, 0.4) !important; color: var(--pink) !important; }
+.avatar-orange { border-color: rgba(255, 159, 10, 0.4) !important; color: var(--orange) !important; }
+.avatar-teal   { border-color: rgba(100, 210, 177, 0.4) !important; color: var(--teal) !important; }
+.avatar-success{ border-color: rgba(48, 209, 88, 0.4) !important; color: var(--success) !important; }
+
+/* --- Chip: ガラスチップ --- */
+.chip {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  box-shadow: var(--shadow-out-sm) !important;
+}
+.chip-primary { border-color: rgba(0, 122, 255, 0.3) !important; }
+.chip-success { border-color: rgba(48, 209, 88, 0.3) !important; }
+.chip-danger  { border-color: rgba(255, 69, 58, 0.3) !important; }
+
+/* --- Table: ガラステーブル --- */
+.table-card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+.table thead th {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.3) !important;
+}
+.table tbody tr {
+  border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+}
+.table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* --- Accordion: ガラスアコーディオン --- */
+.accordion {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+.accordion-item {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+.accordion-trigger {
+  background: transparent !important;
+}
+.accordion-trigger:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: var(--accent) !important;
+}
+.accordion-body {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* --- Knob: ガラスノブ --- */
+.knob {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+.knob-track {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* --- Picker: ガラスピッカー --- */
+.picker {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+.picker[type="color"] {
+  padding: 4px !important;
+}
+.color-field {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+.color-field-swatch {
+  border: none !important;
+  box-shadow: var(--shadow-in-sm) !important;
+  border-radius: var(--radius-sm) !important;
+}
+.color-field-hex {
+  background: transparent !important;
+  border: none !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+/* --- Radii box: ガラス化 --- */
+.pv-radii-box {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+/* --- List chip: ガラス化 --- */
+.list-chip {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  box-shadow: var(--shadow-out-sm) !important;
+}
+.list-chip.active {
+  border-color: rgba(0, 122, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+.list-chip-icon {
+  background: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: var(--shadow-out-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+.list-chip-check {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.list-chip.active .list-chip-check {
+  background: rgba(0, 122, 255, 0.6) !important;
+}
+
+/* --- Skeleton: ガラス風シマー --- */
+.skeleton {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* --- Range control: ガラス化 --- */
+.range-control-track {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+.range-control-fill {
+  background: rgba(0, 122, 255, 0.45) !important;
+}
+.range-control-thumb {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-out-sm) !important;
+}
+
+/* --- Divider: 薄い白線 --- */
+.divider {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+.divider-label::before, .divider-label::after {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+.divider-vertical {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
