@@ -11,6 +11,14 @@
 // Token definitions
 // ═══════════════════════════════════════════════════════════
 
+<<<<<<< Updated upstream
+=======
+const LS_KEY = 'designpocket_themes';
+const LEGACY_KEYS = ['designpocket_apps', 'designpocket_ideas'];
+const RAMS_SEEDED_FLAG = 'designpocket_rams_seeded';
+const RAMS_CSS_VERSION_FLAG = 'designpocket_rams_css_v6';
+
+>>>>>>> Stashed changes
 const COLOR_TOKENS = [
   { var: '--bg',           label: 'bg' },
   { var: '--text',         label: 'text' },
@@ -175,6 +183,165 @@ const PRESET_THEMES = [
   },
 ];
 
+const DIETER_RAMS_TOKENS = {
+  '--bg': '#ECE9E0',
+  '--text': '#1A1A1A',
+  '--text-dim': '#5C5C58',
+  '--muted': '#9A968E',
+  '--accent': '#F25D27',
+  '--accent-hover': '#D94B1C',
+  '--success': '#3A8F5B',
+  '--danger': '#D13B3B',
+  '--warning': '#E8A52F',
+  '--info': '#3B7FB5',
+  '--purple': '#6B4E8C',
+  '--pink': '#C15A8B',
+  '--orange': '#F25D27',
+  '--teal': '#2F8A86',
+  '--indigo': '#3B4D8E',
+  '--radius-sm': '4px',
+  '--radius': '8px',
+  '--radius-lg': '12px',
+  '--radius-full': '999px',
+  '--space-1': '4px',
+  '--space-2': '8px',
+  '--space-3': '12px',
+  '--space-4': '16px',
+  '--space-5': '20px',
+  '--space-6': '24px',
+  '--space-8': '32px',
+  '--space-10': '40px',
+  '--font-sans': "'Inter', -apple-system, sans-serif",
+  '--font-mono': "'JetBrains Mono', ui-monospace, Menlo, monospace",
+};
+
+const DIETER_RAMS_CUSTOM_CSS = `/* ============================================================
+   Dieter Rams / Braun — "Less, but better"
+   dot grid texture + mono caps labels + orange focal dot
+   ============================================================ */
+
+/* ----- Flat shadows & hairline borders --------------------- */
+:root {
+  --shadow-light: transparent;
+  --shadow-dark: rgba(0, 0, 0, 0.08);
+  --shadow-out:    0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-out-sm: 0 1px 1px rgba(0, 0, 0, 0.04);
+  --shadow-out-lg: 0 4px 14px rgba(0, 0, 0, 0.08);
+  --shadow-in:     inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+  --shadow-in-sm:  inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --border:        rgba(0, 0, 0, 0.10);
+  --border-strong: rgba(0, 0, 0, 0.20);
+}
+
+/* ----- Braun speaker-grille dot texture on body ------------ */
+html, body {
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    circle,
+    rgba(0, 0, 0, 0.11) 1px,
+    transparent 1.3px
+  );
+  background-size: 14px 14px;
+  background-position: 0 0;
+}
+
+/* ----- Mono caps labels (Braun functional-label aesthetic) - */
+.form-label,
+.app-card-meta,
+.pv-sub {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+/* ----- Buttons: mono caps + tracked letter-spacing --------- */
+.btn {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* ----- Section titles get an orange focal dot -------------- */
+.pv-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border-strong);
+  letter-spacing: 0.18em;
+}
+.pv-section-title::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ----- Card titles: display weight, tight tracking --------- */
+.app-card-name,
+.pv-card-sample-title {
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+/* ----- Badges: square corners, mono caps ------------------- */
+.badge {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+/* ----- Tabs / segmented: mono caps ------------------------- */
+.tab,
+.segmented-item {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+/* ----- Braun product-label: orange left-strip on cards ----- */
+.app-card,
+.pv-card-sample {
+  position: relative;
+  padding-left: calc(var(--space-4) + 12px);
+  border-radius: 2px;
+}
+.app-card::before,
+.pv-card-sample::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--accent);
+  border-radius: 2px 0 0 2px;
+}
+
+/* ----- Stark primary button: black box + orange text ------- */
+.btn-primary {
+  background: var(--text);
+  color: var(--accent);
+  border-radius: 2px;
+  box-shadow: none;
+}
+.btn-primary:hover {
+  background: #000;
+  color: var(--accent);
+  box-shadow: 0 2px 0 var(--accent);
+}`;
+
 // ═══════════════════════════════════════════════════════════
 // State
 // ═══════════════════════════════════════════════════════════
@@ -214,6 +381,123 @@ function toHexSafe(value) {
 }
 
 // ═══════════════════════════════════════════════════════════
+<<<<<<< Updated upstream
+=======
+// Storage
+// ═══════════════════════════════════════════════════════════
+
+function cleanupLegacyData() {
+  LEGACY_KEYS.forEach((k) => {
+    if (localStorage.getItem(k) !== null) {
+      localStorage.removeItem(k);
+    }
+  });
+}
+
+function _useDrive() {
+  return !!(window.driveSync && window.driveSync.isSignedIn && window.driveSync.isSignedIn());
+}
+
+let _driveProgressCount = 0;
+function driveProgressStart() {
+  _driveProgressCount++;
+  const el = byId('drive-progress');
+  if (el) el.hidden = false;
+}
+function driveProgressEnd() {
+  _driveProgressCount = Math.max(0, _driveProgressCount - 1);
+  if (_driveProgressCount === 0) {
+    const el = byId('drive-progress');
+    if (el) el.hidden = true;
+  }
+}
+
+async function loadThemes() {
+  let raw;
+  try {
+    if (_useDrive()) {
+      raw = await window.driveSync.loadItem(LS_KEY);
+    } else {
+      raw = localStorage.getItem(LS_KEY);
+    }
+  } catch (e) {
+    raw = localStorage.getItem(LS_KEY);
+  }
+  try {
+    state.themes = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    state.themes = [];
+  }
+}
+
+async function saveThemes() {
+  const json = JSON.stringify(state.themes);
+  const drive = _useDrive();
+  if (drive) driveProgressStart();
+  try {
+    if (drive) {
+      await window.driveSync.saveItem(LS_KEY, json);
+    } else {
+      localStorage.setItem(LS_KEY, json);
+    }
+  } finally {
+    if (drive) driveProgressEnd();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Theme factory
+// ═══════════════════════════════════════════════════════════
+
+function createNeumorphismTheme() {
+  return {
+    id: uid(),
+    name: 'Neumorphism (default)',
+    description: '白ベースのニューモフィズム。yuto\'s dev tools の現行デフォルト。二重 shadow で柔らかい立体感を作る。',
+    tokens: Object.assign({}, NEUMORPHISM_TOKENS),
+    customCss: NEUMORPHISM_CUSTOM_CSS,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  };
+}
+
+function createDieterRamsTheme() {
+  return {
+    id: uid(),
+    name: 'Dieter Rams',
+    description: 'Less, but better — 暖かいオフホワイト + Braun オレンジ。フラット設計、ハイライン境界、シャープな階調。',
+    tokens: Object.assign({}, DIETER_RAMS_TOKENS),
+    customCss: DIETER_RAMS_CUSTOM_CSS,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  };
+}
+
+function createNewTheme(name, description, base) {
+  let tokens, customCss;
+  if (base === 'dieter-rams') {
+    tokens = Object.assign({}, DIETER_RAMS_TOKENS);
+    customCss = DIETER_RAMS_CUSTOM_CSS;
+  } else if (base === 'blank') {
+    tokens = Object.assign({}, NEUMORPHISM_TOKENS);
+    customCss = '';
+  } else {
+    tokens = Object.assign({}, NEUMORPHISM_TOKENS);
+    customCss = NEUMORPHISM_CUSTOM_CSS;
+  }
+  return {
+    id: uid(),
+    name: name || 'New Theme',
+    description: description || '',
+    tokens,
+    customCss,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+>>>>>>> Stashed changes
 // List view
 // ═══════════════════════════════════════════════════════════
 
@@ -541,14 +825,68 @@ async function init() {
     if (m) window.theme.mountUI(m);
   }
 
+<<<<<<< Updated upstream
   renderList();
   bindEvents();
 
   // ディープリンク
+=======
+  if (window.driveSync) {
+    window.driveSync.register({
+      toolId: 'designpocket',
+      keys: [LS_KEY],
+      onSyncedFromRemote: async () => {
+        await loadThemes();
+        if (document.body.dataset.view === 'editor' && state.currentId) {
+          renderEditor();
+        } else {
+          renderList();
+        }
+      },
+    });
+    const mount = byId('sync-mount');
+    if (mount) window.driveSync.mountUI(mount);
+    window.driveSync.init();
+  }
+
+  await loadThemes();
+
+  // Seed: first-run user gets both preset themes as references
+  if (state.themes.length === 0) {
+    state.themes.push(createNeumorphismTheme());
+    state.themes.push(createDieterRamsTheme());
+    localStorage.setItem(RAMS_SEEDED_FLAG, '1');
+    localStorage.setItem(RAMS_CSS_VERSION_FLAG, '1');
+    await saveThemes();
+  } else if (!localStorage.getItem(RAMS_SEEDED_FLAG)) {
+    // Existing users: seed Dieter Rams once
+    state.themes.push(createDieterRamsTheme());
+    localStorage.setItem(RAMS_SEEDED_FLAG, '1');
+    localStorage.setItem(RAMS_CSS_VERSION_FLAG, '1');
+    await saveThemes();
+  } else if (!localStorage.getItem(RAMS_CSS_VERSION_FLAG)) {
+    // Existing users with old Rams customCss: upgrade to v2 (dot grid + mono caps)
+    const existing = state.themes.find((t) => t.name === 'Dieter Rams');
+    if (existing) {
+      existing.customCss = DIETER_RAMS_CUSTOM_CSS;
+      existing.description = 'Less, but better — 暖かいオフホワイト + Braun オレンジ。フラット設計、ハイライン境界、シャープな階調。';
+      existing.updatedAt = nowIso();
+      await saveThemes();
+    }
+    localStorage.setItem(RAMS_CSS_VERSION_FLAG, '1');
+  }
+
+  renderList();
+  bindEvents();
+
+  // Deep link: #edit → 最初のテーマを開く、#edit=<id|name> → ID または名前で指定
+>>>>>>> Stashed changes
   const hash = location.hash;
   if (hash && hash.startsWith('#edit')) {
-    const id = hash.includes('=') ? hash.split('=')[1] : null;
-    const target = id ? state.themes.find(t => t.id === id) : state.themes[0];
+    const key = hash.includes('=') ? decodeURIComponent(hash.split('=')[1]) : null;
+    const target = key
+      ? (state.themes.find(t => t.id === key) || state.themes.find(t => t.name === key))
+      : state.themes[0];
     if (target) enterEditor(target.id);
   }
 }
