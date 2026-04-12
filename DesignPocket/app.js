@@ -509,16 +509,22 @@ async function init() {
     localStorage.removeItem(k);
   });
 
-  // プリセットからテーマを読み込み（ディープコピー）+ CSS ファイルを fetch
+  // プリセットからテーマを読み込み（ディープコピー）+ CSS ファイルを取得
+  // file:// では fetch/XHR が CORS でブロックされるため、
+  // themes/bundle.js で事前に window.THEME_CSS に埋め込んだ内容を優先参照する
+  function loadCssFile(url) {
+    // バンドル済み CSS があればそちらを使う（file:// でも確実に動く）
+    if (window.THEME_CSS && window.THEME_CSS[url]) {
+      return Promise.resolve(window.THEME_CSS[url]);
+    }
+    // フォールバック: fetch（http(s):// 用）
+    return fetch(url).then((r) => r.ok ? r.text() : '').catch(() => '');
+  }
+
   state.themes = await Promise.all(PRESET_THEMES.map(async (t) => {
     let css = t.customCss || '';
     if (t.cssFile) {
-      try {
-        const resp = await fetch(t.cssFile);
-        if (resp.ok) css = await resp.text();
-      } catch (e) {
-        console.warn(`CSS 読み込み失敗: ${t.cssFile}`, e);
-      }
+      css = await loadCssFile(t.cssFile) || css;
     }
     return { ...t, tokens: { ...t.tokens }, customCss: css, _originalCss: css };
   }));

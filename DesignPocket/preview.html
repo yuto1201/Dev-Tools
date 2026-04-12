@@ -239,9 +239,32 @@ body {
 
 /* Badges layout */
 .pv-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+
+/* Form panel (Radio / Checkbox コンテナ) */
+.pv-form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 360px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-in-sm);
+}
 </style>
 </head>
 <body>
+
+<!-- SVG Filter for Liquid Glass distortion -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01 0.01" numOctaves="2" seed="92" result="noise"/>
+      <feGaussianBlur in="noise" stdDeviation="2" result="blurred"/>
+      <feDisplacementMap in="SourceGraphic" in2="blurred" scale="55" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
 
 <!-- ============ 0. Header ============ -->
 <section class="pv-section">
@@ -476,7 +499,7 @@ body {
 <!-- ============ 10. Radio ============ -->
 <section class="pv-section">
   <div class="pv-section-title">// 10. radio</div>
-  <div style="display:flex;flex-direction:column;gap:var(--space-3);max-width:360px;background:var(--bg);border-radius:var(--radius);padding:var(--space-4);box-shadow:var(--shadow-in-sm);">
+  <div class="pv-form-panel">
     <label class="radio"><input type="radio" name="pv-radio" checked>Option A</label>
     <label class="radio"><input type="radio" name="pv-radio">Option B</label>
     <label class="radio"><input type="radio" name="pv-radio">Option C</label>
@@ -487,7 +510,7 @@ body {
 <!-- ============ 11. Checkbox ============ -->
 <section class="pv-section">
   <div class="pv-section-title">// 11. checkbox</div>
-  <div style="display:flex;flex-direction:column;gap:var(--space-3);max-width:360px;background:var(--bg);border-radius:var(--radius);padding:var(--space-4);box-shadow:var(--shadow-in-sm);">
+  <div class="pv-form-panel">
     <label class="checkbox"><input type="checkbox" checked>利用規約に同意する</label>
     <label class="checkbox"><input type="checkbox">通知を受け取る</label>
     <label class="checkbox"><input type="checkbox">ベータ機能を有効にする</label>
@@ -1059,28 +1082,66 @@ document.querySelectorAll('.slider').forEach(s => {
   update();
 });
 
-// ==================== Tab bar ====================
+// ==================== Tab bar / Segmented（スライドアニメーション） ====================
 (function(){
-  const bar = document.getElementById('pv-tab-bar');
-  if (!bar) return;
-  bar.addEventListener('click', (e) => {
-    if (e.target.classList.contains('tab')) {
-      bar.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      e.target.classList.add('active');
-    }
-  });
-})();
+  // スライドインジケーターを初期化するヘルパー
+  function initSlider(container, itemClass) {
+    if (!container) return;
+    // position: relative を保証
+    container.style.position = 'relative';
 
-// ==================== Segmented ====================
-(function(){
-  const seg = document.getElementById('pv-segmented');
-  if (!seg) return;
-  seg.addEventListener('click', (e) => {
-    if (e.target.classList.contains('segmented-item')) {
-      seg.querySelectorAll('.segmented-item').forEach(t => t.classList.remove('active'));
-      e.target.classList.add('active');
+    // スライダー要素を作成
+    var slider = document.createElement('div');
+    slider.className = 'tab-slider';
+    slider.style.cssText =
+      'position:absolute;border-radius:var(--radius-full);' +
+      'transition:left .35s cubic-bezier(.4,0,.2,1),width .35s cubic-bezier(.4,0,.2,1);' +
+      'pointer-events:none;z-index:0;' +
+      'background:rgba(255,255,255,0.22);' +
+      'border:1px solid rgba(255,255,255,0.4);' +
+      'box-shadow:0 2px 12px rgba(0,0,0,0.05),inset 0 1px 0 rgba(255,255,255,0.6);';
+    container.appendChild(slider);
+
+    // 各タブを z-index:1 に（スライダーの上に乗せる）
+    container.querySelectorAll('.' + itemClass).forEach(function(t) {
+      t.style.position = 'relative';
+      t.style.zIndex = '1';
+    });
+
+    // スライダーの位置を active タブに合わせる
+    var SLIDE_TRANSITION = 'left .35s cubic-bezier(.4,0,.2,1), width .35s cubic-bezier(.4,0,.2,1), top .35s cubic-bezier(.4,0,.2,1), height .35s cubic-bezier(.4,0,.2,1)';
+    function moveSlider(animate) {
+      var active = container.querySelector('.' + itemClass + '.active');
+      if (!active) { slider.style.opacity = '0'; return; }
+      slider.style.opacity = '1';
+      slider.style.transition = animate ? SLIDE_TRANSITION : 'none';
+      var cRect = container.getBoundingClientRect();
+      var aRect = active.getBoundingClientRect();
+      var pad = 3;
+      slider.style.left   = (aRect.left - cRect.left - pad) + 'px';
+      slider.style.top    = (aRect.top - cRect.top - pad) + 'px';
+      slider.style.width  = (aRect.width + pad * 2) + 'px';
+      slider.style.height = (aRect.height + pad * 2) + 'px';
     }
-  });
+
+    // 初期位置（アニメーションなし）
+    moveSlider(false);
+
+    // クリックでタブ切替 + スライド
+    container.addEventListener('click', function(e) {
+      var target = e.target.closest('.' + itemClass);
+      if (!target) return;
+      container.querySelectorAll('.' + itemClass).forEach(function(t) { t.classList.remove('active'); });
+      target.classList.add('active');
+      moveSlider(true);
+    });
+
+    // リサイズ時に位置を再計算
+    window.addEventListener('resize', function() { moveSlider(false); });
+  }
+
+  initSlider(document.getElementById('pv-tab-bar'), 'tab');
+  initSlider(document.getElementById('pv-segmented'), 'segmented-item');
 })();
 
 // ==================== Dropdown ====================
