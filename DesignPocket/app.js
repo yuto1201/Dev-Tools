@@ -494,6 +494,16 @@ function showToast(msg, variant) {
 // ═══════════════════════════════════════════════════════════
 
 async function init() {
+  // iframe ready メッセージのリスナーを最初に登録（fetch 中に iframe が先に ready になる場合がある）
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'previewReady') {
+      state.previewReady = true;
+      const status = byId('preview-status');
+      if (status) status.textContent = 'live';
+      if (state.currentId) updatePreview();
+    }
+  });
+
   // v1 の残骸を掃除
   ['designpocket_apps', 'designpocket_ideas', 'designpocket_themes'].forEach((k) => {
     localStorage.removeItem(k);
@@ -566,15 +576,7 @@ function bindEvents() {
     }
   });
 
-  // iframe ready
-  window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'previewReady') {
-      state.previewReady = true;
-      const status = byId('preview-status');
-      if (status) status.textContent = 'live';
-      if (state.currentId) updatePreview();
-    }
-  });
+  // iframe ready リスナーは init() 冒頭で登録済み
 }
 
 document.addEventListener('DOMContentLoaded', init);
